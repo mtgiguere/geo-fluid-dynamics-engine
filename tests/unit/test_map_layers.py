@@ -145,3 +145,16 @@ def test_year_metrics_export_is_keyed_by_fips_with_metric_names() -> None:
     assert m["median_age"] == 41.1
     assert m["pct_bachelors_plus"] == 0.45
     assert "year" not in m  # the year is the filename's job, not 3,000 copies
+
+
+def test_year_metrics_nan_becomes_null_for_browser_strict_json() -> None:
+    """Two real counties carry NaN demographics (ACS sentinels). Python's
+    json module happily WRITES literal NaN — and browser JSON.parse rejects
+    it, killing the entire metrics file for one county's missing income.
+    NaN must export as None (-> null), provable via allow_nan=False."""
+    import json
+
+    metrics = export_year_metrics(_panel([{"median_hh_income": float("nan")}]), year=2024)
+
+    assert metrics["29189"]["median_hh_income"] is None
+    json.dumps(metrics, allow_nan=False)  # raises if any NaN survived

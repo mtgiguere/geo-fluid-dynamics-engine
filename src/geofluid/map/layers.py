@@ -38,8 +38,12 @@ def export_year_metrics(panel: pd.DataFrame, year: int) -> dict[str, dict[str, A
     """
     sliced = panel[panel["year"] == year]
     columns = [c for c in _METRIC_COLUMNS if c != "year"]
+    # NaN (ACS sentinel demographics) must become None -> JSON null. Python's
+    # json module happily writes literal NaN, which browser JSON.parse rejects
+    # — one county's missing income would kill the whole file client-side.
     return {
-        str(row["fips"]): {col: row[col] for col in columns} for row in sliced.to_dict("records")
+        str(row["fips"]): {col: None if pd.isna(row[col]) else row[col] for col in columns}
+        for row in sliced.to_dict("records")
     }
 
 
