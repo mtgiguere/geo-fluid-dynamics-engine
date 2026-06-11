@@ -1,0 +1,55 @@
+[project]
+name = "geo-fluid-dynamics-engine"
+version = "0.1.0"
+description = "Strategic civic simulator: descriptive, predictive, and prescriptive analytics for how political ideas move across geography"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pandas>=2.2",
+    "pyshp>=3.0.12",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pytest-cov>=6",
+    "ruff>=0.8",
+    "mypy>=1.14",
+    "pandas-stubs>=2.2",
+    "pip-audit>=2.7",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/geofluid"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+# E/F/W: core errors and style. I: import sorting. UP: modern syntax.
+# B: bugbear (likely bugs). S: bandit security rules — the SAST gate, per CI plan.
+# C4: comprehension correctness. PT: pytest style. SIM: simplification.
+select = ["E", "F", "W", "I", "UP", "B", "S", "C4", "PT", "SIM"]
+
+[tool.ruff.lint.per-file-ignores]
+# S101: pytest tests assert by design.
+"tests/**" = ["S101"]
+
+[tool.mypy]
+strict = true
+files = ["src", "tests"]
+
+# pyshp ships no type stubs and no py.typed marker. Scoped to the one module
+# rather than a global ignore so every other dependency stays strictly typed.
+[[tool.mypy.overrides]]
+module = "shapefile"
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--no-header -q"

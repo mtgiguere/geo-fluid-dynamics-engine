@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  # Gate 1: no secrets in the history. With a Mapbox account on this project,
+  # a leaked token is the single most likely security incident — this runs first.
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      # Gate 2: lockfile in sync with pyproject — prevents "works on my machine" drift.
+      - name: Check lockfile
+        run: uv lock --check
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      # Gate 3: lint (includes bandit security rules via ruff's S ruleset).
+      - name: Ruff check
+        run: uv run ruff check .
+
+      # Gate 4: formatting drift fails the build rather than accumulating.
+      - name: Ruff format
+        run: uv run ruff format --check .
+
+      # Gate 5: strict static types — catches interface contract drift
+      # (the adoption_prob vs adoption_probability class of bug) at the type level.
+      - name: Mypy (strict)
+        run: uv run mypy
+
+      # Gate 6: the test suite, with BRANCH coverage gated at 90%.
+      # Aim for 100; the gate is the floor, not the target (see TDD_CONTRACT.md —
+      # coverage measures execution, not verification; strict TDD is the real gate).
+      - name: Tests + coverage
+        run: uv run pytest --cov=src/geofluid --cov-branch --cov-fail-under=90
+
+      # Gate 7: known CVEs in the dependency tree.
+      - name: Vulnerability audit
+        run: uv run pip-audit
