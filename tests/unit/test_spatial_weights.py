@@ -50,3 +50,22 @@ def test_counties_sharing_a_border_are_adjacent_and_islands_are_present() -> Non
         "29510": frozenset({"29189"}),
         "15003": frozenset(),
     }
+
+
+def test_corner_touching_counties_are_neighbors_queen_contiguity() -> None:
+    """The contiguity rule is QUEEN: sharing a single point makes neighbors.
+    This is the Four Corners case (Arizona/Colorado/New Mexico/Utah meet at
+    one point) and the standard choice for county-level spatial analysis —
+    influence does not require a drivable border. Pinned here so a future
+    switch to rook contiguity is a visible contract change."""
+    fc = _fc(
+        [
+            _square("04001", 0.0, 0.0),  # corner at (1, 1)
+            _square("08083", 1.0, 1.0),  # corner at (1, 1) — diagonal touch
+        ]
+    )
+
+    adjacency = county_adjacency(fc)
+
+    assert adjacency["04001"] == frozenset({"08083"})
+    assert adjacency["08083"] == frozenset({"04001"})
