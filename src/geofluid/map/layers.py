@@ -17,6 +17,7 @@ _METRIC_COLUMNS = [
     "other_votes",
     "total_votes",
     "dem_share_2p",
+    "swing_dem_2p",
     "acs_vintage",
     "total_population",
     "median_age",
