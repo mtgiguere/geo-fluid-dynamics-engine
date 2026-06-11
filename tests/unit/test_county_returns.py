@@ -75,3 +75,26 @@ def test_single_county_year_produces_one_panel_row_with_two_party_share() -> Non
     assert row["other_votes"] == 50
     assert row["total_votes"] == 450
     assert abs(row["dem_share_2p"] - 0.75) < 1e-9
+
+
+def test_fips_is_zero_padded_five_char_string_from_numeric_input() -> None:
+    """The raw file stores county_fips as a number (1001.0 for Autauga, AL)
+    because missing values elsewhere force the column to float dtype. The panel
+    fips must be the canonical 5-character zero-padded string ("01001") — it is
+    the join key for every geometry and demographic dataset downstream, and a
+    "1001.0"/"01001" mismatch would silently drop the join."""
+    raw = _raw_rows(
+        [
+            {
+                "county_fips": 1001.0,
+                "state": "ALABAMA",
+                "county_name": "AUTAUGA",
+                "party": "REPUBLICAN",
+                "candidatevotes": 7,
+            }
+        ]
+    )
+
+    panel = load_county_returns(raw)
+
+    assert panel.iloc[0]["fips"] == "01001"
