@@ -84,3 +84,19 @@ def test_county_year_row_gains_its_demographics() -> None:
     assert row["acs_vintage"] == 2023
     assert abs(row["median_age"] - 41.1) < 1e-9
     assert abs(row["pct_bachelors_plus"] - 0.45) < 1e-9
+
+
+def test_shannon_county_old_fips_harmonizes_to_oglala_lakota() -> None:
+    """Shannon County SD was renamed Oglala Lakota County in 2015 (46113 ->
+    46102). The MIT returns file is internally inconsistent: it uses the OLD
+    code in 2000-2012 and again in 2024, the new code in 2016/2020. Without
+    harmonization the county's time series fractures into two phantom
+    counties, each missing demographics half the time. All 46113 rows become
+    46102 in the master panel."""
+    panel = build_master_panel(
+        _returns([{"fips": "46113", "year": 2024}]),
+        _demographics([{"fips": "46102", "median_age": 26.4}]),
+    )
+
+    assert list(panel["fips"]) == ["46102"]
+    assert abs(panel.iloc[0]["median_age"] - 26.4) < 1e-9

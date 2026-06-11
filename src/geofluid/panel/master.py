@@ -7,6 +7,13 @@ specified in tests/unit/test_master_panel.py, one test per decision.
 
 import pandas as pd
 
+# Counties renamed or recoded over the study period. Applied to the returns
+# side before joining: the returns file spans 2000-2024 and uses whichever
+# code was current when (or, for Shannon/Oglala Lakota, inconsistently even
+# within one release); demographics use only the current code.
+#   46113 -> 46102: Shannon County SD renamed Oglala Lakota County (2015).
+_FIPS_RECODES = {"46113": "46102"}
+
 
 def build_master_panel(returns: pd.DataFrame, demographics: pd.DataFrame) -> pd.DataFrame:
     """Join the returns panel with the demographics panel on county FIPS.
@@ -15,5 +22,6 @@ def build_master_panel(returns: pd.DataFrame, demographics: pd.DataFrame) -> pd.
     election year and the survey vintage are different facts (a 2024 election
     viewed through 2023 ACS context) and must never collide in one column.
     """
+    ret = returns.assign(fips=returns["fips"].replace(_FIPS_RECODES))
     demo = demographics.rename(columns={"year": "acs_vintage"})
-    return returns.merge(demo, on="fips", how="left")
+    return ret.merge(demo, on="fips", how="left")
