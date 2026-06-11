@@ -43,4 +43,7 @@ def load_county_demographics(payload: list[list[str | None]], year: int) -> pd.D
         out[name] = pd.to_numeric(df[var])
     seniors = sum(pd.to_numeric(df[cell]) for cell in _AGE_CELLS_65_PLUS)
     out["pct_65_plus"] = seniors / out["total_population"]
+    # Housing tenure (table B25003): owner-occupied units over all OCCUPIED
+    # units — the denominator is households, not population.
+    out["pct_owner_occupied"] = pd.to_numeric(df["B25003_002E"]) / pd.to_numeric(df["B25003_001E"])
     return out

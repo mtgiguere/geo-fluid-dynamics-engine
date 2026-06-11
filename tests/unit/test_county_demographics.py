@@ -88,3 +88,14 @@ def test_pct_65_plus_is_sum_of_senior_age_cells_over_total_population() -> None:
     df = load_county_demographics(payload, year=2023)
 
     assert abs(df.iloc[0]["pct_65_plus"] - 0.10) < 1e-9
+
+
+def test_pct_owner_occupied_is_owner_units_over_occupied_units() -> None:
+    """Specifies the housing-tenure share: owner-occupied units (B25003_002)
+    over ALL occupied units (B25003_001) — the denominator is households, not
+    population. 280,000 of 400,000 occupied units is exactly 0.70."""
+    payload = _payload([{}])
+
+    df = load_county_demographics(payload, year=2023)
+
+    assert abs(df.iloc[0]["pct_owner_occupied"] - 0.70) < 1e-9
