@@ -122,3 +122,23 @@ def test_rows_without_county_fips_are_excluded() -> None:
     panel = load_county_returns(raw)
 
     assert list(panel["fips"]) == ["29189"]
+
+
+def test_votes_are_summed_across_vote_mode_rows() -> None:
+    """From 2020 onward the raw file splits a county's votes across mode rows
+    (ELECTION DAY, ABSENTEE, PROVISIONAL, ...). The panel must sum them:
+    DEM 100 on election day plus DEM 40 absentee is dem_votes = 140, still in
+    a single county-year row."""
+    raw = _raw_rows(
+        [
+            {"party": "DEMOCRAT", "candidatevotes": 100, "mode": "ELECTION DAY"},
+            {"party": "DEMOCRAT", "candidatevotes": 40, "mode": "ABSENTEE"},
+            {"party": "REPUBLICAN", "candidatevotes": 60, "mode": "ELECTION DAY"},
+        ]
+    )
+
+    panel = load_county_returns(raw)
+
+    assert len(panel) == 1
+    assert panel.iloc[0]["dem_votes"] == 140
+    assert panel.iloc[0]["rep_votes"] == 60
