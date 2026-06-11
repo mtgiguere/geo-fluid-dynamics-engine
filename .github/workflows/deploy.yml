@@ -1,0 +1,67 @@
+name: Deploy
+
+# The deployment gate (TDD_CONTRACT.md, Bug #8): the Playwright suite runs
+# against the PRODUCTION build at the REAL Pages base path in a real browser
+# before anything ships. If it fails, nothing deploys.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  e2e-gate:
+    runs-on: ubuntu-latest
+    env:
+      # Public Mapbox token (pk.*) — set as a repository Actions VARIABLE
+      # named VITE_MAPBOX_TOKEN (Settings -> Secrets and variables ->
+      # Actions -> Variables). It is client-side by design; URL-restrict it
+      # to the Pages domain in the Mapbox dashboard.
+      VITE_MAPBOX_TOKEN: ${{ vars.VITE_MAPBOX_TOKEN }}
+      CI: true
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      # Builds the production bundle at the Pages base path (the Playwright
+      # webServer config sets GFDE_BASE), serves it, and runs the golden
+      # paths against it. The dist/ this produces is what gets deployed.
+      - name: E2E against production build
+        run: npx playwright test
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/dist
+
+  deploy:
+    needs: e2e-gate
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
