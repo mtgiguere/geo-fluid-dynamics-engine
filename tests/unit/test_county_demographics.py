@@ -14,7 +14,7 @@ schema and semantics are specified here before any implementation exists.
 
 import pandas as pd
 
-from geofluid.ingest.county_demographics import load_county_demographics
+from geofluid.ingest.county_demographics import acs5_county_url, load_county_demographics
 
 # The canonical demographics schema, written out literally (a test that
 # imports the constant it checks can never catch the constant changing).
@@ -173,3 +173,21 @@ def test_null_payload_values_become_nan() -> None:
     row = df.iloc[0]
     assert pd.isna(row["median_hh_income"])
     assert row["total_population"] == 990414
+
+
+def test_acs5_county_url_requests_every_needed_variable_for_all_counties() -> None:
+    """The fetch URL is part of the ingest contract: every variable the
+    transform consumes must be requested, for every county, at the requested
+    vintage. Spelled out literally so a silently dropped variable cannot
+    hide behind a constant shared with the implementation."""
+    url = acs5_county_url(2023)
+
+    assert url == (
+        "https://api.census.gov/data/2023/acs/acs5"
+        "?get=NAME,B01003_001E,B01002_001E,B19013_001E,B25077_001E,"
+        "B01001_020E,B01001_021E,B01001_022E,B01001_023E,B01001_024E,B01001_025E,"
+        "B01001_044E,B01001_045E,B01001_046E,B01001_047E,B01001_048E,B01001_049E,"
+        "B25003_001E,B25003_002E,"
+        "B15003_001E,B15003_022E,B15003_023E,B15003_024E,B15003_025E"
+        "&for=county:*"
+    )

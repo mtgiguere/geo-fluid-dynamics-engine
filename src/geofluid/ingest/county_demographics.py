@@ -64,6 +64,21 @@ def _numeric(raw: "pd.Series[str]") -> "pd.Series[float]":
     return values.mask(values.isin(_ACS_SENTINELS))
 
 
+def acs5_county_url(year: int) -> str:
+    """Census API URL requesting every variable the transform consumes,
+    for all counties, at the given ACS 5-year vintage."""
+    variables = [
+        "NAME",
+        *_SIMPLE_VARS,
+        *_AGE_CELLS_65_PLUS,
+        "B25003_001E",
+        "B25003_002E",
+        "B15003_001E",
+        *(f"B15003_{i:03d}E" for i in range(22, 26)),
+    ]
+    return f"https://api.census.gov/data/{year}/acs/acs5?get={','.join(variables)}&for=county:*"
+
+
 def load_county_demographics(payload: list[list[str | None]], year: int) -> pd.DataFrame:
     """Transform a raw Census API county response into the demographics panel."""
     header, *rows = payload
