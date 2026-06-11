@@ -149,3 +149,16 @@ def test_unexplained_missing_demographics_fails_loudly_naming_the_counties() -> 
         )
 
     assert "demographics" in str(excinfo.value)
+
+
+def test_demographics_only_geographies_do_not_appear() -> None:
+    """ACS covers geographies that cast no presidential vote — Puerto Rico's
+    78 municipios, Kalawao's 43 residents folded into Maui's returns. They
+    must not appear as vote-less rows in the master panel; the returns side
+    drives membership."""
+    panel = build_master_panel(
+        _returns([{}]),
+        _demographics([{}, {"fips": "72031"}, {"fips": "15005"}]),
+    )
+
+    assert list(panel["fips"]) == ["29189"]
