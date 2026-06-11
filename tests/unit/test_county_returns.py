@@ -234,3 +234,27 @@ def test_total_mode_rows_take_precedence_over_sub_mode_rows() -> None:
     assert row["rep_votes"] == 700
     assert row["other_votes"] == 0
     assert row["total_votes"] == 1500
+
+
+def test_zero_vote_total_rows_do_not_shadow_sub_mode_votes() -> None:
+    """Discovered in the real 2024 file (Arkansas, Louisiana, Oklahoma,
+    Pennsylvania): some counties carry placeholder TOTAL rows with ZERO votes
+    while the real count lives in the sub-mode rows. Total-mode precedence
+    must only apply when the total rows actually carry the votes — otherwise
+    these counties silently report zero turnout."""
+    raw = _raw_rows(
+        [
+            {"party": "DEMOCRAT", "candidatevotes": 0, "mode": "TOTAL"},
+            {"party": "REPUBLICAN", "candidatevotes": 0, "mode": "TOTAL"},
+            {"party": "DEMOCRAT", "candidatevotes": 300, "mode": "ELECTION DAY"},
+            {"party": "DEMOCRAT", "candidatevotes": 100, "mode": "ABSENTEE"},
+            {"party": "REPUBLICAN", "candidatevotes": 500, "mode": "ELECTION DAY"},
+        ]
+    )
+
+    panel = load_county_returns(raw)
+
+    row = panel.iloc[0]
+    assert row["dem_votes"] == 400
+    assert row["rep_votes"] == 500
+    assert row["total_votes"] == 900

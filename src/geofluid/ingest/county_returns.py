@@ -56,11 +56,19 @@ def load_county_returns(raw: pd.DataFrame) -> pd.DataFrame:
     # Total-mode precedence. Some states report a county's complete count as a
     # TOTAL / TOTAL VOTES row AND the per-channel breakdown alongside it
     # (Texas 2024, Utah 2020). Summing everything would count those ballots
-    # twice — when a county-year has total-mode rows, they alone are the truth
-    # and every sub-mode row is discarded.
+    # twice — when a county-year's total-mode rows carry the votes, they alone
+    # are the truth and every sub-mode row is discarded.
+    #
+    # The precedence is conditional on the total rows actually carrying votes:
+    # other states (Arkansas, Louisiana, Oklahoma, Pennsylvania in 2024) ship
+    # zero-vote placeholder TOTAL rows with the real count in the sub-mode
+    # rows. For those, the sub-mode sum is the county's count.
     is_total_mode = df["mode"].isin(_TOTAL_MODES)
-    county_year_has_total = is_total_mode.groupby([df["fips"], df["year"]]).transform("any")
-    df = df[is_total_mode | ~county_year_has_total]
+    votes_in_total_rows = df["candidatevotes"].where(is_total_mode, 0)
+    total_rows_carry_votes = (
+        votes_in_total_rows.groupby([df["fips"], df["year"]]).transform("sum") > 0
+    )
+    df = df[is_total_mode == total_rows_carry_votes]
 
     df["bloc"] = df["party"].map(_PARTY_BLOC).fillna("other_votes")
 
