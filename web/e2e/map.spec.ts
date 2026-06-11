@@ -6,6 +6,15 @@ import { expect, test } from "@playwright/test";
 // the base path, the data files, the token wiring, or the render pipeline
 // break, they fail here — before any human opens the URL.
 
+test.beforeEach(async ({ page }) => {
+  // Stub Mapbox telemetry. events.mapbox.com 403s from CI runners (and the
+  // GL library then logs minified errors), flooding the console with noise
+  // that has nothing to do with OUR app's health. Fulfilling with 204 keeps
+  // the clean-console assertion strict about everything that matters while
+  // removing a third-party analytics endpoint from the deploy gate.
+  await page.route(/events\.mapbox\.com/, (route) => route.fulfill({ status: 204, body: "" }));
+});
+
 test("map renders every county at the deployed base path, console clean", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(String(e)));
