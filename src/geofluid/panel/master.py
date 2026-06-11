@@ -45,4 +45,6 @@ def build_master_panel(returns: pd.DataFrame, demographics: pd.DataFrame) -> pd.
     unmatched = sorted(panel.loc[panel["acs_vintage"].isna(), "fips"].unique())
     if unmatched:
         raise ValueError(f"Counties missing demographics: {unmatched}")
-    return panel
+    # Recoding changes sort positions (46113 -> 46102 moves the county
+    # earlier); re-sort so serialization and diffs stay deterministic.
+    return panel.sort_values(["fips", "year"], ignore_index=True)

@@ -151,6 +151,27 @@ def test_unexplained_missing_demographics_fails_loudly_naming_the_counties() -> 
     assert "demographics" in str(excinfo.value)
 
 
+def test_panel_is_sorted_by_fips_then_year_after_recoding() -> None:
+    """The recode (46113 -> 46102) changes a county's sort position: a panel
+    that inherits the returns frame's order is no longer FIPS-ordered after
+    harmonization. The master panel must re-sort so downstream serialization
+    and diffs stay deterministic. Expected order written out explicitly."""
+    panel = build_master_panel(
+        _returns(
+            [
+                {"fips": "46103", "year": 2020},
+                {"fips": "46113", "year": 2024},  # recodes to 46102 — sorts FIRST
+            ]
+        ),
+        _demographics([{"fips": "46103"}, {"fips": "46102"}]),
+    )
+
+    assert list(zip(panel["fips"], panel["year"], strict=True)) == [
+        ("46102", 2024),
+        ("46103", 2020),
+    ]
+
+
 def test_demographics_only_geographies_do_not_appear() -> None:
     """ACS covers geographies that cast no presidential vote — Puerto Rico's
     78 municipios, Kalawao's 43 residents folded into Maui's returns. They
