@@ -22,17 +22,28 @@ jobs:
   e2e-gate:
     runs-on: ubuntu-latest
     env:
-      # Public Mapbox token (pk.*) — set as a repository Actions VARIABLE
-      # named VITE_MAPBOX_TOKEN (Settings -> Secrets and variables ->
-      # Actions -> Variables). It is client-side by design; URL-restrict it
-      # to the Pages domain in the Mapbox dashboard.
-      VITE_MAPBOX_TOKEN: ${{ vars.VITE_MAPBOX_TOKEN }}
+      # Public Mapbox token (pk.*) — a repository Actions VARIABLE named
+      # VITE_MAPBOX_TOKEN is the intended home (it's public by design), but
+      # the UI makes Secrets the easy default, so either location works.
+      # URL-restrict the token to the Pages domain in the Mapbox dashboard.
+      VITE_MAPBOX_TOKEN: ${{ vars.VITE_MAPBOX_TOKEN || secrets.VITE_MAPBOX_TOKEN }}
       CI: true
     defaults:
       run:
         working-directory: web
     steps:
       - uses: actions/checkout@v4
+
+      # Fail in one second with a clear message rather than a 30-second
+      # Playwright timeout: without the token the map style never loads and
+      # the status bar stays at "loading…" (failure signature reproduced
+      # locally 2026-06-11).
+      - name: Require Mapbox token
+        run: |
+          if [ -z "$VITE_MAPBOX_TOKEN" ]; then
+            echo "::error::VITE_MAPBOX_TOKEN is empty. Add it under Settings -> Secrets and variables -> Actions (either tab) with your public pk.* token."
+            exit 1
+          fi
 
       - uses: actions/setup-node@v4
         with:
