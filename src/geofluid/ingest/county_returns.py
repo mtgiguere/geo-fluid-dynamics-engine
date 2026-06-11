@@ -37,6 +37,11 @@ def load_county_returns(raw: pd.DataFrame) -> pd.DataFrame:
     # A county panel cannot represent them, so they are excluded here rather
     # than crashing the cast below or fabricating a join key.
     df = df.dropna(subset=["county_fips"])
+
+    # Rows without a party are bookkeeping, not candidate votes: the 2024 file
+    # carries "TOTAL VOTES CAST" pseudo-candidate rows (party=NaN) holding each
+    # county's reported turnout. Counting them would double total_votes.
+    df = df.dropna(subset=["party"])
     # county_fips arrives as float in the raw file (missing values force float
     # dtype), so the canonical form is reached via float -> int -> zero-padded
     # 5-character string: 1001.0 -> "01001". String inputs like "29189" take the

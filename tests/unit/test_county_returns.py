@@ -182,3 +182,28 @@ def test_empty_input_yields_empty_panel_with_canonical_columns() -> None:
 
     assert list(panel.columns) == PANEL_COLUMNS
     assert len(panel) == 0
+
+
+def test_pseudo_candidate_total_rows_are_not_votes() -> None:
+    """Discovered in the real 2024 file (Wisconsin, Vermont, West Virginia,
+    Wyoming): a pseudo-candidate row "TOTAL VOTES CAST" with party=NaN carries
+    the county's reported turnout. It is bookkeeping, not a candidate — counting
+    it would double total_votes (Milwaukee: 464,107 phantom votes into
+    other_votes). Rows without a party are excluded."""
+    raw = _raw_rows(
+        [
+            {"party": "DEMOCRAT", "candidatevotes": 316292, "mode": "<NA>"},
+            {"party": "REPUBLICAN", "candidatevotes": 138022, "mode": "<NA>"},
+            {
+                "candidate": "TOTAL VOTES CAST",
+                "party": float("nan"),
+                "candidatevotes": 464107,
+                "mode": "<NA>",
+            },
+        ]
+    )
+
+    panel = load_county_returns(raw)
+
+    assert panel.iloc[0]["total_votes"] == 316292 + 138022
+    assert panel.iloc[0]["other_votes"] == 0
