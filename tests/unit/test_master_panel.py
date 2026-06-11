@@ -172,6 +172,49 @@ def test_panel_is_sorted_by_fips_then_year_after_recoding() -> None:
     ]
 
 
+def test_merged_jurisdiction_votes_aggregate_into_absorbing_county() -> None:
+    """Found by the fail-fast in the real master panel build: Bedford City VA
+    (51515) was an independent city with real votes 2000-2012, then merged
+    into Bedford County (51019) in 2013. Harmonizing to current geography
+    means its votes JOIN the county's votes — the recode must aggregate the
+    two rows into one, recomputing the two-party share, never emit duplicate
+    (fips, year) rows."""
+    panel = build_master_panel(
+        _returns(
+            [
+                {
+                    "fips": "51515",
+                    "year": 2000,
+                    "dem_votes": 1000,
+                    "rep_votes": 2000,
+                    "other_votes": 100,
+                    "total_votes": 3100,
+                    "dem_share_2p": 1000 / 3000,
+                },
+                {
+                    "fips": "51019",
+                    "year": 2000,
+                    "dem_votes": 4000,
+                    "rep_votes": 8000,
+                    "other_votes": 200,
+                    "total_votes": 12200,
+                    "dem_share_2p": 4000 / 12000,
+                },
+            ]
+        ),
+        _demographics([{"fips": "51019"}]),
+    )
+
+    assert len(panel) == 1
+    row = panel.iloc[0]
+    assert row["fips"] == "51019"
+    assert row["dem_votes"] == 5000
+    assert row["rep_votes"] == 10000
+    assert row["other_votes"] == 300
+    assert row["total_votes"] == 15300
+    assert abs(row["dem_share_2p"] - 5000 / 15000) < 1e-9
+
+
 def test_demographics_only_geographies_do_not_appear() -> None:
     """ACS covers geographies that cast no presidential vote — Puerto Rico's
     78 municipios, Kalawao's 43 residents folded into Maui's returns. They

@@ -12,7 +12,12 @@ import pandas as pd
 # code was current when (or, for Shannon/Oglala Lakota, inconsistently even
 # within one release); demographics use only the current code.
 #   46113 -> 46102: Shannon County SD renamed Oglala Lakota County (2015).
-_FIPS_RECODES = {"46113": "46102"}
+#   51515 -> 51019: Bedford City VA, an independent city through 2013, merged
+#                   into Bedford County; its 2000-2012 votes aggregate into
+#                   the county's rows (current-geography harmonization).
+_FIPS_RECODES = {"46113": "46102", "51515": "51019"}
+
+_VOTE_COLUMNS = ["dem_votes", "rep_votes", "other_votes", "total_votes"]
 
 
 def build_master_panel(returns: pd.DataFrame, demographics: pd.DataFrame) -> pd.DataFrame:
@@ -34,6 +39,13 @@ def build_master_panel(returns: pd.DataFrame, demographics: pd.DataFrame) -> pd.
     is_alaska = ret["fips"].str.startswith("02")
     is_state_bucket = ret["fips"].str.endswith("000")
     ret = ret[~is_alaska & ~is_state_bucket]
+
+    # Recodes can merge two jurisdictions into one (Bedford City's votes join
+    # Bedford County's for 2000-2012). Aggregate to one row per (fips, year),
+    # recomputing the two-party share from the summed votes — an identity for
+    # every county that was not part of a merge.
+    ret = ret.groupby(["fips", "year"], as_index=False)[_VOTE_COLUMNS].sum()
+    ret["dem_share_2p"] = ret["dem_votes"] / (ret["dem_votes"] + ret["rep_votes"])
 
     demo = demographics.rename(columns={"year": "acs_vintage"})
     panel = ret.merge(demo, on="fips", how="left")
