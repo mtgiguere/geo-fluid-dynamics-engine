@@ -42,6 +42,13 @@ def build_map_layer(
     features = []
     for feature in county_geojson["features"]:
         out = dict(feature)
-        out["properties"] = {**feature["properties"], **by_fips[str(feature["id"])]}
+        # Geographies outside the panel (Alaska, by documented policy) still
+        # render — a hole in the map reads as a bug. has_data is the single
+        # flag the frontend styles on.
+        metrics = by_fips.get(str(feature["id"]))
+        if metrics is None:
+            out["properties"] = {**feature["properties"], "has_data": False}
+        else:
+            out["properties"] = {**feature["properties"], **metrics, "has_data": True}
         features.append(out)
     return {"type": "FeatureCollection", "features": features}

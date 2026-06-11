@@ -81,3 +81,19 @@ def test_features_gain_panel_metrics_for_the_requested_year() -> None:
     assert props["pct_owner_occupied"] == 0.71
     assert props["pct_bachelors_plus"] == 0.45
     assert props["year"] == 2024
+
+
+def test_counties_without_panel_data_keep_geometry_and_flag_no_data() -> None:
+    """Alaska's boroughs (excluded from the panel by policy) and any future
+    no-data geography must still RENDER — a hole in the map reads as a bug to
+    every user. Such features keep their geometry and get has_data=False;
+    data-bearing features get has_data=True so the frontend styles on one
+    flag instead of probing for missing properties."""
+    layer = build_map_layer(_panel([{}]), _geojson(["29189", "02016"]), year=2024)
+
+    by_id = {f["id"]: f for f in layer["features"]}
+    assert set(by_id) == {"29189", "02016"}
+    assert by_id["29189"]["properties"]["has_data"] is True
+    assert by_id["02016"]["properties"]["has_data"] is False
+    assert by_id["02016"]["geometry"]["type"] == "Polygon"
+    assert "dem_share_2p" not in by_id["02016"]["properties"]
