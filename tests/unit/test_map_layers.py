@@ -113,3 +113,20 @@ def test_panel_county_missing_from_geometry_fails_loudly() -> None:
         )
 
     assert "geometry" in str(excinfo.value)
+
+
+def test_layer_round_trips_through_json() -> None:
+    """The layer's destination is a static .json file fetched by a browser.
+    numpy scalars (int64/float64 from the pandas panel) are the classic
+    json.dumps failure. The contract: dumps succeeds and the parsed result
+    equals the layer — values are native Python numbers, not stringified
+    stand-ins."""
+    import json
+
+    layer = build_map_layer(_panel([{}]), _geojson(["29189", "02016"]), year=2024)
+
+    parsed = json.loads(json.dumps(layer))
+
+    assert parsed == layer
+    assert isinstance(parsed["features"][0]["properties"]["total_votes"], int)
+    assert isinstance(parsed["features"][0]["properties"]["dem_share_2p"], float)
