@@ -45,3 +45,30 @@ def test_shapefile_converts_to_feature_collection_keyed_by_geoid(tmp_path: Path)
     assert stl["properties"] == {"NAME": "St. Louis"}
     assert stl["geometry"]["type"] == "Polygon"
     assert stl["geometry"]["coordinates"][0][0] == (0.0, 0.0)
+
+
+def test_coordinates_round_to_five_decimals(tmp_path: Path) -> None:
+    """The boundary file ships full double-precision coordinates; serialized,
+    that made the real 2024 layer 28 MB — most of it digits that are pure
+    noise at the file's own 1:500k generalization. Five decimals is ~1.1 m
+    of longitude: far beyond map precision, roughly half the bytes."""
+    shp = tmp_path / "one"
+    with shapefile.Writer(str(shp)) as w:
+        w.field("GEOID", "C", size=5)
+        w.field("NAME", "C", size=100)
+        w.poly(
+            [
+                [
+                    (-90.123456789, 38.987654321),
+                    (-90.1, 39.0),
+                    (-90.2, 38.9),
+                    (-90.123456789, 38.987654321),
+                ]
+            ]
+        )
+        w.record(GEOID="29189", NAME="St. Louis")
+
+    fc = county_shapefile_to_geojson(shp.with_suffix(".shp"))
+
+    ring = fc["features"][0]["geometry"]["coordinates"][0]
+    assert ring[0] == (-90.12346, 38.98765)
