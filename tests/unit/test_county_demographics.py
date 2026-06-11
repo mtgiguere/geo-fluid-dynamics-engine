@@ -12,6 +12,8 @@ modules consume. As with the returns panel, this file is the contract:
 schema and semantics are specified here before any implementation exists.
 """
 
+import pandas as pd
+
 from geofluid.ingest.county_demographics import load_county_demographics
 
 # The canonical demographics schema, written out literally (a test that
@@ -55,8 +57,8 @@ def _payload(rows: list[dict[str, str | None]]) -> list[list[str | None]]:
         "state": "29",
         "county": "189",
     }
-    header = list(defaults)
-    return [header, *[[{**defaults, **row}[k] for k in header] for row in rows]]
+    header: list[str | None] = list(defaults)
+    return [header, *[[{**defaults, **row}[str(k)] for k in header] for row in rows]]
 
 
 def test_single_county_payload_yields_fips_and_numeric_simple_columns() -> None:
@@ -125,3 +127,19 @@ def test_panel_columns_match_canonical_schema_in_order() -> None:
     df = load_county_demographics(payload, year=2023)
 
     assert list(df.columns) == DEMOGRAPHICS_COLUMNS
+
+
+def test_acs_sentinel_values_become_nan_not_numbers() -> None:
+    """ACS encodes "median cannot be computed" (insufficient sample, e.g.
+    Kalawao County's ~80 residents) as the in-band sentinel -666666666.
+    Treated as a number it would silently destroy every mean, scale, and
+    model fit downstream. Sentinels must come out as NaN — and NaN must not
+    infect the county's other, valid columns."""
+    payload = _payload([{"B25077_001E": "-666666666", "B19013_001E": "-666666666"}])
+
+    df = load_county_demographics(payload, year=2023)
+
+    row = df.iloc[0]
+    assert pd.isna(row["median_home_value"])
+    assert pd.isna(row["median_hh_income"])
+    assert abs(row["median_age"] - 41.1) < 1e-9  # valid columns untouched

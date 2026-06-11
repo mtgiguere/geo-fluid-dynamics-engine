@@ -42,6 +42,28 @@ DEMOGRAPHICS_COLUMNS = [
 ]
 
 
+# ACS annotation sentinels: in-band negative codes meaning "estimate not
+# available" (insufficient sample, suppressed, not applicable). Documented at
+# census.gov under "Notes on ACS Estimate and Annotation Values". Left as
+# numbers they would silently destroy every mean, choropleth scale, and model
+# fit downstream — they must become NaN at ingest.
+_ACS_SENTINELS = [
+    -111111111,
+    -222222222,
+    -333333333,
+    -555555555,
+    -666666666,
+    -888888888,
+    -999999999,
+]
+
+
+def _numeric(raw: "pd.Series[str]") -> "pd.Series[float]":
+    """String ACS values -> numbers, with annotation sentinels as NaN."""
+    values = pd.to_numeric(raw)
+    return values.mask(values.isin(_ACS_SENTINELS))
+
+
 def load_county_demographics(payload: list[list[str | None]], year: int) -> pd.DataFrame:
     """Transform a raw Census API county response into the demographics panel."""
     header, *rows = payload
@@ -54,17 +76,17 @@ def load_county_demographics(payload: list[list[str | None]], year: int) -> pd.D
     # ACS payloads do not carry their vintage; the caller supplies it.
     out["year"] = year
     for var, name in _SIMPLE_VARS.items():
-        out[name] = pd.to_numeric(df[var])
-    seniors = sum(pd.to_numeric(df[cell]) for cell in _AGE_CELLS_65_PLUS)
+        out[name] = _numeric(df[var])
+    seniors = sum(_numeric(df[cell]) for cell in _AGE_CELLS_65_PLUS)
     out["pct_65_plus"] = seniors / out["total_population"]
     # Housing tenure (table B25003): owner-occupied units over all OCCUPIED
     # units — the denominator is households, not population.
-    out["pct_owner_occupied"] = pd.to_numeric(df["B25003_002E"]) / pd.to_numeric(df["B25003_001E"])
+    out["pct_owner_occupied"] = _numeric(df["B25003_002E"]) / _numeric(df["B25003_001E"])
     # Educational attainment (table B15003): bachelor's, master's,
     # professional, and doctorate over the table's own universe — population
     # 25 and over. This is the variable whose quiet rise to dominance the
     # 2016 models missed (see spec, Module 4); its denominator must be the
     # adult universe, not total population.
-    degrees = sum(pd.to_numeric(df[f"B15003_{i:03d}E"]) for i in range(22, 26))
-    out["pct_bachelors_plus"] = degrees / pd.to_numeric(df["B15003_001E"])
+    degrees = sum(_numeric(df[f"B15003_{i:03d}E"]) for i in range(22, 26))
+    out["pct_bachelors_plus"] = degrees / _numeric(df["B15003_001E"])
     return out.loc[:, DEMOGRAPHICS_COLUMNS]
