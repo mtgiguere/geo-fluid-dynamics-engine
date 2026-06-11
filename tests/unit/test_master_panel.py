@@ -30,6 +30,7 @@ MASTER_COLUMNS = [
     "other_votes",
     "total_votes",
     "dem_share_2p",
+    "swing_dem_2p",
     "acs_vintage",
     "total_population",
     "median_age",
@@ -85,6 +86,50 @@ def test_county_year_row_gains_its_demographics() -> None:
     assert row["acs_vintage"] == 2023
     assert abs(row["median_age"] - 41.1) < 1e-9
     assert abs(row["pct_bachelors_plus"] - 0.45) < 1e-9
+
+
+def test_swing_is_change_in_two_party_share_since_previous_election() -> None:
+    """Specifies the wave quantity: swing_dem_2p is this election's two-party
+    share minus the SAME county's share in the immediately preceding election.
+    A county going 0.40 -> 0.55 swung +0.15 toward the Democrats. The first
+    election a county appears in has no previous share: swing is missing
+    (NaN), never zero — zero means "no movement", which is a real claim."""
+    panel = build_master_panel(
+        _returns(
+            [
+                {"year": 2016, "dem_votes": 400, "rep_votes": 600, "dem_share_2p": 0.4},
+                {"year": 2020, "dem_votes": 550, "rep_votes": 450, "dem_share_2p": 0.55},
+            ]
+        ),
+        _demographics([{}]),
+    )
+
+    by_year = panel.set_index("year")
+    assert pd.isna(by_year.loc[2016, "swing_dem_2p"])
+    assert abs(by_year.loc[2020, "swing_dem_2p"] - 0.15) < 1e-9
+
+
+def test_swing_is_missing_when_previous_election_has_no_row() -> None:
+    """A county absent from the immediately preceding election (boundary
+    changes, placeholder years dropped at ingest) has no valid baseline.
+    Comparing against two elections back would silently report an 8-year
+    drift as a 4-year swing — the swing must be missing, and the county's
+    later swings must resume normally."""
+    panel = build_master_panel(
+        _returns(
+            [
+                {"year": 2012, "dem_votes": 300, "rep_votes": 700, "dem_share_2p": 0.3},
+                # 2016: no row for this county
+                {"year": 2020, "dem_votes": 500, "rep_votes": 500, "dem_share_2p": 0.5},
+                {"year": 2024, "dem_votes": 600, "rep_votes": 400, "dem_share_2p": 0.6},
+            ]
+        ),
+        _demographics([{}]),
+    )
+
+    by_year = panel.set_index("year")
+    assert pd.isna(by_year.loc[2020, "swing_dem_2p"])  # NOT 0.5 - 0.3
+    assert abs(by_year.loc[2024, "swing_dem_2p"] - 0.1) < 1e-9
 
 
 def test_shannon_county_old_fips_harmonizes_to_oglala_lakota() -> None:

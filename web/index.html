@@ -12,13 +12,14 @@
     <header id="bar">
       <h1>Geo-Fluid Dynamics Engine</h1>
       <div id="controls">
+        <select id="metric" aria-label="Map metric"></select>
         <span id="year-label">2024</span>
         <input id="year" type="range" min="0" max="6" step="1" value="6" />
       </div>
       <div id="legend">
-        <span>More Republican</span>
+        <span id="legend-left">More Republican</span>
         <div id="ramp"></div>
-        <span>More Democratic</span>
+        <span id="legend-right">More Democratic</span>
       </div>
       <span id="status">loading…</span>
     </header>

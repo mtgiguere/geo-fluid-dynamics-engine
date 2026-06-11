@@ -59,4 +59,22 @@ def build_master_panel(returns: pd.DataFrame, demographics: pd.DataFrame) -> pd.
         raise ValueError(f"Counties missing demographics: {unmatched}")
     # Recoding changes sort positions (46113 -> 46102 moves the county
     # earlier); re-sort so serialization and diffs stay deterministic.
-    return panel.sort_values(["fips", "year"], ignore_index=True)
+    panel = panel.sort_values(["fips", "year"], ignore_index=True)
+
+    # The wave quantity: swing_dem_2p is this election's two-party share minus
+    # the same county's share in the preceding election. A county's first
+    # appearance has no baseline — swing is NaN there, never zero, because
+    # zero asserts "no movement", which is a real claim about the world.
+    #
+    # "Preceding" means the preceding PRESIDENTIAL election — year minus four,
+    # the calendar's cadence — not the county's previous appearance. A county
+    # absent in year t-4 must not have its t-8 share passed off as a
+    # one-election baseline. (If this panel ever carries non-presidential
+    # contests, this contract changes visibly, in tests first.)
+    grouped = panel.groupby("fips")
+    swing = panel["dem_share_2p"] - grouped["dem_share_2p"].shift(1)
+    panel["swing_dem_2p"] = swing.where(grouped["year"].shift(1) == panel["year"] - 4)
+
+    columns = [c for c in panel.columns if c not in ("swing_dem_2p",)]
+    share_at = columns.index("dem_share_2p") + 1
+    return panel.loc[:, [*columns[:share_at], "swing_dem_2p", *columns[share_at:]]]
