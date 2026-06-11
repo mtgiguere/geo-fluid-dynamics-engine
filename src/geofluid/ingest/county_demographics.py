@@ -89,4 +89,6 @@ def load_county_demographics(payload: list[list[str | None]], year: int) -> pd.D
     # adult universe, not total population.
     degrees = sum(_numeric(df[f"B15003_{i:03d}E"]) for i in range(22, 26))
     out["pct_bachelors_plus"] = degrees / _numeric(df["B15003_001E"])
-    return out.loc[:, DEMOGRAPHICS_COLUMNS]
+    # API row order is an implementation detail; the panel is fips-ordered so
+    # joins and diffs against the returns panel are deterministic.
+    return out.loc[:, DEMOGRAPHICS_COLUMNS].sort_values("fips", ignore_index=True)

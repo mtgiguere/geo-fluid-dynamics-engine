@@ -143,3 +143,33 @@ def test_acs_sentinel_values_become_nan_not_numbers() -> None:
     assert pd.isna(row["median_home_value"])
     assert pd.isna(row["median_hh_income"])
     assert abs(row["median_age"] - 41.1) < 1e-9  # valid columns untouched
+
+
+def test_panel_is_sorted_by_fips_regardless_of_payload_order() -> None:
+    """Census API row order is an implementation detail of the API. The panel
+    must come out in fips order so joins and diffs against the returns panel
+    are deterministic."""
+    payload = _payload(
+        [
+            {"state": "29", "county": "510"},
+            {"state": "01", "county": "001"},
+            {"state": "29", "county": "189"},
+        ]
+    )
+
+    df = load_county_demographics(payload, year=2023)
+
+    assert list(df["fips"]) == ["01001", "29189", "29510"]
+
+
+def test_null_payload_values_become_nan() -> None:
+    """The API returns JSON null for some county-variable combinations.
+    Nulls must become NaN in numeric columns, not crash the parse and not
+    infect other columns."""
+    payload = _payload([{"B19013_001E": None}])
+
+    df = load_county_demographics(payload, year=2023)
+
+    row = df.iloc[0]
+    assert pd.isna(row["median_hh_income"])
+    assert row["total_population"] == 990414
