@@ -100,3 +100,29 @@ def test_shannon_county_old_fips_harmonizes_to_oglala_lakota() -> None:
 
     assert list(panel["fips"]) == ["46102"]
     assert abs(panel.iloc[0]["median_age"] - 26.4) < 1e-9
+
+
+def test_alaska_districts_and_state_buckets_are_excluded() -> None:
+    """Two geographies can never join and are excluded by policy, not error:
+
+    Alaska (02xxx) reports elections by legislative district while every
+    demographic dataset uses boroughs — no county-level crosswalk exists, so
+    Alaska is analyzed statewide, never at "county" level.
+
+    State-level buckets (FIPS XX000, e.g. New York's 36000 holding 124,288
+    unallocated 2024 absentee votes) are real votes but map to no county.
+
+    Both exclusions are silent BY DOCUMENTED POLICY — unlike any other
+    unmatched county, which must fail loudly (next test)."""
+    panel = build_master_panel(
+        _returns(
+            [
+                {"fips": "02010", "year": 2024},
+                {"fips": "36000", "year": 2024},
+                {"fips": "29189", "year": 2024},
+            ]
+        ),
+        _demographics([{}]),
+    )
+
+    assert list(panel["fips"]) == ["29189"]

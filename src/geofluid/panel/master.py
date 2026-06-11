@@ -23,5 +23,17 @@ def build_master_panel(returns: pd.DataFrame, demographics: pd.DataFrame) -> pd.
     viewed through 2023 ACS context) and must never collide in one column.
     """
     ret = returns.assign(fips=returns["fips"].replace(_FIPS_RECODES))
+
+    # Policy exclusions — geographies that can never join, removed silently
+    # and deliberately (any OTHER unmatched county is an error, not policy):
+    #  - Alaska (02xxx): elections are reported by legislative district,
+    #    demographics by borough; no county-level crosswalk exists. Alaska
+    #    is analyzed statewide, never at "county" level.
+    #  - State buckets (XX000, e.g. New York's 36000 unallocated absentee
+    #    votes in 2024): real votes that belong to no county.
+    is_alaska = ret["fips"].str.startswith("02")
+    is_state_bucket = ret["fips"].str.endswith("000")
+    ret = ret[~is_alaska & ~is_state_bucket]
+
     demo = demographics.rename(columns={"year": "acs_vintage"})
     return ret.merge(demo, on="fips", how="left")
