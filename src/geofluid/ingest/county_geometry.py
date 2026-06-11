@@ -42,7 +42,10 @@ def county_shapefile_to_geojson(shp_path: str | Path) -> dict[str, Any]:
                 {
                     "type": "Feature",
                     "id": record["GEOID"],
-                    "properties": {"NAME": record["NAME"]},
+                    # fips duplicated into properties: Mapbox GL feature-state
+                    # joins on string ids require promoteId on a property —
+                    # the top-level id alone cannot carry a string key.
+                    "properties": {"NAME": record["NAME"], "fips": record["GEOID"]},
                     "geometry": geometry,
                 }
             )

@@ -26,3 +26,16 @@ demanded it, and the commit history shows the RED → GREEN sequence.
 uv sync          # install dependencies
 uv run pytest    # run the test suite
 ```
+
+## Running the map
+
+```
+# one-time data export (needs CENSUS_API_KEY in the environment, the MIT
+# returns CSV and cb_2021 5m boundary shapefile under data/raw/)
+uv run python scripts/export_web_data.py
+
+cd web
+cp .env.example .env.local   # add your Mapbox public token
+npm install
+npm run dev                  # http://localhost:5173
+```
