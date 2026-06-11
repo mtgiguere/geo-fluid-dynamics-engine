@@ -53,6 +53,18 @@ test("clicking a county opens its data popup", async ({ page }) => {
   await expect(popup).toContainText("Bachelor's or higher");
 });
 
+test("metric switcher recolors the map and relabels the legend", async ({ page }) => {
+  await page.goto("./");
+  await expect(page.locator("#status")).toContainText("counties", { timeout: 30_000 });
+
+  await page.locator("#metric").selectOption("swing_dem_2p");
+  await expect(page.locator("#legend-left")).toHaveText("Swung Republican");
+
+  await page.locator("#metric").selectOption("median_hh_income");
+  await expect(page.locator("#legend-left")).toHaveText("$40k");
+  await expect(page.locator("#legend-right")).toHaveText("$120k+");
+});
+
 test("year slider scrubs to another election", async ({ page }) => {
   await page.goto("./");
   await expect(page.locator("#status")).toContainText("counties", { timeout: 30_000 });
