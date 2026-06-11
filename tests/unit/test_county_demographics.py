@@ -99,3 +99,17 @@ def test_pct_owner_occupied_is_owner_units_over_occupied_units() -> None:
     df = load_county_demographics(payload, year=2023)
 
     assert abs(df.iloc[0]["pct_owner_occupied"] - 0.70) < 1e-9
+
+
+def test_pct_bachelors_plus_sums_four_degree_cells_over_adults_25_plus() -> None:
+    """Specifies the education share: bachelor's + master's + professional +
+    doctorate (B15003 cells 022-025) over the population 25 and over
+    (B15003_001) — the table's own universe, NOT total population. The 2016
+    lesson in the project spec is exactly this variable; getting its
+    denominator wrong would distort the engine's most important covariate.
+    (140,000 + 56,000 + 14,000 + 7,000) / 700,000 = 0.31."""
+    payload = _payload([{}])
+
+    df = load_county_demographics(payload, year=2023)
+
+    assert abs(df.iloc[0]["pct_bachelors_plus"] - 0.31) < 1e-9

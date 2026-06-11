@@ -46,4 +46,11 @@ def load_county_demographics(payload: list[list[str | None]], year: int) -> pd.D
     # Housing tenure (table B25003): owner-occupied units over all OCCUPIED
     # units — the denominator is households, not population.
     out["pct_owner_occupied"] = pd.to_numeric(df["B25003_002E"]) / pd.to_numeric(df["B25003_001E"])
+    # Educational attainment (table B15003): bachelor's, master's,
+    # professional, and doctorate over the table's own universe — population
+    # 25 and over. This is the variable whose quiet rise to dominance the
+    # 2016 models missed (see spec, Module 4); its denominator must be the
+    # adult universe, not total population.
+    degrees = sum(pd.to_numeric(df[f"B15003_{i:03d}E"]) for i in range(22, 26))
+    out["pct_bachelors_plus"] = degrees / pd.to_numeric(df["B15003_001E"])
     return out
