@@ -64,9 +64,14 @@ def _numeric(raw: "pd.Series[str]") -> "pd.Series[float]":
     return values.mask(values.isin(_ACS_SENTINELS))
 
 
-def acs5_county_url(year: int) -> str:
+def acs5_county_url(year: int, api_key: str) -> str:
     """Census API URL requesting every variable the transform consumes,
-    for all counties, at the given ACS 5-year vintage."""
+    for all counties, at the given ACS 5-year vintage.
+
+    A key is mandatory for every Census API request (free signup at
+    api.census.gov/data/key_signup.html). Keep it out of the repository:
+    read it from the CENSUS_API_KEY environment variable, never commit it.
+    """
     variables = [
         "NAME",
         *_SIMPLE_VARS,
@@ -76,7 +81,10 @@ def acs5_county_url(year: int) -> str:
         "B15003_001E",
         *(f"B15003_{i:03d}E" for i in range(22, 26)),
     ]
-    return f"https://api.census.gov/data/{year}/acs/acs5?get={','.join(variables)}&for=county:*"
+    return (
+        f"https://api.census.gov/data/{year}/acs/acs5"
+        f"?get={','.join(variables)}&for=county:*&key={api_key}"
+    )
 
 
 def load_county_demographics(payload: list[list[str | None]], year: int) -> pd.DataFrame:

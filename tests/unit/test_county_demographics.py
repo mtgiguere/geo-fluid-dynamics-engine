@@ -178,9 +178,11 @@ def test_null_payload_values_become_nan() -> None:
 def test_acs5_county_url_requests_every_needed_variable_for_all_counties() -> None:
     """The fetch URL is part of the ingest contract: every variable the
     transform consumes must be requested, for every county, at the requested
-    vintage. Spelled out literally so a silently dropped variable cannot
-    hide behind a constant shared with the implementation."""
-    url = acs5_county_url(2023)
+    vintage, with the API key (mandatory for all Census API requests since
+    2025 — confirmed live: keyless requests return an HTML "Missing Key"
+    page with HTTP 200). Spelled out literally so a silently dropped
+    variable cannot hide behind a constant shared with the implementation."""
+    url = acs5_county_url(2023, api_key="TESTKEY123")
 
     assert url == (
         "https://api.census.gov/data/2023/acs/acs5"
@@ -189,5 +191,5 @@ def test_acs5_county_url_requests_every_needed_variable_for_all_counties() -> No
         "B01001_044E,B01001_045E,B01001_046E,B01001_047E,B01001_048E,B01001_049E,"
         "B25003_001E,B25003_002E,"
         "B15003_001E,B15003_022E,B15003_023E,B15003_024E,B15003_025E"
-        "&for=county:*"
+        "&for=county:*&key=TESTKEY123"
     )
