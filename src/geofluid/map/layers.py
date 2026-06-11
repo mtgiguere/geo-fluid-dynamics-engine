@@ -51,4 +51,13 @@ def build_map_layer(
         else:
             out["properties"] = {**feature["properties"], **metrics, "has_data": True}
         features.append(out)
+
+    # The inverse of the no-data case is NOT a policy: a panel county absent
+    # from the boundary file is votes that silently never render. Raise,
+    # naming the FIPS — this catches a wrong-vintage boundary file at build
+    # time instead of as an invisible hole in production.
+    geometry_ids = {str(f["id"]) for f in county_geojson["features"]}
+    undrawable = sorted(set(by_fips) - geometry_ids)
+    if undrawable:
+        raise ValueError(f"Panel counties missing from geometry: {undrawable}")
     return {"type": "FeatureCollection", "features": features}

@@ -10,6 +10,7 @@ out literally here, before the implementation exists.
 """
 
 import pandas as pd
+import pytest
 
 from geofluid.map.layers import build_map_layer
 
@@ -97,3 +98,18 @@ def test_counties_without_panel_data_keep_geometry_and_flag_no_data() -> None:
     assert by_id["02016"]["properties"]["has_data"] is False
     assert by_id["02016"]["geometry"]["type"] == "Polygon"
     assert "dem_share_2p" not in by_id["02016"]["properties"]
+
+
+def test_panel_county_missing_from_geometry_fails_loudly() -> None:
+    """A panel county absent from the boundary file is votes that silently
+    never render — the inverse of the Alaska case and NOT a policy. The build
+    must raise naming the FIPS (this is what would have caught a wrong-vintage
+    boundary file, e.g. 2023 boundaries lacking Connecticut's old counties)."""
+    with pytest.raises(ValueError, match=r"09001") as excinfo:
+        build_map_layer(
+            _panel([{}, {"fips": "09001"}]),
+            _geojson(["29189"]),
+            year=2024,
+        )
+
+    assert "geometry" in str(excinfo.value)
