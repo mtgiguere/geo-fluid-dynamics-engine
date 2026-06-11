@@ -65,7 +65,15 @@ def build_master_panel(returns: pd.DataFrame, demographics: pd.DataFrame) -> pd.
     # the same county's share in the preceding election. A county's first
     # appearance has no baseline — swing is NaN there, never zero, because
     # zero asserts "no movement", which is a real claim about the world.
-    panel["swing_dem_2p"] = panel["dem_share_2p"] - panel.groupby("fips")["dem_share_2p"].shift(1)
+    #
+    # "Preceding" means the preceding PRESIDENTIAL election — year minus four,
+    # the calendar's cadence — not the county's previous appearance. A county
+    # absent in year t-4 must not have its t-8 share passed off as a
+    # one-election baseline. (If this panel ever carries non-presidential
+    # contests, this contract changes visibly, in tests first.)
+    grouped = panel.groupby("fips")
+    swing = panel["dem_share_2p"] - grouped["dem_share_2p"].shift(1)
+    panel["swing_dem_2p"] = swing.where(grouped["year"].shift(1) == panel["year"] - 4)
 
     columns = [c for c in panel.columns if c not in ("swing_dem_2p",)]
     share_at = columns.index("dem_share_2p") + 1

@@ -109,6 +109,29 @@ def test_swing_is_change_in_two_party_share_since_previous_election() -> None:
     assert abs(by_year.loc[2020, "swing_dem_2p"] - 0.15) < 1e-9
 
 
+def test_swing_is_missing_when_previous_election_has_no_row() -> None:
+    """A county absent from the immediately preceding election (boundary
+    changes, placeholder years dropped at ingest) has no valid baseline.
+    Comparing against two elections back would silently report an 8-year
+    drift as a 4-year swing — the swing must be missing, and the county's
+    later swings must resume normally."""
+    panel = build_master_panel(
+        _returns(
+            [
+                {"year": 2012, "dem_votes": 300, "rep_votes": 700, "dem_share_2p": 0.3},
+                # 2016: no row for this county
+                {"year": 2020, "dem_votes": 500, "rep_votes": 500, "dem_share_2p": 0.5},
+                {"year": 2024, "dem_votes": 600, "rep_votes": 400, "dem_share_2p": 0.6},
+            ]
+        ),
+        _demographics([{}]),
+    )
+
+    by_year = panel.set_index("year")
+    assert pd.isna(by_year.loc[2020, "swing_dem_2p"])  # NOT 0.5 - 0.3
+    assert abs(by_year.loc[2024, "swing_dem_2p"] - 0.1) < 1e-9
+
+
 def test_shannon_county_old_fips_harmonizes_to_oglala_lakota() -> None:
     """Shannon County SD was renamed Oglala Lakota County in 2015 (46113 ->
     46102). The MIT returns file is internally inconsistent: it uses the OLD
