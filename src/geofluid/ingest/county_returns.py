@@ -63,6 +63,10 @@ def load_county_returns(raw: pd.DataFrame) -> pd.DataFrame:
     # other states (Arkansas, Louisiana, Oklahoma, Pennsylvania in 2024) ship
     # zero-vote placeholder TOTAL rows with the real count in the sub-mode
     # rows. For those, the sub-mode sum is the county's count.
+    #
+    # A deliberate consequence: county-years whose rows are ALL zero-vote
+    # placeholders (Alaska's DISTRICT 99, defunct Bedford City VA) drop out of
+    # the panel entirely — zero ballots is not an observation.
     is_total_mode = df["mode"].isin(_TOTAL_MODES)
     votes_in_total_rows = df["candidatevotes"].where(is_total_mode, 0)
     total_rows_carry_votes = (

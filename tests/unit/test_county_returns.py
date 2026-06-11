@@ -258,3 +258,28 @@ def test_zero_vote_total_rows_do_not_shadow_sub_mode_votes() -> None:
     assert row["dem_votes"] == 400
     assert row["rep_votes"] == 500
     assert row["total_votes"] == 900
+
+
+def test_all_zero_placeholder_county_years_are_excluded() -> None:
+    """The real file contains placeholder entities whose rows are ALL zero
+    votes: Alaska's "DISTRICT 99" (2000-2012), a Kansas City pseudo-FIPS row,
+    Bedford City VA in 2016 (merged into Bedford County in 2013). A county-year
+    with zero ballots is not an observation — emitting it would produce NaN
+    shares and pollute downstream joins. It is excluded from the panel."""
+    raw = _raw_rows(
+        [
+            {"county_fips": "29189", "party": "DEMOCRAT", "candidatevotes": 10},
+            {"county_fips": "29189", "party": "REPUBLICAN", "candidatevotes": 5},
+            {"county_fips": "02099", "county_name": "DISTRICT 99", "candidatevotes": 0},
+            {
+                "county_fips": "02099",
+                "county_name": "DISTRICT 99",
+                "party": "REPUBLICAN",
+                "candidatevotes": 0,
+            },
+        ]
+    )
+
+    panel = load_county_returns(raw)
+
+    assert list(panel["fips"]) == ["29189"]
