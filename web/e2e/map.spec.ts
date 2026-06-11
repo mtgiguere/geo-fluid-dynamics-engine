@@ -21,6 +21,13 @@ test("map renders every county at the deployed base path, console clean", async 
   page.on("console", (m) => {
     if (m.type() === "error") errors.push(m.text());
   });
+  // Console "Failed to load resource" messages omit the URL, which cost two
+  // blind debugging rounds (the real culprit was a Mapbox token missing the
+  // TILES:READ scope — 403 on api.mapbox.com/v4 only). Capture every >=400
+  // response WITH its URL so the assertion diff names the failing resource.
+  page.on("response", (r) => {
+    if (r.status() >= 400) errors.push(`HTTP ${r.status()} ${r.url()}`);
+  });
 
   await page.goto("./");
 
