@@ -10,6 +10,10 @@ never an array literal whose order silently encodes an assumption.
 
 from typing import Any
 
+import numpy as np
+from hypothesis import given
+from hypothesis import strategies as st
+
 from geofluid.spatial.weights import county_adjacency, spatial_weights
 
 
@@ -99,3 +103,56 @@ def test_weights_matrix_is_row_standardized_and_sorted_by_fips() -> None:
     for i, source in enumerate(order):
         for j, target in enumerate(order):
             assert matrix[i, j] == expected.get((source, target), 0.0), (source, target)
+
+
+@st.composite
+def _adjacencies(draw: st.DrawFn) -> dict[str, frozenset[str]]:
+    """Random symmetric adjacency over 1-12 counties (any edge set)."""
+    n = draw(st.integers(min_value=1, max_value=12))
+    fips = [f"{i:05d}" for i in range(n)]
+    pairs = [(i, j) for i in range(n) for j in range(i + 1, n)]
+    chosen: set[tuple[int, int]] = (
+        draw(st.sets(st.sampled_from(pairs))) if pairs else set()
+    )
+    neighbors: dict[str, set[str]] = {f: set() for f in fips}
+    for i, j in chosen:
+        neighbors[fips[i]].add(fips[j])
+        neighbors[fips[j]].add(fips[i])
+    return {f: frozenset(s) for f, s in neighbors.items()}
+
+
+@given(adjacency=_adjacencies(), value=st.floats(-1e6, 1e6, allow_nan=False))
+def test_spatial_lag_of_constant_field_is_that_constant(
+    adjacency: dict[str, frozenset[str]], value: float
+) -> None:
+    """Property: W @ (a constant field) returns the constant for every county
+    with neighbors, and exactly zero for islands — for ANY adjacency and any
+    value. "The average of my neighbors' x, when everyone's x is c, is c" is
+    what row standardization MEANS; if the normalization is wrong anywhere,
+    some county's lag will not be c. (Same property family as the GFIP
+    area-weighted-mean test in TDD_CONTRACT.md.)"""
+    matrix, order = spatial_weights(adjacency)
+
+    lag = matrix @ np.full(len(order), value)
+
+    for i, fips in enumerate(order):
+        if adjacency[fips]:
+            assert abs(lag[i] - value) < 1e-9 * max(1.0, abs(value))
+        else:
+            assert lag[i] == 0.0
+
+
+@given(adjacency=_adjacencies())
+def test_weights_diagonal_is_zero_and_nonzero_pattern_is_symmetric(
+    adjacency: dict[str, frozenset[str]],
+) -> None:
+    """Property: no county influences itself through W (zero diagonal), and
+    the nonzero PATTERN is symmetric for symmetric adjacency — the weights
+    differ (row standardization), but i touching j must mean j touches i."""
+    matrix, order = spatial_weights(adjacency)
+
+    n = len(order)
+    for i in range(n):
+        assert matrix[i, i] == 0.0
+        for j in range(n):
+            assert (matrix[i, j] > 0) == (matrix[j, i] > 0)
