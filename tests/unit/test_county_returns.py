@@ -207,3 +207,30 @@ def test_pseudo_candidate_total_rows_are_not_votes() -> None:
 
     assert panel.iloc[0]["total_votes"] == 316292 + 138022
     assert panel.iloc[0]["other_votes"] == 0
+
+
+def test_total_mode_rows_take_precedence_over_sub_mode_rows() -> None:
+    """Discovered in the real 2024 file (Texas, Arizona, Iowa, ...): a county
+    can report authoritative TOTAL VOTES rows ALONGSIDE early-voting sub-mode
+    rows (whose votes are already inside the totals) and stray unattributed
+    rows. Harris County, TX would over-count by 4.5x if all rows were summed.
+    When total-mode rows carry the county's votes, they alone are the truth."""
+    raw = _raw_rows(
+        [
+            {"party": "DEMOCRAT", "candidatevotes": 800, "mode": "TOTAL VOTES"},
+            {"party": "REPUBLICAN", "candidatevotes": 700, "mode": "TOTAL VOTES"},
+            # early-vote subset, already contained in the TOTAL VOTES rows
+            {"party": "DEMOCRAT", "candidatevotes": 600, "mode": "EARLY VOTING"},
+            # stray unattributed bulk row (real example: 2.69M "OTHER" votes
+            # in a county with 1.56M actual ballots)
+            {"party": "OTHER", "candidatevotes": 2000, "mode": "<NA>"},
+        ]
+    )
+
+    panel = load_county_returns(raw)
+
+    row = panel.iloc[0]
+    assert row["dem_votes"] == 800
+    assert row["rep_votes"] == 700
+    assert row["other_votes"] == 0
+    assert row["total_votes"] == 1500

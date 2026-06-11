@@ -21,6 +21,11 @@ import pandas as pd
 _PARTY_BLOC = {"DEMOCRAT": "dem_votes", "REPUBLICAN": "rep_votes"}
 _BLOC_COLUMNS = ["dem_votes", "rep_votes", "other_votes"]
 
+# Vote-mode labels that mean "this row is the county's complete count" rather
+# than one reporting channel (election day, absentee, early, ...). Both labels
+# appear in the raw data: "TOTAL" through 2020, "TOTAL VOTES" in 2024.
+_TOTAL_MODES = ["TOTAL", "TOTAL VOTES"]
+
 # The canonical panel schema, in order. dem_share_2p is the TWO-PARTY share —
 # Democratic votes over (Democratic + Republican) — the standard quantity for
 # tracking partisan movement over time, because it is not distorted by
@@ -30,7 +35,7 @@ PANEL_COLUMNS = ["fips", "year", *_BLOC_COLUMNS, "total_votes", "dem_share_2p"]
 
 def load_county_returns(raw: pd.DataFrame) -> pd.DataFrame:
     """Transform raw MIT-format county returns into the canonical county-year panel."""
-    df = raw.loc[:, ["county_fips", "year", "party", "candidatevotes"]].copy()
+    df = raw.loc[:, ["county_fips", "year", "party", "candidatevotes", "mode"]].copy()
 
     # Rows without a county FIPS are not counties — the raw file uses them for
     # statewide records such as "FEDERAL PRECINCT" overseas-absentee ballots.
@@ -47,6 +52,16 @@ def load_county_returns(raw: pd.DataFrame) -> pd.DataFrame:
     # 5-character string: 1001.0 -> "01001". String inputs like "29189" take the
     # same path unchanged.
     df["fips"] = df["county_fips"].astype(float).astype(int).astype(str).str.zfill(5)
+
+    # Total-mode precedence. Some states report a county's complete count as a
+    # TOTAL / TOTAL VOTES row AND the per-channel breakdown alongside it
+    # (Texas 2024, Utah 2020). Summing everything would count those ballots
+    # twice — when a county-year has total-mode rows, they alone are the truth
+    # and every sub-mode row is discarded.
+    is_total_mode = df["mode"].isin(_TOTAL_MODES)
+    county_year_has_total = is_total_mode.groupby([df["fips"], df["year"]]).transform("any")
+    df = df[is_total_mode | ~county_year_has_total]
+
     df["bloc"] = df["party"].map(_PARTY_BLOC).fillna("other_votes")
 
     panel = (
