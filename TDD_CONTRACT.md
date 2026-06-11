@@ -696,6 +696,9 @@ when they are fresh, not later when they are invisible.
 | NaN anchor alert (Groundshift) | Immediately GREEN | Confirmed Python NaN comparison semantics as guarantee |
 | `DescribeResult` return type change (Groundshift) | 14-test cascade at commit time | Precise failure list; fixed in minutes with no missed call sites |
 | Defensive `getattr` in CLI (Groundshift) | Retrospective code review | Fixed immediately; deferred smells become invisible smells |
+| "TOTAL VOTES CAST" pseudo-candidate doubled Milwaukee (GFDE) | Real-data acceptance run | RED test reproducing the real row pattern before the fix |
+| TOTAL rows + sub-mode rows coexist; Harris County 4.5× (GFDE) | Real-data acceptance run | Same — fixtures modeled on the real file, not imagination |
+| Zero-vote placeholder TOTAL rows zeroed four states (GFDE) | Real-data acceptance run | RED before refining the precedence rule |
 
 ---
 
@@ -1093,3 +1096,114 @@ The hypothesis is that H1–H5 effect sizes will be significantly larger in the
 seasonally-arid group — because in these countries, a reduction in annual freshwater
 represents a reduction in an already marginal and unreliable supply, not just a
 reduction from abundance.
+
+---
+
+## Geo-Fluid Dynamics Engine Examples — Evidence From the Rebuild
+
+*Added 2026-06-11 after the first development arc of the GFDE rebuild (the returns and
+demographics ingest modules). The contract above was written from GFIP and Groundshift
+evidence; this section records what the rebuild itself taught. The headline lesson is
+new: strict TDD with fixtures was followed to the letter — and the loader was still
+wrong three ways, because the fixtures encoded a model of the world that the world
+did not match.*
+
+---
+
+### Bugs #10–#12 (GFDE): Three Correct Implementations of a Wrong World-Model
+
+**What happened:**
+
+`load_county_returns` was built in six strict TDD cycles. Every test was written first,
+every RED confirmed, no guards, no seeds, 100% branch coverage, mypy strict clean.
+Then the real 94,409-row MIT county returns file was run through it, and the panel was
+wrong in three distinct ways:
+
+1. **Bug #10 — the pseudo-candidate.** Wisconsin/Vermont/West Virginia/Wyoming 2024
+   carry a row `candidate="TOTAL VOTES CAST", party=NaN` holding the county's reported
+   turnout. The loader mapped NaN party into `other_votes`: Milwaukee County reported
+   918,421 total votes instead of 454,314 — exactly doubled.
+2. **Bug #11 — total-mode rows coexist with sub-mode rows.** Texas 2024 (and Utah 2020)
+   report a county's complete `TOTAL VOTES` count AND the early-vote breakdown alongside
+   it, plus stray unattributed bulk rows. Summing everything gave Harris County 7.0M
+   votes against 1.56M actual ballots — a 4.5× over-count.
+3. **Bug #12 — zero-vote placeholder totals.** The obvious fix for #11 ("when TOTAL rows
+   exist, use only them") would have silently zeroed Arkansas, Louisiana, Oklahoma, and
+   Pennsylvania, whose 2024 TOTAL rows are zero-vote placeholders with the real count in
+   the sub-mode rows.
+
+**Why strict TDD did not catch them:**
+
+The fixtures were invented from a reasonable mental model: one row per candidate per
+mode, modes partition the vote. The tests verified the code against that model
+perfectly. But the tests could only encode row patterns the developer knew existed.
+The failure mode is not TAD's "does the code do what I just wrote?" — it is
+"does the world look like what I imagined?" No amount of test-first discipline answers
+that question, because the test and the implementation share the same imagination.
+
+**What caught them:**
+
+A real-data acceptance run: load the actual file, compare aggregates against externally
+certified facts (national vote totals per election), and investigate every discrepancy.
+Each discrepancy became a RED test whose fixture reproduces the *real* row pattern in
+miniature (Milwaukee's pseudo-candidate, Harris County's coexisting modes, Arkansas's
+zero placeholders). Then the fix. The final panel matches certified national results
+for all seven elections, 2000–2024.
+
+**The rule this adds to the discipline:**
+
+> Fixtures specify the contract. Real data falsifies your model of the world.
+> For every ingest module, a real-data acceptance run against externally verifiable
+> facts is part of the definition of done — not extra credit. Validate aggregates
+> against certified or published values, and treat every discrepancy as a RED test
+> waiting to be written.
+
+A corollary from the same arc: **spot checks validate only the cells you check.**
+A mirror of the dataset passed spot checks (known counties, known years) while carrying
+an off-by-one FIPS shift that corrupted ~146 county-years in other states. Structural
+corruption needs structural comparison — when provenance matters, diff the whole file
+against the authoritative source, not samples of it.
+
+---
+
+### Observation (GFDE): Converting Accidental Behavior Into Specified Behavior
+
+The acceptance run found 6 county-years silently absent from the panel (Alaska's
+placeholder "DISTRICT 99", a Kansas City pseudo-FIPS, defunct Bedford City VA) — all
+all-zero placeholder entities dropped as a *side effect* of the Bug #12 fix. The
+behavior was correct and entirely accidental.
+
+The response was a test specifying the behavior (`zero ballots is not an observation`),
+expected and confirmed immediately GREEN. Accidental correctness is a liability — the
+next refactor can remove it without any test noticing. The immediately-GREEN test is
+the cheapest possible insurance: it converts a coincidence into a guarantee.
+
+---
+
+### Process Rule (GFDE): When the World Changes, Changing the Test Is Legitimate
+
+Mid-arc, the Census API began rejecting keyless requests (a 2025 policy change,
+confirmed live: an HTML "Missing Key" page returned with HTTP 200). The existing test
+specified the exact request URL without a key; the URL builder now needed one.
+
+The existing test was *modified* — expected URL updated to include `&key=` — rather
+than a new test added beside it. This is legitimate exactly when the **external
+contract itself changed**, and it must be visible: the commit message and the test
+docstring both record the external cause. The line being drawn:
+
+- Changing a test because the API/file format/standard it specifies changed: correct.
+  Document the cause in the test and the commit.
+- Changing a test because the implementation you want to write doesn't satisfy it:
+  that is deleting the specification to fit the code. Never.
+
+---
+
+### Process Rule (GFDE): One Test at a Time Means One
+
+During the demographics arc, two tests were added in a single edit (sort order +
+null handling) because the second "was obviously going to be immediately GREEN."
+It was — and that is luck, not discipline. The prediction could have been wrong, and
+with two new failing tests the RED step no longer tells you *which* behavior is
+unimplemented; failure reasons blur. The cadence exists precisely so every RED has
+one unambiguous cause. The violation was disclosed in the commit message; the rule
+stands: one test, one RED, one GREEN, one commit.

@@ -17,6 +17,9 @@ it documents real bugs from the previous attempt at this exact project. The shor
    `is False` against pandas/numpy values.
 4. Long explanatory comments on scientific methodology are a feature, not a smell —
    the audience includes policymakers, journalists, and students.
+5. Fixtures specify the contract; real data falsifies your model of the world. Every
+   ingest module's definition of done includes a real-data acceptance run validated
+   against externally certified facts (see the contract's GFDE Bugs #10–#12).
 
 ## Pre-commit sequence (before every commit)
 
