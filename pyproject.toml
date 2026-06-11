@@ -44,6 +44,12 @@ select = ["E", "F", "W", "I", "UP", "B", "S", "C4", "PT", "SIM"]
 strict = true
 files = ["src", "tests"]
 
+# pyshp ships no type stubs and no py.typed marker. Scoped to the one module
+# rather than a global ignore so every other dependency stays strictly typed.
+[[tool.mypy.overrides]]
+module = "shapefile"
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--no-header -q"
