@@ -111,9 +111,7 @@ def _adjacencies(draw: st.DrawFn) -> dict[str, frozenset[str]]:
     n = draw(st.integers(min_value=1, max_value=12))
     fips = [f"{i:05d}" for i in range(n)]
     pairs = [(i, j) for i in range(n) for j in range(i + 1, n)]
-    chosen: set[tuple[int, int]] = (
-        draw(st.sets(st.sampled_from(pairs))) if pairs else set()
-    )
+    chosen: set[tuple[int, int]] = draw(st.sets(st.sampled_from(pairs))) if pairs else set()
     neighbors: dict[str, set[str]] = {f: set() for f in fips}
     for i, j in chosen:
         neighbors[fips[i]].add(fips[j])

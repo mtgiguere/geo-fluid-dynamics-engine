@@ -1,0 +1,14 @@
+#!/bin/sh
+# The contract's pre-commit sequence, made mechanical instead of remembered.
+# Installed via: git config core.hooksPath .githooks
+# (documented in CLAUDE.md; CI runs the same gates, this just fails earlier)
+set -e
+
+echo "pre-commit: ruff check"
+uv run ruff check .
+
+echo "pre-commit: ruff format --check"
+uv run ruff format --check .
+
+echo "pre-commit: pytest"
+uv run pytest --no-header -q
