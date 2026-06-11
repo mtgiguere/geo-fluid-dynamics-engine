@@ -15,6 +15,7 @@ Join policy specified by these tests:
 """
 
 import pandas as pd
+import pytest
 
 from geofluid.panel.master import build_master_panel
 
@@ -126,3 +127,25 @@ def test_alaska_districts_and_state_buckets_are_excluded() -> None:
     )
 
     assert list(panel["fips"]) == ["29189"]
+
+
+def test_unexplained_missing_demographics_fails_loudly_naming_the_counties() -> None:
+    """Any county outside the documented exclusions that lacks demographics
+    is a data defect, not a policy: a left join would hand every downstream
+    model NaN covariates that pandas happily propagates. The build must raise
+    and NAME the offending counties, so the failure is diagnosable from the
+    message alone. (Connecticut 2024 against an ACS vintage >= 2022 trips
+    this by design — resolving CT is the caller's explicit decision.)"""
+    with pytest.raises(ValueError, match=r"09001.*09003") as excinfo:
+        build_master_panel(
+            _returns(
+                [
+                    {"fips": "09001", "year": 2024},
+                    {"fips": "09003", "year": 2024},
+                    {"fips": "29189", "year": 2024},
+                ]
+            ),
+            _demographics([{}]),
+        )
+
+    assert "demographics" in str(excinfo.value)

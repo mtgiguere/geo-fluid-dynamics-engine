@@ -36,4 +36,13 @@ def build_master_panel(returns: pd.DataFrame, demographics: pd.DataFrame) -> pd.
     ret = ret[~is_alaska & ~is_state_bucket]
 
     demo = demographics.rename(columns={"year": "acs_vintage"})
-    return ret.merge(demo, on="fips", how="left")
+    panel = ret.merge(demo, on="fips", how="left")
+
+    # Outside the policy exclusions, a county without demographics is a data
+    # defect. A silent left-join NaN would propagate through every downstream
+    # mean and model fit — fail here, naming the counties, so the defect is
+    # diagnosable from the message alone.
+    unmatched = sorted(panel.loc[panel["acs_vintage"].isna(), "fips"].unique())
+    if unmatched:
+        raise ValueError(f"Counties missing demographics: {unmatched}")
+    return panel
