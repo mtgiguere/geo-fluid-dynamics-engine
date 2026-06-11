@@ -21,6 +21,12 @@ _SIMPLE_VARS = {
     "B25077_001E": "median_home_value",
 }
 
+# Sex-by-age cells (table B01001) covering ages 65 and over: male 65-66
+# through 85+ are cells 020-025, female are 044-049. Their sum over total
+# population is the seniors share — one of the strongest county-level
+# predictors of both turnout and partisan lean.
+_AGE_CELLS_65_PLUS = [f"B01001_{i:03d}E" for i in [*range(20, 26), *range(44, 50)]]
+
 
 def load_county_demographics(payload: list[list[str | None]], year: int) -> pd.DataFrame:
     """Transform a raw Census API county response into the demographics panel."""
@@ -35,4 +41,6 @@ def load_county_demographics(payload: list[list[str | None]], year: int) -> pd.D
     out["year"] = year
     for var, name in _SIMPLE_VARS.items():
         out[name] = pd.to_numeric(df[var])
+    seniors = sum(pd.to_numeric(df[cell]) for cell in _AGE_CELLS_65_PLUS)
+    out["pct_65_plus"] = seniors / out["total_population"]
     return out

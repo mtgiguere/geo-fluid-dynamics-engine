@@ -76,3 +76,15 @@ def test_single_county_payload_yields_fips_and_numeric_simple_columns() -> None:
     assert abs(row["median_age"] - 41.1) < 1e-9
     assert row["median_hh_income"] == 75000
     assert row["median_home_value"] == 230000
+
+
+def test_pct_65_plus_is_sum_of_senior_age_cells_over_total_population() -> None:
+    """Specifies the seniors share: the twelve B01001 sex-by-age cells for 65+
+    (male and female: 65-66, 67-69, 70-74, 75-79, 80-84, 85+) summed and
+    divided by total population, as a fraction. 12 cells of 1,000 in a county
+    of 120,000 people is exactly 0.10."""
+    payload = _payload([{"B01003_001E": "120000"}])
+
+    df = load_county_demographics(payload, year=2023)
+
+    assert abs(df.iloc[0]["pct_65_plus"] - 0.10) < 1e-9
