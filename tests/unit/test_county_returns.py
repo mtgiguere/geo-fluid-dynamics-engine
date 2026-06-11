@@ -124,6 +124,29 @@ def test_rows_without_county_fips_are_excluded() -> None:
     assert list(panel["fips"]) == ["29189"]
 
 
+def test_missing_candidatevotes_count_as_zero_and_votes_stay_integers() -> None:
+    """Discovered in the official 2024 file: New Mexico reports NaN
+    candidatevotes for a minor candidate in small counties (unreported — the
+    other candidates' rows are intact). The aggregation must treat unreported
+    as zero, and every vote column must remain integer dtype: a float vote
+    count is the tell that a NaN leaked through the aggregation."""
+    raw = _raw_rows(
+        [
+            {"party": "DEMOCRAT", "candidatevotes": 100},
+            {"party": "REPUBLICAN", "candidatevotes": 50},
+            {"party": "LIBERTARIAN", "candidatevotes": float("nan")},
+        ]
+    )
+
+    panel = load_county_returns(raw)
+
+    row = panel.iloc[0]
+    assert row["other_votes"] == 0
+    assert row["total_votes"] == 150
+    for col in ["dem_votes", "rep_votes", "other_votes", "total_votes"]:
+        assert pd.api.types.is_integer_dtype(panel[col]), col
+
+
 def test_votes_are_summed_across_vote_mode_rows() -> None:
     """From 2020 onward the raw file splits a county's votes across mode rows
     (ELECTION DAY, ABSENTEE, PROVISIONAL, ...). The panel must sum them:

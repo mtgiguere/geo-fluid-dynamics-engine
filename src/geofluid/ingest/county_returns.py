@@ -87,6 +87,11 @@ def load_county_returns(raw: pd.DataFrame) -> pd.DataFrame:
         .reindex(columns=_BLOC_COLUMNS, fill_value=0)
         .reset_index()
     )
+    # Vote counts are integers by definition. The raw candidatevotes column can
+    # arrive as float — NaN for unreported minor-candidate values (New Mexico
+    # 2024) forces float dtype. The sum already treats unreported as zero;
+    # the cast guarantees no NaN leaked through and restores integer votes.
+    panel[_BLOC_COLUMNS] = panel[_BLOC_COLUMNS].astype("int64")
     panel["total_votes"] = panel[_BLOC_COLUMNS].sum(axis=1)
     panel["dem_share_2p"] = panel["dem_votes"] / (panel["dem_votes"] + panel["rep_votes"])
     return panel.loc[:, PANEL_COLUMNS]
