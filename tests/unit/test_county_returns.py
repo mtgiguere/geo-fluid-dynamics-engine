@@ -98,3 +98,27 @@ def test_fips_is_zero_padded_five_char_string_from_numeric_input() -> None:
     panel = load_county_returns(raw)
 
     assert panel.iloc[0]["fips"] == "01001"
+
+
+def test_rows_without_county_fips_are_excluded() -> None:
+    """The raw file contains rows that are not counties — statewide "FEDERAL
+    PRECINCT" rows for overseas absentee ballots have no county_fips. A county
+    panel cannot represent them, so they are excluded. The alternative
+    failure modes are both worse: crashing on NaN, or fabricating a FIPS that
+    would join against nothing."""
+    raw = _raw_rows(
+        [
+            {"county_fips": 29189.0, "party": "DEMOCRAT", "candidatevotes": 10},
+            {
+                "county_fips": float("nan"),
+                "county_name": "FEDERAL PRECINCT",
+                "state": "CONNECTICUT",
+                "party": "DEMOCRAT",
+                "candidatevotes": 5,
+            },
+        ]
+    )
+
+    panel = load_county_returns(raw)
+
+    assert list(panel["fips"]) == ["29189"]

@@ -31,6 +31,12 @@ PANEL_COLUMNS = ["fips", "year", *_BLOC_COLUMNS, "total_votes", "dem_share_2p"]
 def load_county_returns(raw: pd.DataFrame) -> pd.DataFrame:
     """Transform raw MIT-format county returns into the canonical county-year panel."""
     df = raw.loc[:, ["county_fips", "year", "party", "candidatevotes"]].copy()
+
+    # Rows without a county FIPS are not counties — the raw file uses them for
+    # statewide records such as "FEDERAL PRECINCT" overseas-absentee ballots.
+    # A county panel cannot represent them, so they are excluded here rather
+    # than crashing the cast below or fabricating a join key.
+    df = df.dropna(subset=["county_fips"])
     # county_fips arrives as float in the raw file (missing values force float
     # dtype), so the canonical form is reached via float -> int -> zero-padded
     # 5-character string: 1001.0 -> "01001". String inputs like "29189" take the
