@@ -167,3 +167,18 @@ def test_panel_is_sorted_by_fips_then_year_with_integer_years() -> None:
         ("29510", 2020),
     ]
     assert pd.api.types.is_integer_dtype(panel["year"])
+
+
+def test_empty_input_yields_empty_panel_with_canonical_columns() -> None:
+    """Zero raw rows (e.g. a filter that matched nothing) must yield a panel
+    with zero rows but ALL canonical columns. Downstream consumers select
+    columns before checking length; an empty frame without the columns is the
+    exact KeyError class of TDD_CONTRACT.md Bug #2."""
+    # One default row, then slice to zero rows: an empty frame that still has
+    # the raw columns, which is what "no matching records" actually looks like.
+    raw = _raw_rows([{}]).iloc[0:0]
+
+    panel = load_county_returns(raw)
+
+    assert list(panel.columns) == PANEL_COLUMNS
+    assert len(panel) == 0
