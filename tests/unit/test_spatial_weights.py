@@ -10,7 +10,7 @@ never an array literal whose order silently encodes an assumption.
 
 from typing import Any
 
-from geofluid.spatial.weights import county_adjacency
+from geofluid.spatial.weights import county_adjacency, spatial_weights
 
 
 def _square(fips: str, x: float, y: float, size: float = 1.0) -> dict[str, Any]:
@@ -69,3 +69,33 @@ def test_corner_touching_counties_are_neighbors_queen_contiguity() -> None:
 
     assert adjacency["04001"] == frozenset({"08083"})
     assert adjacency["08083"] == frozenset({"04001"})
+
+
+def test_weights_matrix_is_row_standardized_and_sorted_by_fips() -> None:
+    """The W contract: rows/columns aligned to SORTED fips (returned alongside
+    the matrix, never assumed), each row standardized to sum to 1 across the
+    county's neighbors, islands all-zero. Expected weights are written as an
+    explicit (from, to) -> value mapping — Bug #3 in TDD_CONTRACT.md was an
+    array literal whose order silently disagreed with the implementation."""
+    adjacency = {
+        "29189": frozenset({"01001", "29510"}),
+        "29510": frozenset({"29189"}),
+        "01001": frozenset({"29189"}),
+        "15003": frozenset(),  # island
+    }
+
+    matrix, order = spatial_weights(adjacency)
+
+    assert order == ["01001", "15003", "29189", "29510"]
+    assert matrix.shape == (4, 4)
+    # 01001 neighbors {29189} -> full weight to it; 29189 neighbors two
+    # counties -> 0.5 each; 29510 -> full weight to 29189; 15003 -> nothing.
+    expected = {
+        ("01001", "29189"): 1.0,
+        ("29189", "01001"): 0.5,
+        ("29189", "29510"): 0.5,
+        ("29510", "29189"): 1.0,
+    }
+    for i, source in enumerate(order):
+        for j, target in enumerate(order):
+            assert matrix[i, j] == expected.get((source, target), 0.0), (source, target)
