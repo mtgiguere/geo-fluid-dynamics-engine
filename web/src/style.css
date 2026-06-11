@@ -1,0 +1,99 @@
+* {
+  margin: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+#bar {
+  position: absolute;
+  z-index: 2;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+#bar h1 {
+  font-size: 15px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+#controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#year-label {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 15px;
+  width: 3em;
+}
+
+#year {
+  width: 220px;
+}
+
+#legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #444;
+}
+
+#ramp {
+  width: 120px;
+  height: 10px;
+  border-radius: 5px;
+  background: linear-gradient(to right, #b2182b, #ef8a62, #f7f7f7, #67a9cf, #2166ac);
+}
+
+#status {
+  margin-left: auto;
+  font-size: 12px;
+  color: #555;
+  font-variant-numeric: tabular-nums;
+}
+
+#map {
+  position: absolute;
+  inset: 0;
+}
+
+.mapboxgl-popup-content {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.mapboxgl-popup-content table {
+  margin: 6px 0;
+  border-collapse: collapse;
+}
+
+.mapboxgl-popup-content td {
+  padding: 1px 0;
+}
+
+.mapboxgl-popup-content td + td {
+  padding-left: 14px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.mapboxgl-popup-content small {
+  color: #777;
+}
