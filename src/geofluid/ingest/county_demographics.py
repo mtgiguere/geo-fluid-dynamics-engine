@@ -1,0 +1,38 @@
+"""Ingest Census ACS county profiles into the canonical demographics panel.
+
+The raw input is the Census Bureau API response for ACS 5-year detailed
+tables: a header row of variable names followed by data rows of strings,
+with geography columns "state" and "county" at the end. ACS detailed-table
+variable IDs (B-tables) are stable across vintages, which is why they are
+used here instead of the friendlier DP profile tables — DP variable numbers
+shift from year to year and would silently break multi-vintage time series.
+
+Like the returns ingest, this module exposes one public function whose output
+satisfies the contract in tests/unit/test_county_demographics.py.
+"""
+
+import pandas as pd
+
+# Variables that pass straight through to a canonical column (renamed).
+_SIMPLE_VARS = {
+    "B01003_001E": "total_population",
+    "B01002_001E": "median_age",
+    "B19013_001E": "median_hh_income",
+    "B25077_001E": "median_home_value",
+}
+
+
+def load_county_demographics(payload: list[list[str | None]], year: int) -> pd.DataFrame:
+    """Transform a raw Census API county response into the demographics panel."""
+    header, *rows = payload
+    df = pd.DataFrame(rows, columns=header)
+
+    out = pd.DataFrame()
+    # The county FIPS join key: 2-digit state + 3-digit county, matching the
+    # zero-padded 5-character key of the returns panel.
+    out["fips"] = df["state"] + df["county"]
+    # ACS payloads do not carry their vintage; the caller supplies it.
+    out["year"] = year
+    for var, name in _SIMPLE_VARS.items():
+        out[name] = pd.to_numeric(df[var])
+    return out
