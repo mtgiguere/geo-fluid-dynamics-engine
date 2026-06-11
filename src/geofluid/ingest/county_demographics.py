@@ -27,6 +27,20 @@ _SIMPLE_VARS = {
 # predictors of both turnout and partisan lean.
 _AGE_CELLS_65_PLUS = [f"B01001_{i:03d}E" for i in [*range(20, 26), *range(44, 50)]]
 
+# The canonical demographics schema, in order. Percentages are fractions in
+# [0, 1], consistent with dem_share_2p in the returns panel.
+DEMOGRAPHICS_COLUMNS = [
+    "fips",
+    "year",
+    "total_population",
+    "median_age",
+    "pct_65_plus",
+    "median_hh_income",
+    "median_home_value",
+    "pct_owner_occupied",
+    "pct_bachelors_plus",
+]
+
 
 def load_county_demographics(payload: list[list[str | None]], year: int) -> pd.DataFrame:
     """Transform a raw Census API county response into the demographics panel."""
@@ -53,4 +67,4 @@ def load_county_demographics(payload: list[list[str | None]], year: int) -> pd.D
     # adult universe, not total population.
     degrees = sum(pd.to_numeric(df[f"B15003_{i:03d}E"]) for i in range(22, 26))
     out["pct_bachelors_plus"] = degrees / pd.to_numeric(df["B15003_001E"])
-    return out
+    return out.loc[:, DEMOGRAPHICS_COLUMNS]

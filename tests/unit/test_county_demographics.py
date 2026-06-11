@@ -113,3 +113,15 @@ def test_pct_bachelors_plus_sums_four_degree_cells_over_adults_25_plus() -> None
     df = load_county_demographics(payload, year=2023)
 
     assert abs(df.iloc[0]["pct_bachelors_plus"] - 0.31) < 1e-9
+
+
+def test_panel_columns_match_canonical_schema_in_order() -> None:
+    """The full demographics contract: exactly these columns, in this order.
+    Downstream code (map layers, model feature matrices) may select by
+    position when serializing — schema order is part of the contract, exactly
+    as with the returns panel."""
+    payload = _payload([{}])
+
+    df = load_county_demographics(payload, year=2023)
+
+    assert list(df.columns) == DEMOGRAPHICS_COLUMNS
