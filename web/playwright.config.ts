@@ -14,6 +14,15 @@ export default defineConfig({
     baseURL: `http://localhost:4173${BASE_PATH}`,
     // Locally this box has no Playwright browsers; system Edge is Chromium.
     ...(process.env.CI ? {} : { channel: "msedge" }),
+    // CI runners have no GPU. Chromium >= 137 refuses software WebGL unless
+    // explicitly allowed — without these flags Mapbox GL cannot create its
+    // WebGL2 context and the map dies on construction (verified: suite
+    // passes locally under CI=true with a GPU, fails in ~seconds on the
+    // ubuntu runner).
+    launchOptions: {
+      args: ["--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"],
+    },
+    trace: "retain-on-failure",
   },
   webServer: {
     command: "npm run build && npm run preview",
