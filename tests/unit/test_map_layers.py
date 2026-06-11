@@ -12,7 +12,7 @@ out literally here, before the implementation exists.
 import pandas as pd
 import pytest
 
-from geofluid.map.layers import build_map_layer
+from geofluid.map.layers import build_map_layer, export_year_metrics
 
 
 def _panel(rows: list[dict[str, object]]) -> pd.DataFrame:
@@ -130,3 +130,18 @@ def test_layer_round_trips_through_json() -> None:
     assert parsed == layer
     assert isinstance(parsed["features"][0]["properties"]["total_votes"], int)
     assert isinstance(parsed["features"][0]["properties"]["dem_share_2p"], float)
+
+
+def test_year_metrics_export_is_keyed_by_fips_with_metric_names() -> None:
+    """The frontend's per-year data contract: geometry ships once, metrics
+    ship per year as {fips: {metric: value}} joined client-side. Same literal
+    property names as the combined layer — one frontend contract, not two."""
+    metrics = export_year_metrics(_panel([{}, {"fips": "01001", "dem_share_2p": 0.3}]), year=2024)
+
+    assert set(metrics) == {"29189", "01001"}
+    m = metrics["29189"]
+    assert m["dem_share_2p"] == 0.6
+    assert m["total_votes"] == 510
+    assert m["median_age"] == 41.1
+    assert m["pct_bachelors_plus"] == 0.45
+    assert "year" not in m  # the year is the filename's job, not 3,000 copies

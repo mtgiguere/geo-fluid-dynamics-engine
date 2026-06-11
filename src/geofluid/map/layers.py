@@ -28,6 +28,21 @@ _METRIC_COLUMNS = [
 ]
 
 
+def export_year_metrics(panel: pd.DataFrame, year: int) -> dict[str, dict[str, Any]]:
+    """The frontend's per-year data product: {fips: {metric: value}}.
+
+    Geometry ships once and is cacheable; these files are small (~300 KB)
+    and fetched per year as the user scrubs time. Property names match the
+    combined layer — one frontend contract, not two. The year itself is the
+    filename's job, not 3,000 redundant copies.
+    """
+    sliced = panel[panel["year"] == year]
+    columns = [c for c in _METRIC_COLUMNS if c != "year"]
+    return {
+        str(row["fips"]): {col: row[col] for col in columns} for row in sliced.to_dict("records")
+    }
+
+
 def build_map_layer(
     panel: pd.DataFrame, county_geojson: dict[str, Any], year: int
 ) -> dict[str, Any]:
