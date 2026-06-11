@@ -142,3 +142,28 @@ def test_votes_are_summed_across_vote_mode_rows() -> None:
     assert len(panel) == 1
     assert panel.iloc[0]["dem_votes"] == 140
     assert panel.iloc[0]["rep_votes"] == 60
+
+
+def test_panel_is_sorted_by_fips_then_year_with_integer_years() -> None:
+    """The panel must come out in deterministic (fips, year) order regardless
+    of raw row order, and year must stay an integer (a float year like 2016.0
+    would corrupt every "support in year t" lookup downstream). The explicit
+    expected list — not a re-sort of the output — specifies the order
+    (TDD_CONTRACT.md Bug #3: the assertion must not share the implementation's
+    assumptions)."""
+    raw = _raw_rows(
+        [
+            {"county_fips": "29510", "year": 2020, "party": "DEMOCRAT", "candidatevotes": 5},
+            {"county_fips": "01001", "year": 2020, "party": "DEMOCRAT", "candidatevotes": 5},
+            {"county_fips": "29510", "year": 2016, "party": "DEMOCRAT", "candidatevotes": 5},
+        ]
+    )
+
+    panel = load_county_returns(raw)
+
+    assert list(zip(panel["fips"], panel["year"], strict=True)) == [
+        ("01001", 2020),
+        ("29510", 2016),
+        ("29510", 2020),
+    ]
+    assert pd.api.types.is_integer_dtype(panel["year"])
