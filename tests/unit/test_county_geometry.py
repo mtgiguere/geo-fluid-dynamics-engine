@@ -42,7 +42,7 @@ def test_shapefile_converts_to_feature_collection_keyed_by_geoid(tmp_path: Path)
     assert set(by_id) == {"29189", "01001"}
     stl = by_id["29189"]
     assert stl["type"] == "Feature"
-    assert stl["properties"] == {"NAME": "St. Louis"}
+    assert stl["properties"] == {"NAME": "St. Louis", "fips": "29189"}
     assert stl["geometry"]["type"] == "Polygon"
     assert stl["geometry"]["coordinates"][0][0] == (0.0, 0.0)
 
