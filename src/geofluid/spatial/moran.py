@@ -65,7 +65,11 @@ def morans_i(values: "pd.Series[float]", adjacency: Mapping[str, frozenset[str]]
 
 
 def local_morans_i(
-    values: "pd.Series[float]", adjacency: Mapping[str, frozenset[str]]
+    values: "pd.Series[float]",
+    adjacency: Mapping[str, frozenset[str]],
+    *,
+    permutations: int | None = None,
+    rng: np.random.Generator | None = None,
 ) -> pd.DataFrame:
     """Local Moran's I (LISA): each county's contribution to the global
     pattern, I_i = z_i * (W z)_i / m2 with m2 = z'z / n.
@@ -73,22 +77,52 @@ def local_morans_i(
     Returns a DataFrame indexed by the usable fips with column i_local.
     Positive I_i: the county resembles its neighbors (part of a cluster —
     a wave core or a calm basin). Negative: it defies them (an outlier).
+
+    With `permutations`, adds a pseudo p-value per county via conditional
+    permutation (Anselin): the county's own value stays fixed while the
+    others are shuffled across the remaining locations, asking "how often
+    would a neighborhood this coherent arise by chance?" One-sided in the
+    direction of the observed statistic; p = (extreme + 1)/(permutations + 1).
+    Pass a seeded numpy Generator via `rng` for reproducible published runs.
     """
-    matrix, order = spatial_weights(_usable_subset(values, adjacency))
+    sub_adjacency = _usable_subset(values, adjacency)
+    matrix, order = spatial_weights(sub_adjacency)
     z = values.loc[order].to_numpy(dtype=float)
     z = z - z.mean()
     m2 = (z @ z) / len(order)
     lag = matrix @ z
+    i_local = z * lag / m2
     # The LISA quadrants: own value vs neighborhood average, both relative
     # to the mean. high-high = wave core, low-low = calm basin, high-low =
     # defiant outlier, low-high = a hole inside a wave.
     own = np.where(z >= 0, "high", "low")
     neighborhood = np.where(lag >= 0, "high", "low")
     quadrant = np.char.add(np.char.add(own, "-"), neighborhood)
-    return pd.DataFrame(
-        {"i_local": z * lag / m2, "quadrant": quadrant},
+    frame = pd.DataFrame(
+        {"i_local": i_local, "quadrant": quadrant},
         index=pd.Index(order, name="fips"),
     )
+
+    if permutations is not None:
+        generator = rng if rng is not None else np.random.default_rng()
+        n = len(order)
+        max_k = max(len(sub_adjacency[fips]) for fips in order)
+        # One shared bank of permutations (PySAL's trick): each row is a
+        # random ordering of the n-1 "other" positions; county i reads its
+        # first k_i columns as that permutation's neighbor draw.
+        draw_bank = np.argsort(generator.random((permutations, n - 1)), axis=1)[:, :max_k]
+        p_values = np.empty(n)
+        for i, fips in enumerate(order):
+            k = len(sub_adjacency[fips])
+            others = np.delete(z, i)
+            simulated = z[i] * others[draw_bank[:, :k]].mean(axis=1) / m2
+            if i_local[i] >= 0:
+                extreme = int((simulated >= i_local[i]).sum())
+            else:
+                extreme = int((simulated <= i_local[i]).sum())
+            p_values[i] = (extreme + 1) / (permutations + 1)
+        frame["p_value"] = p_values
+    return frame
 
 
 def local_morans_by_year(
