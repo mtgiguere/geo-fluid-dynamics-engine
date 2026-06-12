@@ -68,7 +68,21 @@ body {
   width: 120px;
   height: 10px;
   border-radius: 5px;
-  background: linear-gradient(to right, #b2182b, #ef8a62, #f7f7f7, #67a9cf, #2166ac);
+}
+
+#legend .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 8px;
+  white-space: nowrap;
+}
+
+#legend .chip i {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  display: inline-block;
 }
 
 #status {

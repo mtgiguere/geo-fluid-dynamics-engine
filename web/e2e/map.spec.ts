@@ -63,6 +63,11 @@ test("metric switcher recolors the map and relabels the legend", async ({ page }
   await page.locator("#metric").selectOption("median_hh_income");
   await expect(page.locator("#legend-left")).toHaveText("$40k");
   await expect(page.locator("#legend-right")).toHaveText("$120k+");
+
+  // The categorical wave-anchors layer: legend switches to labeled chips.
+  await page.locator("#metric").selectOption("swing_lisa_quadrant");
+  await expect(page.locator("#legend")).toContainText("D-swing core");
+  await expect(page.locator("#legend")).toContainText("R outlier");
 });
 
 test("year slider scrubs to another election", async ({ page }) => {
