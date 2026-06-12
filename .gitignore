@@ -22,3 +22,7 @@ coverage.xml
 
 # Raw data downloads (large; fetched by ingest scripts, never committed)
 data/raw/
+
+# Playwright artifacts (any location)
+test-results/
+playwright-report/
