@@ -29,7 +29,18 @@ def morans_i(values: "pd.Series[float]", adjacency: Mapping[str, frozenset[str]]
     index, never by position (TDD_CONTRACT.md Bug #3 lived in exactly that
     positional assumption).
     """
-    matrix, order = spatial_weights(dict(adjacency))
+    # Listwise exclusion, in three layers: a county participates only if it
+    # has a non-missing value AND at least one neighbor that also does.
+    # Islands (no neighbors), NaN counties, counties absent from the values
+    # index, and counties orphaned by their neighbors' missingness all drop
+    # out — symmetry of adjacency guarantees the kept neighbors of a kept
+    # county are themselves kept, so the subset is closed.
+    present = values.dropna()
+    usable = {fips for fips in adjacency if fips in present.index}
+    kept = {fips for fips in usable if adjacency[fips] & usable}
+    sub_adjacency = {fips: frozenset(adjacency[fips] & usable) for fips in kept}
+
+    matrix, order = spatial_weights(sub_adjacency)
 
     z = values.loc[order].to_numpy(dtype=float)
     z = z - z.mean()

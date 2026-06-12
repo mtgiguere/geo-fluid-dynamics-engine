@@ -40,3 +40,36 @@ def test_perfectly_dispersed_values_give_moran_i_of_minus_one() -> None:
     values = pd.Series({"01001": 1.0, "01003": -1.0, "29189": 1.0, "29510": -1.0})
 
     assert abs(morans_i(values, _PAIRS) - (-1.0)) < 1e-12
+
+
+def test_missing_values_islands_and_orphaned_counties_are_excluded() -> None:
+    """The real inputs are messy: swing is NaN in 2000 and for gap counties;
+    Hawaii has no neighbors; a county whose ONLY neighbor is missing has no
+    one to be compared with. All three must drop out — included, an island's
+    zero weight row would deflate I, and a NaN would poison the sums. The
+    perfectly clustered pairs must still give exactly 1.0 after exclusion:
+    - 15003: island (no neighbors) despite having a value
+    - 30001: value is NaN
+    - 30031: present, but its only neighbor is the NaN county
+    - 56001: in the adjacency, absent from the values index entirely"""
+    adjacency = {
+        **_PAIRS,
+        "15003": frozenset(),
+        "30001": frozenset({"30031"}),
+        "30031": frozenset({"30001"}),
+        "56001": frozenset({"01001"}),
+        "01001": _PAIRS["01001"] | {"56001"},
+    }
+    values = pd.Series(
+        {
+            "01001": 1.0,
+            "01003": 1.0,
+            "29189": -1.0,
+            "29510": -1.0,
+            "15003": 5.0,
+            "30001": float("nan"),
+            "30031": 2.0,
+        }
+    )
+
+    assert abs(morans_i(values, adjacency) - 1.0) < 1e-12
