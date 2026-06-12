@@ -13,7 +13,12 @@ import pandas as pd
 from hypothesis import assume, given
 from hypothesis import strategies as st
 
-from geofluid.spatial.moran import local_morans_by_year, local_morans_i, morans_i
+from geofluid.spatial.moran import (
+    local_morans_by_year,
+    local_morans_i,
+    morans_i,
+    significant_quadrants,
+)
 
 _PAIRS = {
     "01001": frozenset({"01003"}),
@@ -110,6 +115,27 @@ def test_same_generator_seed_reproduces_identical_p_values() -> None:
     second = local_morans_i(values, _PAIRS, permutations=49, rng=np.random.default_rng(7))
 
     assert first["p_value"].equals(second["p_value"])
+
+
+def test_significant_quadrants_masks_labels_that_could_be_chance() -> None:
+    """The map-honesty rule: a quadrant label is only painted when the
+    clustering beats chance at the chosen alpha. Counties failing the test
+    keep their row and i_local but lose the label (None -> gray on the map
+    via the existing null path). Constructed p-values, no randomness."""
+    lisa = pd.DataFrame(
+        {
+            "i_local": [3.0, 0.4, -1.2],
+            "quadrant": ["high-high", "low-low", "low-high"],
+            "p_value": [0.01, 0.30, 0.05],
+        },
+        index=pd.Index(["01001", "29189", "29510"], name="fips"),
+    )
+
+    masked = significant_quadrants(lisa, alpha=0.05)
+
+    assert masked["quadrant"].tolist() == ["high-high", None, "low-high"]  # 0.05 <= alpha
+    assert masked["i_local"].tolist() == [3.0, 0.4, -1.2]  # values untouched
+    assert lisa["quadrant"].tolist()[1] == "low-low"  # input not mutated
 
 
 def test_local_moran_by_year_returns_tidy_per_county_year_frame() -> None:

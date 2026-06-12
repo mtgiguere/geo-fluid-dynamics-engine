@@ -125,6 +125,19 @@ def local_morans_i(
     return frame
 
 
+def significant_quadrants(lisa: pd.DataFrame, alpha: float) -> pd.DataFrame:
+    """Map honesty: keep a quadrant label only where the clustering beats
+    chance at the chosen alpha; everything else becomes None (gray on the
+    map via the existing null path). Values and p-values stay untouched —
+    the mask hides labels, never evidence."""
+    masked = lisa.copy()
+    # astype(object) so the masked entries are literal None, not the NaN
+    # pandas' string dtype would silently substitute — "no label" is a
+    # decision, and None says so unambiguously.
+    masked["quadrant"] = masked["quadrant"].astype(object).where(masked["p_value"] <= alpha, None)
+    return masked
+
+
 def local_morans_by_year(
     panel: pd.DataFrame,
     adjacency: Mapping[str, frozenset[str]],
