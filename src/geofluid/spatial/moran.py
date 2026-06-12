@@ -57,3 +57,26 @@ def morans_i(values: "pd.Series[float]", adjacency: Mapping[str, frozenset[str]]
 
     s0 = matrix.sum()
     return float((n / s0) * (z @ matrix @ z) / denominator)
+
+
+def local_morans_i(
+    values: "pd.Series[float]", adjacency: Mapping[str, frozenset[str]]
+) -> pd.DataFrame:
+    """Local Moran's I (LISA): each county's contribution to the global
+    pattern, I_i = z_i * (W z)_i / m2 with m2 = z'z / n.
+
+    Returns a DataFrame indexed by the usable fips with column i_local.
+    Positive I_i: the county resembles its neighbors (part of a cluster —
+    a wave core or a calm basin). Negative: it defies them (an outlier).
+    """
+    present = values.dropna()
+    usable = {fips for fips in adjacency if fips in present.index}
+    kept = {fips for fips in usable if adjacency[fips] & usable}
+    sub_adjacency = {fips: frozenset(adjacency[fips] & usable) for fips in kept}
+
+    matrix, order = spatial_weights(sub_adjacency)
+    z = values.loc[order].to_numpy(dtype=float)
+    z = z - z.mean()
+    m2 = (z @ z) / len(order)
+    lag = matrix @ z
+    return pd.DataFrame({"i_local": z * lag / m2}, index=pd.Index(order, name="fips"))
