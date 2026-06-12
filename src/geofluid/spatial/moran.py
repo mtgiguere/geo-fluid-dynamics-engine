@@ -41,9 +41,19 @@ def morans_i(values: "pd.Series[float]", adjacency: Mapping[str, frozenset[str]]
     sub_adjacency = {fips: frozenset(adjacency[fips] & usable) for fips in kept}
 
     matrix, order = spatial_weights(sub_adjacency)
+    n = len(order)
+    # Below three usable counties the statistic is meaningless: a single
+    # pair yields exactly +/-1 for ANY data — a confident-looking artifact.
+    if n < 3:
+        raise ValueError(f"Moran's I needs at least 3 usable counties, found {n}")
 
     z = values.loc[order].to_numpy(dtype=float)
     z = z - z.mean()
+    denominator = z @ z
+    # Zero variance makes I equal 0/0: undefined, not "no autocorrelation".
+    # numpy would silently emit NaN here — that is a fabricated finding.
+    if denominator == 0.0:
+        raise ValueError("Moran's I is undefined for a constant field (zero variance)")
+
     s0 = matrix.sum()
-    n = len(order)
-    return float((n / s0) * (z @ matrix @ z) / (z @ z))
+    return float((n / s0) * (z @ matrix @ z) / denominator)

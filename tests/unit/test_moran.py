@@ -11,6 +11,7 @@ impossible to express.
 """
 
 import pandas as pd
+import pytest
 
 from geofluid.spatial.moran import morans_i
 
@@ -73,3 +74,25 @@ def test_missing_values_islands_and_orphaned_counties_are_excluded() -> None:
     )
 
     assert abs(morans_i(values, adjacency) - 1.0) < 1e-12
+
+
+def test_constant_field_raises_rather_than_fabricating_a_number() -> None:
+    """A constant field has zero variance: Moran's I is 0/0 — mathematically
+    undefined, not 'zero autocorrelation'. Returning any number would be a
+    fabricated finding; numpy would silently produce NaN or raise a warning.
+    The contract: ValueError naming the problem."""
+    values = pd.Series({"01001": 0.7, "01003": 0.7, "29189": 0.7, "29510": 0.7})
+
+    with pytest.raises(ValueError, match="constant"):
+        morans_i(values, _PAIRS)
+
+
+def test_fewer_than_three_usable_counties_raises() -> None:
+    """With fewer than three usable counties the statistic is meaningless
+    (a single pair always yields exactly ±1 regardless of the data). Real
+    inputs hit this when NaN exclusion eats almost everything — that must
+    surface as an error, not as a confident-looking ±1."""
+    values = pd.Series({"01001": 1.0, "01003": 2.0})
+
+    with pytest.raises(ValueError, match="3"):
+        morans_i(values, _PAIRS)
