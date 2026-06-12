@@ -85,6 +85,12 @@ body {
   display: inline-block;
 }
 
+#legend .caption {
+  font-size: 10px;
+  color: #777;
+  margin-top: 2px;
+}
+
 #status {
   margin-left: auto;
   font-size: 12px;

@@ -40,6 +40,11 @@ interface CategoricalMetric {
   kind: "categories";
   key: keyof Metrics;
   label: string;
+  // Plain-language explanation rendered with the legend. Exists because a
+  // real user read wave-anchor red over Chicago as "Chicago votes R" —
+  // the layer shows clusters of CHANGE, and intuition will not supply that
+  // distinction on its own. The map must explain itself.
+  caption: string;
   categories: { value: string; label: string; color: string }[];
 }
 
@@ -72,11 +77,13 @@ export const METRIC_DEFS: MetricDef[] = [
     kind: "categories",
     key: "swing_lisa_quadrant",
     label: "Wave anchors (swing clusters)",
+    caption:
+      "Clusters of change vs the previous election — not partisan lean. Gray: no significant cluster.",
     categories: [
-      { value: "high-high", label: "D-swing core", color: "#2166ac" },
-      { value: "low-low", label: "R-swing core", color: "#b2182b" },
-      { value: "high-low", label: "D outlier", color: "#92c5de" },
-      { value: "low-high", label: "R outlier", color: "#f4a582" },
+      { value: "high-high", label: "Swung D together", color: "#2166ac" },
+      { value: "low-low", label: "Swung R together", color: "#b2182b" },
+      { value: "high-low", label: "Swung D, neighbors R", color: "#92c5de" },
+      { value: "low-high", label: "Swung R, neighbors D", color: "#f4a582" },
     ],
   },
   {
@@ -174,7 +181,7 @@ export function fillColor(def: MetricDef): unknown[] {
 
 export type LegendModel =
   | { kind: "ramp"; left: string; right: string; gradientCss: string }
-  | { kind: "categories"; items: { label: string; color: string }[] };
+  | { kind: "categories"; caption: string; items: { label: string; color: string }[] };
 
 export function legendModel(def: MetricDef): LegendModel {
   if (def.kind === "ramp") {
@@ -187,6 +194,7 @@ export function legendModel(def: MetricDef): LegendModel {
   }
   return {
     kind: "categories",
+    caption: def.caption,
     items: def.categories.map(({ label, color }) => ({ label, color })),
   };
 }
