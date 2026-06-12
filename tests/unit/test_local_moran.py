@@ -10,8 +10,10 @@ fips-indexed results out, alignment internal.
 """
 
 import pandas as pd
+from hypothesis import assume, given
+from hypothesis import strategies as st
 
-from geofluid.spatial.moran import local_morans_i
+from geofluid.spatial.moran import local_morans_i, morans_i
 
 _PAIRS = {
     "01001": frozenset({"01003"}),
@@ -61,3 +63,25 @@ def test_quadrant_labels_classify_cores_and_outliers() -> None:
     pairs_local = local_morans_i(pairs_values, _PAIRS)
     assert pairs_local["quadrant"]["01001"] == "high-high"
     assert pairs_local["quadrant"]["29189"] == "low-low"
+
+
+_RING_FIPS = ["01001", "01003", "29189", "29510", "46102", "56001"]
+_RING = {
+    f: frozenset({_RING_FIPS[(i - 1) % 6], _RING_FIPS[(i + 1) % 6]})
+    for i, f in enumerate(_RING_FIPS)
+}
+
+
+@given(raw=st.lists(st.floats(-100, 100, allow_nan=False), min_size=6, max_size=6))
+def test_mean_of_local_statistics_equals_global_moran_i(raw: list[float]) -> None:
+    """Property: with row-standardized W and no islands, S0 = n and the
+    global statistic decomposes exactly: I = mean(I_i). This is the theorem
+    that makes the LISA a DECOMPOSITION rather than a separate metric — if
+    the two implementations ever drift apart (different exclusion, different
+    centering), this property snaps."""
+    values = pd.Series(dict(zip(_RING_FIPS, raw, strict=True)))
+    assume(float(values.var()) > 1e-6)
+
+    local = local_morans_i(values, _RING)
+
+    assert abs(float(local["i_local"].mean()) - morans_i(values, _RING)) < 1e-9

@@ -23,6 +23,21 @@ import pandas as pd
 from geofluid.spatial.weights import spatial_weights
 
 
+def _usable_subset(
+    values: "pd.Series[float]", adjacency: Mapping[str, frozenset[str]]
+) -> dict[str, frozenset[str]]:
+    """Listwise exclusion, in three layers: a county participates only if it
+    has a non-missing value AND at least one neighbor that also does.
+    Islands (no neighbors), NaN counties, counties absent from the values
+    index, and counties orphaned by their neighbors' missingness all drop
+    out — symmetry of adjacency guarantees the kept neighbors of a kept
+    county are themselves kept, so the subset is closed."""
+    present = values.dropna()
+    usable = {fips for fips in adjacency if fips in present.index}
+    kept = {fips for fips in usable if adjacency[fips] & usable}
+    return {fips: frozenset(adjacency[fips] & usable) for fips in kept}
+
+
 def morans_i(values: "pd.Series[float]", adjacency: Mapping[str, frozenset[str]]) -> float:
     """Global Moran's I of a fips-indexed series under queen adjacency.
 
@@ -30,18 +45,7 @@ def morans_i(values: "pd.Series[float]", adjacency: Mapping[str, frozenset[str]]
     index, never by position (TDD_CONTRACT.md Bug #3 lived in exactly that
     positional assumption).
     """
-    # Listwise exclusion, in three layers: a county participates only if it
-    # has a non-missing value AND at least one neighbor that also does.
-    # Islands (no neighbors), NaN counties, counties absent from the values
-    # index, and counties orphaned by their neighbors' missingness all drop
-    # out — symmetry of adjacency guarantees the kept neighbors of a kept
-    # county are themselves kept, so the subset is closed.
-    present = values.dropna()
-    usable = {fips for fips in adjacency if fips in present.index}
-    kept = {fips for fips in usable if adjacency[fips] & usable}
-    sub_adjacency = {fips: frozenset(adjacency[fips] & usable) for fips in kept}
-
-    matrix, order = spatial_weights(sub_adjacency)
+    matrix, order = spatial_weights(_usable_subset(values, adjacency))
     n = len(order)
     # Below three usable counties the statistic is meaningless: a single
     # pair yields exactly +/-1 for ANY data — a confident-looking artifact.
@@ -70,12 +74,7 @@ def local_morans_i(
     Positive I_i: the county resembles its neighbors (part of a cluster —
     a wave core or a calm basin). Negative: it defies them (an outlier).
     """
-    present = values.dropna()
-    usable = {fips for fips in adjacency if fips in present.index}
-    kept = {fips for fips in usable if adjacency[fips] & usable}
-    sub_adjacency = {fips: frozenset(adjacency[fips] & usable) for fips in kept}
-
-    matrix, order = spatial_weights(sub_adjacency)
+    matrix, order = spatial_weights(_usable_subset(values, adjacency))
     z = values.loc[order].to_numpy(dtype=float)
     z = z - z.mean()
     m2 = (z @ z) / len(order)
