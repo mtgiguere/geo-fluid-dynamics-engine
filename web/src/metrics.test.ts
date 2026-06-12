@@ -68,16 +68,21 @@ describe("legendModel", () => {
     });
   });
 
-  it("categorical metrics produce labeled color chips", () => {
+  it("categorical metrics produce labeled chips and a plain-language caption", () => {
+    // The caption exists because a real user (the project owner) read the
+    // wave-anchors red over Chicago as "Chicago is Republican". The layer
+    // shows clusters of CHANGE, not lean — and the map must say so itself.
     const legend = legendModel(anchors);
 
     expect(legend).toEqual({
       kind: "categories",
+      caption:
+        "Clusters of change vs the previous election — not partisan lean. Gray: no significant cluster.",
       items: [
-        { label: "D-swing core", color: "#2166ac" },
-        { label: "R-swing core", color: "#b2182b" },
-        { label: "D outlier", color: "#92c5de" },
-        { label: "R outlier", color: "#f4a582" },
+        { label: "Swung D together", color: "#2166ac" },
+        { label: "Swung R together", color: "#b2182b" },
+        { label: "Swung D, neighbors R", color: "#92c5de" },
+        { label: "Swung R, neighbors D", color: "#f4a582" },
       ],
     });
   });

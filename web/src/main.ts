@@ -54,12 +54,13 @@ function renderLegend(def: MetricDef): void {
       <span id="legend-right">${model.right}</span>`;
     return;
   }
-  legend.innerHTML = model.items
+  const chips = model.items
     .map(
       (item) =>
         `<span class="chip"><i style="background: ${item.color}"></i>${item.label}</span>`,
     )
     .join("");
+  legend.innerHTML = `<div>${chips}<div class="caption">${model.caption}</div></div>`;
 }
 
 function applyMetric(): void {

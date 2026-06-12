@@ -64,10 +64,11 @@ test("metric switcher recolors the map and relabels the legend", async ({ page }
   await expect(page.locator("#legend-left")).toHaveText("$40k");
   await expect(page.locator("#legend-right")).toHaveText("$120k+");
 
-  // The categorical wave-anchors layer: legend switches to labeled chips.
+  // The categorical wave-anchors layer: labeled chips plus the
+  // plain-language caption (the Chicago-misreading lesson).
   await page.locator("#metric").selectOption("swing_lisa_quadrant");
-  await expect(page.locator("#legend")).toContainText("D-swing core");
-  await expect(page.locator("#legend")).toContainText("R outlier");
+  await expect(page.locator("#legend")).toContainText("Swung R together");
+  await expect(page.locator("#legend")).toContainText("not partisan lean");
 });
 
 test("year slider scrubs to another election", async ({ page }) => {
