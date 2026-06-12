@@ -54,7 +54,7 @@ export const METRIC_DEFS: MetricDef[] = [
   {
     kind: "ramp",
     key: "dem_share_2p",
-    label: "Two-party result",
+    label: "Who won",
     stops: [0.2, 0.35, 0.5, 0.65, 0.8],
     colors: PARTISAN_RAMP,
     legendLeft: "More Republican",
@@ -63,7 +63,7 @@ export const METRIC_DEFS: MetricDef[] = [
   {
     kind: "ramp",
     key: "swing_dem_2p",
-    label: "Swing since last election",
+    label: "Who gained ground",
     stops: [-0.15, -0.075, 0, 0.075, 0.15],
     colors: PARTISAN_RAMP,
     legendLeft: "Swung Republican",
@@ -76,7 +76,7 @@ export const METRIC_DEFS: MetricDef[] = [
     // region. Computed per election by geofluid.spatial.moran.
     kind: "categories",
     key: "swing_lisa_quadrant",
-    label: "Wave anchors (swing clusters)",
+    label: "The wave — change spreading together",
     caption:
       "Clusters of change vs the previous election — not partisan lean. Gray: no significant cluster.",
     categories: [
@@ -177,6 +177,42 @@ export function fillColor(def: MetricDef): unknown[] {
   }
   match.push(NO_VALUE_GRAY);
   return guarded(def.key, "string", match);
+}
+
+// ---------------------------------------------------------------------------
+// The storyline: one plain sentence narrating what the screen shows, computed
+// live from the loaded data. Our median user is a campaign volunteer — a
+// retiree, a student, a barista — not a statistician. The sentence carries
+// the entire interpretation so the colors never have to.
+// ---------------------------------------------------------------------------
+export function storyline(
+  key: keyof Metrics,
+  year: number,
+  data: Record<string, Metrics>,
+): string {
+  const counties = Object.values(data);
+  if (key === "dem_share_2p") {
+    const rep = counties.filter((c) => c.dem_share_2p < 0.5).length;
+    const dem = counties.filter((c) => c.dem_share_2p > 0.5).length;
+    return `${year}: Republicans got more votes in ${rep.toLocaleString()} counties, Democrats in ${dem.toLocaleString()}. Click any county for details.`;
+  }
+  if (key === "swing_dem_2p" || key === "swing_lisa_quadrant") {
+    const swings = counties.map((c) => c.swing_dem_2p).filter((s): s is number => s != null);
+    if (swings.length === 0) {
+      return `${year}: the first election in our data — nothing earlier to compare against yet.`;
+    }
+    if (key === "swing_dem_2p") {
+      const towardR = swings.filter((s) => s < 0).length;
+      const towardD = swings.filter((s) => s > 0).length;
+      return `${year}: since the last election, ${towardR.toLocaleString()} counties moved toward Republicans and ${towardD.toLocaleString()} toward Democrats.`;
+    }
+    const repCores = counties.filter((c) => c.swing_lisa_quadrant === "low-low").length;
+    const demCores = counties.filter((c) => c.swing_lisa_quadrant === "high-high").length;
+    return `${year}: the wave — ${repCores.toLocaleString()} counties moved toward Republicans TOGETHER with their neighbors, ${demCores.toLocaleString()} toward Democrats.`;
+  }
+  const def = METRIC_DEFS.find((d) => d.key === key);
+  const vintage = counties[0]?.acs_vintage ?? 2023;
+  return `Counties colored by ${def ? def.label.toLowerCase() : String(key)} (Census ACS ${vintage}). This does not change with the election year.`;
 }
 
 export type LegendModel =

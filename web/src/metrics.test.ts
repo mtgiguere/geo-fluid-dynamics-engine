@@ -5,7 +5,8 @@
 // E2E golden paths verify integration; THESE verify the logic.
 
 import { describe, expect, it } from "vitest";
-import { METRIC_DEFS, fillColor, legendModel } from "./metrics";
+import { METRIC_DEFS, fillColor, legendModel, storyline } from "./metrics";
+import type { Metrics } from "./metrics";
 
 const result = METRIC_DEFS.find((d) => d.key === "dem_share_2p")!;
 const anchors = METRIC_DEFS.find((d) => d.key === "swing_lisa_quadrant")!;
@@ -52,6 +53,69 @@ describe("fillColor for categorical metrics (wave anchors)", () => {
       "#d4d4d4",
     ]);
     expect(expr[3]).toBe("#d4d4d4");
+  });
+});
+
+// A tiny county dataset for storyline tests: values chosen by hand so every
+// count below is checkable on fingers.
+function county(over: Partial<Metrics>): Metrics {
+  return {
+    dem_votes: 0,
+    rep_votes: 0,
+    other_votes: 0,
+    total_votes: 0,
+    dem_share_2p: 0.5,
+    swing_dem_2p: null,
+    swing_lisa_quadrant: null,
+    acs_vintage: 2023,
+    total_population: 0,
+    median_age: null,
+    pct_65_plus: null,
+    median_hh_income: null,
+    median_home_value: null,
+    pct_owner_occupied: null,
+    pct_bachelors_plus: null,
+    ...over,
+  };
+}
+
+describe("storyline — the plain-language sentence for campaign volunteers", () => {
+  const data = {
+    a: county({ dem_share_2p: 0.7, swing_dem_2p: -0.03, swing_lisa_quadrant: "low-low" }),
+    b: county({ dem_share_2p: 0.4, swing_dem_2p: -0.01, swing_lisa_quadrant: "low-low" }),
+    c: county({ dem_share_2p: 0.45, swing_dem_2p: 0.02, swing_lisa_quadrant: "high-high" }),
+    d: county({ dem_share_2p: 0.55, swing_dem_2p: null, swing_lisa_quadrant: null }),
+  };
+
+  it("result view counts who won where", () => {
+    expect(storyline("dem_share_2p", 2024, data)).toBe(
+      "2024: Republicans got more votes in 2 counties, Democrats in 2. Click any county for details.",
+    );
+  });
+
+  it("swing view counts movement vs the previous election", () => {
+    expect(storyline("swing_dem_2p", 2024, data)).toBe(
+      "2024: since the last election, 2 counties moved toward Republicans and 1 toward Democrats.",
+    );
+  });
+
+  it("wave view counts counties moving together", () => {
+    expect(storyline("swing_lisa_quadrant", 2024, data)).toBe(
+      "2024: the wave — 2 counties moved toward Republicans TOGETHER with their neighbors, 1 toward Democrats.",
+    );
+  });
+
+  it("the first election in the data explains why change cannot show yet", () => {
+    const none = { a: county({}), b: county({}) };
+    expect(storyline("swing_dem_2p", 2000, none)).toBe(
+      "2000: the first election in our data — nothing earlier to compare against yet.",
+    );
+  });
+
+  it("demographic views state what is colored and its vintage", () => {
+    expect(storyline("median_age", 2024, data)).toBe(
+      "Counties colored by median age (Census ACS 2023). This does not change with the election year.",
+    );
   });
 });
 

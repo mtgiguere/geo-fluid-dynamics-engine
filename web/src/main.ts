@@ -1,7 +1,7 @@
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import "./style.css";
-import { METRIC_DEFS, fillColor, legendModel } from "./metrics";
+import { METRIC_DEFS, fillColor, legendModel, storyline } from "./metrics";
 import type { MetricDef, Metrics } from "./metrics";
 
 // Every static fetch is BASE_URL-prefixed. This is the lesson of the prior
@@ -19,6 +19,8 @@ const yearLabel = document.getElementById("year-label")!;
 const slider = document.getElementById("year") as HTMLInputElement;
 const metricSelect = document.getElementById("metric") as HTMLSelectElement;
 const legend = document.getElementById("legend")!;
+const storyEl = document.getElementById("storyline")!;
+const playButton = document.getElementById("play") as HTMLButtonElement;
 
 for (const def of METRIC_DEFS) {
   const option = document.createElement("option");
@@ -71,6 +73,12 @@ function applyMetric(): void {
     fillColor(def) as mapboxgl.ExpressionSpecification,
   );
   renderLegend(def);
+  renderStoryline();
+}
+
+function renderStoryline(): void {
+  const year = YEARS[Number(slider.value)]!;
+  storyEl.textContent = storyline(currentMetricDef().key, year, currentMetrics);
 }
 
 async function fetchJson<T>(path: string): Promise<T> {
@@ -94,6 +102,35 @@ async function loadYear(year: number): Promise<void> {
   yearLabel.textContent = String(year);
   const counted = Object.keys(currentMetrics).length;
   status.textContent = `${counted.toLocaleString()} counties · ${year}`;
+  renderStoryline();
+}
+
+// The time-lapse: the spec's founding pitch is "current tools take a
+// photograph; this engine shoots the video". The play button IS that video —
+// for a campaign volunteer it replaces every statistic on this screen.
+let playTimer: number | null = null;
+
+function stopPlaying(): void {
+  if (playTimer !== null) {
+    window.clearInterval(playTimer);
+    playTimer = null;
+  }
+  playButton.textContent = "▶ Play";
+}
+
+function startPlaying(): void {
+  if (Number(slider.value) >= YEARS.length - 1) slider.value = "0";
+  void loadYear(YEARS[Number(slider.value)]!);
+  playButton.textContent = "⏸ Pause";
+  playTimer = window.setInterval(() => {
+    const next = Number(slider.value) + 1;
+    if (next >= YEARS.length) {
+      stopPlaying();
+      return;
+    }
+    slider.value = String(next);
+    void loadYear(YEARS[next]!);
+  }, 1600);
 }
 
 function fmtPct(v: number | null): string {
@@ -180,9 +217,17 @@ map.on("load", async () => {
   await loadYear(YEARS[Number(slider.value)]!);
 
   slider.addEventListener("input", () => {
+    stopPlaying();
     void loadYear(YEARS[Number(slider.value)]!);
   });
   metricSelect.addEventListener("change", applyMetric);
+  playButton.addEventListener("click", () => {
+    if (playTimer !== null) {
+      stopPlaying();
+    } else {
+      startPlaying();
+    }
+  });
 
   map.on("click", "county-fills", (e) => {
     const feature = e.features?.[0];
