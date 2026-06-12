@@ -29,6 +29,15 @@ uv run ruff format .    # if this changes files, re-run ruff check
 uv run pytest
 ```
 
+This is enforced mechanically by `.githooks/pre-commit`. One-time setup per clone:
+
+```
+git config core.hooksPath .githooks
+```
+
+(Added after a commit skipped the format step and CI caught the drift —
+the contract's "ruff format is not optional" rule, demonstrated live.)
+
 ## Commands
 
 - `uv sync` — install dependencies
