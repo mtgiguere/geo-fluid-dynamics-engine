@@ -1,0 +1,131 @@
+"""Tests for Moran's I — is a county-level quantity spatially clustered?
+
+This is Module 1's first inferential statistic: before predicting where a
+wave goes, establish that waves exist — that swing on the map is clustered
+beyond chance rather than scattered noise.
+
+API note: morans_i takes a fips-INDEXED Series and the adjacency mapping and
+aligns them internally. A signature taking a bare array plus an assumed
+order would reopen TDD_CONTRACT.md Bug #3; this one makes misalignment
+impossible to express.
+"""
+
+import pandas as pd
+import pytest
+from hypothesis import assume, given
+from hypothesis import strategies as st
+
+from geofluid.spatial.moran import morans_i
+
+# Two separated pairs: A-B adjacent, C-D adjacent, no edges between pairs.
+_PAIRS = {
+    "01001": frozenset({"01003"}),
+    "01003": frozenset({"01001"}),
+    "29189": frozenset({"29510"}),
+    "29510": frozenset({"29189"}),
+}
+
+
+def test_perfectly_clustered_values_give_moran_i_of_one() -> None:
+    """Two adjacent pairs, each pair internally identical, pairs opposite:
+    every county's neighbor average equals its own value. Hand computation
+    with row-standardized W: z = (1, 1, -1, -1), z'Wz = 4, z'z = 4, S0 = 4,
+    n = 4 -> I = (4/4) * (4/4) = 1.0. Perfect positive autocorrelation."""
+    values = pd.Series({"01001": 1.0, "01003": 1.0, "29189": -1.0, "29510": -1.0})
+
+    assert abs(morans_i(values, _PAIRS) - 1.0) < 1e-12
+
+
+def test_perfectly_dispersed_values_give_moran_i_of_minus_one() -> None:
+    """Each county's only neighbor holds the opposite value: the
+    checkerboard. Hand computation: z'Wz = -4 -> I = -1.0. Perfect negative
+    autocorrelation — the opposite of a wave."""
+    values = pd.Series({"01001": 1.0, "01003": -1.0, "29189": 1.0, "29510": -1.0})
+
+    assert abs(morans_i(values, _PAIRS) - (-1.0)) < 1e-12
+
+
+def test_missing_values_islands_and_orphaned_counties_are_excluded() -> None:
+    """The real inputs are messy: swing is NaN in 2000 and for gap counties;
+    Hawaii has no neighbors; a county whose ONLY neighbor is missing has no
+    one to be compared with. All three must drop out — included, an island's
+    zero weight row would deflate I, and a NaN would poison the sums. The
+    perfectly clustered pairs must still give exactly 1.0 after exclusion:
+    - 15003: island (no neighbors) despite having a value
+    - 30001: value is NaN
+    - 30031: present, but its only neighbor is the NaN county
+    - 56001: in the adjacency, absent from the values index entirely"""
+    adjacency = {
+        **_PAIRS,
+        "15003": frozenset(),
+        "30001": frozenset({"30031"}),
+        "30031": frozenset({"30001"}),
+        "56001": frozenset({"01001"}),
+        "01001": _PAIRS["01001"] | {"56001"},
+    }
+    values = pd.Series(
+        {
+            "01001": 1.0,
+            "01003": 1.0,
+            "29189": -1.0,
+            "29510": -1.0,
+            "15003": 5.0,
+            "30001": float("nan"),
+            "30031": 2.0,
+        }
+    )
+
+    assert abs(morans_i(values, adjacency) - 1.0) < 1e-12
+
+
+def test_constant_field_raises_rather_than_fabricating_a_number() -> None:
+    """A constant field has zero variance: Moran's I is 0/0 — mathematically
+    undefined, not 'zero autocorrelation'. Returning any number would be a
+    fabricated finding; numpy would silently produce NaN or raise a warning.
+    The contract: ValueError naming the problem."""
+    values = pd.Series({"01001": 0.7, "01003": 0.7, "29189": 0.7, "29510": 0.7})
+
+    with pytest.raises(ValueError, match="constant"):
+        morans_i(values, _PAIRS)
+
+
+def test_fewer_than_three_usable_counties_raises() -> None:
+    """With fewer than three usable counties the statistic is meaningless
+    (a single pair always yields exactly ±1 regardless of the data). Real
+    inputs hit this when NaN exclusion eats almost everything — that must
+    surface as an error, not as a confident-looking ±1."""
+    values = pd.Series({"01001": 1.0, "01003": 2.0})
+
+    with pytest.raises(ValueError, match="3"):
+        morans_i(values, _PAIRS)
+
+
+# A fixed six-county ring for value-space property tests.
+_RING_FIPS = ["01001", "01003", "29189", "29510", "46102", "56001"]
+_RING = {
+    f: frozenset({_RING_FIPS[(i - 1) % 6], _RING_FIPS[(i + 1) % 6]})
+    for i, f in enumerate(_RING_FIPS)
+}
+
+
+@given(
+    raw=st.lists(st.floats(-100, 100, allow_nan=False), min_size=6, max_size=6),
+    shift=st.floats(-1000, 1000, allow_nan=False),
+    scale=st.one_of(st.floats(0.01, 100), st.floats(-100, -0.01)),
+)
+def test_moran_i_is_invariant_under_location_and_scale(
+    raw: list[float], shift: float, scale: float
+) -> None:
+    """Property: I(shift + scale * x) == I(x) for any shift and any nonzero
+    scale — including negative scale. Swing measured in percentage points,
+    fractions, or with a flipped sign convention must yield the same
+    autocorrelation; centering removes the shift and the ratio cancels the
+    scale. If the implementation ever centered or normalized incorrectly,
+    some draw here would expose it."""
+    values = pd.Series(dict(zip(_RING_FIPS, raw, strict=True)))
+    assume(float(values.var()) > 1e-6)
+
+    base = morans_i(values, _RING)
+    transformed = morans_i(shift + scale * values, _RING)
+
+    assert abs(base - transformed) < 1e-6
