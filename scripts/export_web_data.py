@@ -14,6 +14,7 @@ import os
 import urllib.request
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from geofluid.ingest.county_demographics import acs5_county_url, load_county_demographics
@@ -21,7 +22,7 @@ from geofluid.ingest.county_geometry import county_shapefile_to_geojson
 from geofluid.ingest.county_returns import load_county_returns
 from geofluid.map.layers import export_year_metrics
 from geofluid.panel.master import build_master_panel
-from geofluid.spatial.moran import local_morans_by_year
+from geofluid.spatial.moran import local_morans_by_year, significant_quadrants
 from geofluid.spatial.weights import county_adjacency
 
 OUT = Path("web/public/data")
@@ -56,7 +57,20 @@ def main() -> None:
     adjacency = county_adjacency(
         county_shapefile_to_geojson("data/raw/cb_2021/cb_2021_us_county_500k.shp")
     )
-    lisa = local_morans_by_year(panel, adjacency, value_column="swing_dem_2p")
+    # 999 conditional permutations per county-year; quadrant labels survive
+    # only below alpha = 0.05 (standard LISA practice — the map paints no
+    # cluster that chance could explain). The generator is SEEDED so the
+    # published map is exactly reproducible — a documented reproducibility
+    # decision, distinct from the seed-specific test assertions the contract
+    # bans (TDD_CONTRACT.md RED FLAG 3).
+    lisa = local_morans_by_year(
+        panel,
+        adjacency,
+        value_column="swing_dem_2p",
+        permutations=999,
+        rng=np.random.default_rng(20260612),
+    )
+    lisa = significant_quadrants(lisa.set_index("fips"), alpha=0.05).reset_index()
     panel = panel.merge(
         lisa.rename(columns={"quadrant": "swing_lisa_quadrant"})[
             ["fips", "year", "swing_lisa_quadrant"]

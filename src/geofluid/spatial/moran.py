@@ -65,7 +65,11 @@ def morans_i(values: "pd.Series[float]", adjacency: Mapping[str, frozenset[str]]
 
 
 def local_morans_i(
-    values: "pd.Series[float]", adjacency: Mapping[str, frozenset[str]]
+    values: "pd.Series[float]",
+    adjacency: Mapping[str, frozenset[str]],
+    *,
+    permutations: int | None = None,
+    rng: np.random.Generator | None = None,
 ) -> pd.DataFrame:
     """Local Moran's I (LISA): each county's contribution to the global
     pattern, I_i = z_i * (W z)_i / m2 with m2 = z'z / n.
@@ -73,36 +77,93 @@ def local_morans_i(
     Returns a DataFrame indexed by the usable fips with column i_local.
     Positive I_i: the county resembles its neighbors (part of a cluster —
     a wave core or a calm basin). Negative: it defies them (an outlier).
+
+    With `permutations`, adds a pseudo p-value per county via conditional
+    permutation (Anselin): the county's own value stays fixed while the
+    others are shuffled across the remaining locations, asking "how often
+    would a neighborhood this coherent arise by chance?" One-sided in the
+    direction of the observed statistic; p = (extreme + 1)/(permutations + 1).
+    Pass a seeded numpy Generator via `rng` for reproducible published runs.
     """
-    matrix, order = spatial_weights(_usable_subset(values, adjacency))
+    sub_adjacency = _usable_subset(values, adjacency)
+    # An empty usable set (e.g. swing in 2000: NaN everywhere — no preceding
+    # election) yields an empty frame that still carries the canonical
+    # columns, so downstream column selection never KeyErrors (Bug #2 class).
+    if not sub_adjacency:
+        columns: dict[str, list[float] | list[str]] = {"i_local": [], "quadrant": []}
+        if permutations is not None:
+            columns["p_value"] = []
+        return pd.DataFrame(columns, index=pd.Index([], name="fips"))
+
+    matrix, order = spatial_weights(sub_adjacency)
     z = values.loc[order].to_numpy(dtype=float)
     z = z - z.mean()
     m2 = (z @ z) / len(order)
     lag = matrix @ z
+    i_local = z * lag / m2
     # The LISA quadrants: own value vs neighborhood average, both relative
     # to the mean. high-high = wave core, low-low = calm basin, high-low =
     # defiant outlier, low-high = a hole inside a wave.
     own = np.where(z >= 0, "high", "low")
     neighborhood = np.where(lag >= 0, "high", "low")
     quadrant = np.char.add(np.char.add(own, "-"), neighborhood)
-    return pd.DataFrame(
-        {"i_local": z * lag / m2, "quadrant": quadrant},
+    frame = pd.DataFrame(
+        {"i_local": i_local, "quadrant": quadrant},
         index=pd.Index(order, name="fips"),
     )
+
+    if permutations is not None:
+        generator = rng if rng is not None else np.random.default_rng()
+        n = len(order)
+        max_k = max(len(sub_adjacency[fips]) for fips in order)
+        # One shared bank of permutations (PySAL's trick): each row is a
+        # random ordering of the n-1 "other" positions; county i reads its
+        # first k_i columns as that permutation's neighbor draw.
+        draw_bank = np.argsort(generator.random((permutations, n - 1)), axis=1)[:, :max_k]
+        p_values = np.empty(n)
+        for i, fips in enumerate(order):
+            k = len(sub_adjacency[fips])
+            others = np.delete(z, i)
+            simulated = z[i] * others[draw_bank[:, :k]].mean(axis=1) / m2
+            if i_local[i] >= 0:
+                extreme = int((simulated >= i_local[i]).sum())
+            else:
+                extreme = int((simulated <= i_local[i]).sum())
+            p_values[i] = (extreme + 1) / (permutations + 1)
+        frame["p_value"] = p_values
+    return frame
+
+
+def significant_quadrants(lisa: pd.DataFrame, alpha: float) -> pd.DataFrame:
+    """Map honesty: keep a quadrant label only where the clustering beats
+    chance at the chosen alpha; everything else becomes None (gray on the
+    map via the existing null path). Values and p-values stay untouched —
+    the mask hides labels, never evidence."""
+    masked = lisa.copy()
+    # astype(object) so the masked entries are literal None, not the NaN
+    # pandas' string dtype would silently substitute — "no label" is a
+    # decision, and None says so unambiguously.
+    masked["quadrant"] = masked["quadrant"].astype(object).where(masked["p_value"] <= alpha, None)
+    return masked
 
 
 def local_morans_by_year(
     panel: pd.DataFrame,
     adjacency: Mapping[str, frozenset[str]],
     value_column: str,
+    *,
+    permutations: int | None = None,
+    rng: np.random.Generator | None = None,
 ) -> pd.DataFrame:
     """One LISA run per election year, returned tidy: fips, year, i_local,
-    quadrant. Counties excluded for a year (missing value, island, orphan)
-    have no row that year — absence, never a fabricated label."""
+    quadrant (and p_value when permutations are requested). Counties
+    excluded for a year (missing value, island, orphan) have no row that
+    year — absence, never a fabricated label."""
     frames = []
     for year in sorted(panel["year"].unique()):
         values = panel[panel["year"] == year].set_index("fips")[value_column]
-        local = local_morans_i(values, adjacency).reset_index()
+        local = local_morans_i(values, adjacency, permutations=permutations, rng=rng)
+        local = local.reset_index()
         local.insert(1, "year", year)
         frames.append(local)
     return pd.concat(frames, ignore_index=True)

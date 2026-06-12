@@ -13,7 +13,12 @@ import pandas as pd
 from hypothesis import assume, given
 from hypothesis import strategies as st
 
-from geofluid.spatial.moran import local_morans_by_year, local_morans_i, morans_i
+from geofluid.spatial.moran import (
+    local_morans_by_year,
+    local_morans_i,
+    morans_i,
+    significant_quadrants,
+)
 
 _PAIRS = {
     "01001": frozenset({"01003"}),
@@ -65,11 +70,103 @@ def test_quadrant_labels_classify_cores_and_outliers() -> None:
     assert pairs_local["quadrant"]["29189"] == "low-low"
 
 
+def test_all_missing_values_yield_an_empty_frame_with_canonical_columns() -> None:
+    """Found by the real export: in 2000 swing is NaN for every county (no
+    preceding election), so the usable set is empty. The result is an empty
+    frame that still carries the canonical columns — downstream selects
+    columns before checking length (the Bug #2 class) — and the permutation
+    path must not crash on the empty set."""
+    values = pd.Series({"01001": float("nan"), "01003": float("nan"), "29189": float("nan")})
+
+    local = local_morans_i(values, _PAIRS, permutations=9)
+
+    assert list(local.columns) == ["i_local", "quadrant", "p_value"]
+    assert len(local) == 0
+
+
+def test_local_moran_by_year_carries_permutation_p_values() -> None:
+    """The export path needs per-year p-values: by_year forwards the
+    permutation arguments and the tidy frame gains p_value, bounded by the
+    pseudo-p floor 1/(permutations+1) and 1.0 — for any rng."""
+    panel = pd.DataFrame(
+        [
+            {"fips": f, "year": 2020, "swing_dem_2p": v}
+            for f, v in [("01001", 1.0), ("01003", 1.5), ("29189", -1.0), ("29510", -2.0)]
+        ]
+    )
+
+    tidy = local_morans_by_year(panel, _PAIRS, value_column="swing_dem_2p", permutations=9)
+
+    assert list(tidy.columns) == ["fips", "year", "i_local", "quadrant", "p_value"]
+    assert ((tidy["p_value"] >= 0.1) & (tidy["p_value"] <= 1.0)).all()
+
+
 _RING_FIPS = ["01001", "01003", "29189", "29510", "46102", "56001"]
 _RING = {
     f: frozenset({_RING_FIPS[(i - 1) % 6], _RING_FIPS[(i + 1) % 6]})
     for i, f in enumerate(_RING_FIPS)
 }
+
+
+def test_fully_connected_county_has_pseudo_p_of_exactly_one() -> None:
+    """Conditional permutation holds a county's own value fixed and permutes
+    everyone else's across the other locations. A county adjacent to ALL
+    other counties therefore sees the same neighbor mean under every
+    permutation — its simulated I_i always equals the observed one, so the
+    pseudo p-value is exactly (nperm + 1)/(nperm + 1) = 1.0, deterministically,
+    for ANY rng. This is the no-seed test of the permutation machinery
+    (TDD_CONTRACT.md RED FLAG 3: seed-specific assertions are banned)."""
+    star = {
+        "29189": frozenset({"01001", "01003", "29510"}),  # connected to all
+        "01001": frozenset({"29189"}),
+        "01003": frozenset({"29189"}),
+        "29510": frozenset({"29189"}),
+    }
+    values = pd.Series({"29189": -2.0, "01001": 2.0, "01003": 3.0, "29510": 3.0})
+
+    local = local_morans_i(values, star, permutations=99)
+
+    assert local["p_value"]["29189"] == 1.0
+    # The spokes have one neighbor each drawn from three candidates; their
+    # p-values are random but must respect the pseudo-p bounds.
+    for fips in ["01001", "01003", "29510"]:
+        assert 1 / 100 <= local["p_value"][fips] <= 1.0
+
+
+def test_same_generator_seed_reproduces_identical_p_values() -> None:
+    """The reproducibility contract: an injected, identically-seeded
+    Generator yields identical p-values. This asserts DETERMINISM of the
+    machinery, not any seed-specific data value — the distinction RED FLAG 3
+    draws. Published findings must be re-runnable."""
+    import numpy as np
+
+    values = pd.Series({"01001": 1.0, "01003": 1.5, "29189": -1.0, "29510": -2.0})
+
+    first = local_morans_i(values, _PAIRS, permutations=49, rng=np.random.default_rng(7))
+    second = local_morans_i(values, _PAIRS, permutations=49, rng=np.random.default_rng(7))
+
+    assert first["p_value"].equals(second["p_value"])
+
+
+def test_significant_quadrants_masks_labels_that_could_be_chance() -> None:
+    """The map-honesty rule: a quadrant label is only painted when the
+    clustering beats chance at the chosen alpha. Counties failing the test
+    keep their row and i_local but lose the label (None -> gray on the map
+    via the existing null path). Constructed p-values, no randomness."""
+    lisa = pd.DataFrame(
+        {
+            "i_local": [3.0, 0.4, -1.2],
+            "quadrant": ["high-high", "low-low", "low-high"],
+            "p_value": [0.01, 0.30, 0.05],
+        },
+        index=pd.Index(["01001", "29189", "29510"], name="fips"),
+    )
+
+    masked = significant_quadrants(lisa, alpha=0.05)
+
+    assert masked["quadrant"].tolist() == ["high-high", None, "low-high"]  # 0.05 <= alpha
+    assert masked["i_local"].tolist() == [3.0, 0.4, -1.2]  # values untouched
+    assert lisa["quadrant"].tolist()[1] == "low-low"  # input not mutated
 
 
 def test_local_moran_by_year_returns_tidy_per_county_year_frame() -> None:
