@@ -71,6 +71,27 @@ test("metric switcher recolors the map and relabels the legend", async ({ page }
   await expect(page.locator("#legend")).toContainText("not partisan lean");
 });
 
+test("play button runs the elections like a movie with a narrated storyline", async ({
+  page,
+}) => {
+  await page.goto("./");
+  await expect(page.locator("#status")).toContainText("counties", { timeout: 30_000 });
+
+  // Default view ends at 2024, so play restarts from 2000 and rolls forward.
+  await page.locator("#play").click();
+  await expect(page.locator("#year-label")).toHaveText("2000");
+  await expect(page.locator("#play")).toHaveText("⏸ Pause");
+  await expect(page.locator("#year-label")).toHaveText("2008", { timeout: 15_000 });
+  await expect(page.locator("#storyline")).toContainText("counties");
+
+  // Pausing stops the clock.
+  await page.locator("#play").click();
+  await expect(page.locator("#play")).toHaveText("▶ Play");
+  const frozen = await page.locator("#year-label").textContent();
+  await page.waitForTimeout(2_000);
+  await expect(page.locator("#year-label")).toHaveText(frozen!);
+});
+
 test("year slider scrubs to another election", async ({ page }) => {
   await page.goto("./");
   await expect(page.locator("#status")).toContainText("counties", { timeout: 30_000 });
