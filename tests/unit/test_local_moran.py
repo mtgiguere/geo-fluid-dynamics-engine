@@ -33,3 +33,31 @@ def test_local_values_hand_computed_for_perfect_clustering() -> None:
     assert sorted(local["i_local"].index) == ["01001", "01003", "29189", "29510"]
     for fips in ["01001", "01003", "29189", "29510"]:
         assert abs(local["i_local"][fips] - 1.0) < 1e-12
+
+
+def test_quadrant_labels_classify_cores_and_outliers() -> None:
+    """The LISA quadrants, on a hand-built star: center county at -2
+    surrounded by +2/+3/+3 neighbors. Mean is 1.5, so the center is below
+    average among above-average neighbors -> "low-high" (a hole in a wave);
+    each spoke is above average with a below-average neighborhood (their
+    only neighbor is the center) -> "high-low" (defiant outliers). The
+    clustered-pairs fixture yields "high-high" and "low-low" cores."""
+    star = {
+        "29189": frozenset({"01001", "01003", "29510"}),
+        "01001": frozenset({"29189"}),
+        "01003": frozenset({"29189"}),
+        "29510": frozenset({"29189"}),
+    }
+    values = pd.Series({"29189": -2.0, "01001": 2.0, "01003": 3.0, "29510": 3.0})
+
+    local = local_morans_i(values, star)
+
+    assert local["quadrant"]["29189"] == "low-high"
+    assert local["quadrant"]["01001"] == "high-low"
+    assert local["quadrant"]["01003"] == "high-low"
+    assert local["quadrant"]["29510"] == "high-low"
+
+    pairs_values = pd.Series({"01001": 1.0, "01003": 1.0, "29189": -1.0, "29510": -1.0})
+    pairs_local = local_morans_i(pairs_values, _PAIRS)
+    assert pairs_local["quadrant"]["01001"] == "high-high"
+    assert pairs_local["quadrant"]["29189"] == "low-low"

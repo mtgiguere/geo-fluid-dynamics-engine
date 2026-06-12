@@ -17,6 +17,7 @@ sit near zero; political waves show up as strongly positive I.
 
 from collections.abc import Mapping
 
+import numpy as np
 import pandas as pd
 
 from geofluid.spatial.weights import spatial_weights
@@ -79,4 +80,13 @@ def local_morans_i(
     z = z - z.mean()
     m2 = (z @ z) / len(order)
     lag = matrix @ z
-    return pd.DataFrame({"i_local": z * lag / m2}, index=pd.Index(order, name="fips"))
+    # The LISA quadrants: own value vs neighborhood average, both relative
+    # to the mean. high-high = wave core, low-low = calm basin, high-low =
+    # defiant outlier, low-high = a hole inside a wave.
+    own = np.where(z >= 0, "high", "low")
+    neighborhood = np.where(lag >= 0, "high", "low")
+    quadrant = np.char.add(np.char.add(own, "-"), neighborhood)
+    return pd.DataFrame(
+        {"i_local": z * lag / m2, "quadrant": quadrant},
+        index=pd.Index(order, name="fips"),
+    )
