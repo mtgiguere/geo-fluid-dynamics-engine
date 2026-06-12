@@ -70,6 +70,20 @@ def test_quadrant_labels_classify_cores_and_outliers() -> None:
     assert pairs_local["quadrant"]["29189"] == "low-low"
 
 
+def test_all_missing_values_yield_an_empty_frame_with_canonical_columns() -> None:
+    """Found by the real export: in 2000 swing is NaN for every county (no
+    preceding election), so the usable set is empty. The result is an empty
+    frame that still carries the canonical columns — downstream selects
+    columns before checking length (the Bug #2 class) — and the permutation
+    path must not crash on the empty set."""
+    values = pd.Series({"01001": float("nan"), "01003": float("nan"), "29189": float("nan")})
+
+    local = local_morans_i(values, _PAIRS, permutations=9)
+
+    assert list(local.columns) == ["i_local", "quadrant", "p_value"]
+    assert len(local) == 0
+
+
 def test_local_moran_by_year_carries_permutation_p_values() -> None:
     """The export path needs per-year p-values: by_year forwards the
     permutation arguments and the tidy frame gains p_value, bounded by the

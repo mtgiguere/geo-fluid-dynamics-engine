@@ -86,6 +86,15 @@ def local_morans_i(
     Pass a seeded numpy Generator via `rng` for reproducible published runs.
     """
     sub_adjacency = _usable_subset(values, adjacency)
+    # An empty usable set (e.g. swing in 2000: NaN everywhere — no preceding
+    # election) yields an empty frame that still carries the canonical
+    # columns, so downstream column selection never KeyErrors (Bug #2 class).
+    if not sub_adjacency:
+        columns: dict[str, list[float] | list[str]] = {"i_local": [], "quadrant": []}
+        if permutations is not None:
+            columns["p_value"] = []
+        return pd.DataFrame(columns, index=pd.Index([], name="fips"))
+
     matrix, order = spatial_weights(sub_adjacency)
     z = values.loc[order].to_numpy(dtype=float)
     z = z - z.mean()
