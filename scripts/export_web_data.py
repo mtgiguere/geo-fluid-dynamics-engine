@@ -21,6 +21,8 @@ from geofluid.ingest.county_geometry import county_shapefile_to_geojson
 from geofluid.ingest.county_returns import load_county_returns
 from geofluid.map.layers import export_year_metrics
 from geofluid.panel.master import build_master_panel
+from geofluid.spatial.moran import local_morans_by_year
+from geofluid.spatial.weights import county_adjacency
 
 OUT = Path("web/public/data")
 
@@ -47,6 +49,21 @@ def main() -> None:
 
     returns = load_county_returns(pd.read_csv("data/raw/countypres_2000-2024.csv"))
     panel = build_master_panel(returns, demographics)
+
+    # Wave anchors: LISA quadrants of swing per year, computed on the
+    # analysis-grade 500k boundaries (NOT the 5m display file — generalized
+    # geometry is for eyes, adjacency is for math).
+    adjacency = county_adjacency(
+        county_shapefile_to_geojson("data/raw/cb_2021/cb_2021_us_county_500k.shp")
+    )
+    lisa = local_morans_by_year(panel, adjacency, value_column="swing_dem_2p")
+    panel = panel.merge(
+        lisa.rename(columns={"quadrant": "swing_lisa_quadrant"})[
+            ["fips", "year", "swing_lisa_quadrant"]
+        ],
+        on=["fips", "year"],
+        how="left",
+    )
 
     for year in sorted(panel["year"].unique()):
         metrics = export_year_metrics(panel, year=int(year))

@@ -25,6 +25,7 @@ def _panel(rows: list[dict[str, object]]) -> pd.DataFrame:
         "total_votes": 510,
         "dem_share_2p": 0.6,
         "swing_dem_2p": 0.05,
+        "swing_lisa_quadrant": "high-high",
         "acs_vintage": 2023,
         "total_population": 990000,
         "median_age": 41.1,
@@ -143,6 +144,7 @@ def test_year_metrics_export_is_keyed_by_fips_with_metric_names() -> None:
     m = metrics["29189"]
     assert m["dem_share_2p"] == 0.6
     assert m["swing_dem_2p"] == 0.05
+    assert m["swing_lisa_quadrant"] == "high-high"
     assert m["total_votes"] == 510
     assert m["median_age"] == 41.1
     assert m["pct_bachelors_plus"] == 0.45
