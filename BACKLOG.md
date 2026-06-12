@@ -47,3 +47,11 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
 - **Git single-file-commit mystery** (TDD_CONTRACT.md OPEN INCIDENT):
   unexplained; tripwire in place. Trigger: any recurrence — capture
   evidence before repairing; consider upgrading git 2.24.
+
+## Science honesty notes
+
+- **SAR vs spatial-error/Durbin comparison** (2026-06-12): the SAR rho attributes
+  ALL spatial structure to transmission. A spatial error model (regionally
+  correlated shocks) or Durbin terms (neighbors' demographics) would separate
+  "change spreads" from "shocks cluster". Trigger: before any public claim that
+  rho measures contagion.
