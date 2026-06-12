@@ -20,6 +20,14 @@ it documents real bugs from the previous attempt at this exact project. The shor
 5. Fixtures specify the contract; real data falsifies your model of the world. Every
    ingest module's definition of done includes a real-data acceptance run validated
    against externally certified facts (see the contract's GFDE Bugs #10–#12).
+6. When CI diverges from local, diff the actual inputs (env vars, tokens, data,
+   versions) before hypothesizing — and ask Matt for the failing log early; one
+   pasted log beats three speculative CI runs.
+7. E2E verifies integration, never logic. The moment frontend code accumulates pure
+   logic (formatters, expression builders), it gets Vitest contract tests.
+8. After structural git operations (stash across branches), verify
+   `git ls-files | wc -l` against the expected count before pushing — see the
+   contract's OPEN INCIDENT on the single-file commit.
 
 ## Pre-commit sequence (before every commit)
 
@@ -45,7 +53,11 @@ the contract's "ruff format is not optional" rule, demonstrated live.)
 - `uv run mypy` — strict type checking
 
 CI gates (`.github/workflows/ci.yml`): gitleaks → ruff check → ruff format --check →
-mypy → pytest with branch coverage ≥ 90% → pip-audit → uv lock --check.
+mypy → pytest with branch coverage ≥ 90% → pip-audit → uv lock --check, plus a web
+job (npm ci + typecheck/build). Deployment (`deploy.yml`): Playwright E2E against the
+production build at the real Pages base path gates every deploy. Mutation testing
+(`mutation.yml`): nightly, report-only — surviving mutants are work items, the
+watchdog for hollow tests.
 
 ## Layout
 

@@ -55,3 +55,30 @@ jobs:
       # Gate 7: known CVEs in the dependency tree.
       - name: Vulnerability audit
         run: uv run pip-audit
+
+  # Gate 8: the frontend builds and typechecks at PR time. Before this job
+  # existed, web/ changes had ZERO verification until the deploy gate — a gap
+  # found in the second retrospective. Full E2E stays at deploy (it needs a
+  # real token and browsers); tsc strict catches the contract drift cheaply.
+  web-quality:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - run: npm ci
+
+      - name: Typecheck and build
+        run: npm run build
+        env:
+          # The token is a runtime value baked into the bundle; any string
+          # satisfies the build. E2E at deploy time uses the real one.
+          VITE_MAPBOX_TOKEN: pk.ci-typecheck-placeholder

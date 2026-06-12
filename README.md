@@ -1,5 +1,7 @@
 # Geo-Fluid Dynamics Engine
 
+**Live map: https://mtgiguere.github.io/geo-fluid-dynamics-engine/**
+
 A strategic civic simulator. Where current civic-data platforms produce static heatmaps
 of who agrees with you today, this engine models how ideas *move* — across counties,
 along human networks, over years — and predicts where they will go next.
@@ -23,8 +25,9 @@ binding** — read it before contributing. Every function exists because a faili
 demanded it, and the commit history shows the RED → GREEN sequence.
 
 ```
-uv sync          # install dependencies
-uv run pytest    # run the test suite
+uv sync                                # install dependencies
+git config core.hooksPath .githooks   # one-time: pre-commit gate (check/format/tests)
+uv run pytest                          # run the test suite
 ```
 
 ## Running the map

@@ -1,0 +1,34 @@
+name: Mutation testing
+
+# The watchdog for hollow tests (TDD_CONTRACT.md Bug #5): coverage measures
+# which lines EXECUTED; mutation score measures which tests actually FAIL
+# when the code is wrong. Too slow for the PR loop — runs nightly,
+# report-only: surviving mutants are work items, not build failures.
+#
+# Note: mutmut does not run natively on Windows (its own startup message),
+# so this CI job is the only place it executes for this project.
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+jobs:
+  mutmut:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Run mutation testing (report-only)
+        run: uv run mutmut run || echo "::warning::Surviving mutants found — see results below"
+
+      - name: Results
+        if: always()
+        run: uv run mutmut results

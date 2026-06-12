@@ -1207,3 +1207,127 @@ with two new failing tests the RED step no longer tells you *which* behavior is
 unimplemented; failure reasons blur. The cadence exists precisely so every RED has
 one unambiguous cause. The violation was disclosed in the commit message; the rule
 stands: one test, one RED, one GREEN, one commit.
+
+---
+
+## Second GFDE Retrospective — Guardrails, Debugging Economics, Open Questions
+
+*Added 2026-06-11, after the deployment arc and the spatial-weights module. The first
+GFDE section was about fixtures versus reality; this one is about what happens when
+the system meets CI, production, and its own operator.*
+
+---
+
+### Process Rule (GFDE): A Gate That Trips Is the System Working
+
+The CI format gate failed on the spatial-weights branch: one commit went in without
+the `ruff format` step. This is verbatim the failure mode documented above under
+*"ruff format is not optional"* — which had already happened "multiple times in early
+Groundshift sessions." It survives model upgrades. It survives having written the rule
+down. Humans (and models) forget; that is a property of the system, not a defect of
+the operator.
+
+The response hierarchy, now policy:
+
+1. A rule stated in documentation will eventually be skipped.
+2. A rule checked in CI will be caught after the push — minutes lost, nothing shipped.
+3. A rule enforced by a pre-commit hook cannot be skipped silently at all.
+
+When a documented rule is violated once, promote it to mechanism. `.githooks/pre-commit`
+now runs check / format-check / pytest on every commit (`git config core.hooksPath
+.githooks`, once per clone). The gate caught the drift; the hook retires the class.
+
+---
+
+### Process Rule (GFDE): When CI Diverges From Local, Diff the Inputs First
+
+The deployment arc burned seven CI runs. The post-mortem on the post-mortem:
+
+- Two or three runs went to plausible hypotheses (Mapbox telemetry, missing WebGL
+  flags) that were reasoned from experience rather than evidence.
+- The run that broke the case was boring: reproduce locally with the EXACT inputs CI
+  has. The input that differed was the token itself — CI built with a token whose
+  scopes excluded TILES:READ (403 on `api.mapbox.com/v4` only; style, sprite, and
+  glyphs all 200). Local runs had silently used a different token from `.env.local`.
+- The console error that would have named the failing URL doesn't include URLs
+  ("Failed to load resource: 403"). The E2E suite now records every >= 400 response
+  WITH its URL, so this entire class self-diagnoses in the assertion diff.
+
+The rules:
+
+1. **Before hypothesizing about environmental differences, enumerate the actual
+   inputs** — env vars, tokens, data files, versions — and diff them against CI's.
+   The divergent input is usually one you assumed constant.
+2. **Ask the human for the log early.** One pasted log beats three speculative runs.
+   Minimizing interruptions is false economy when each guess costs a CI cycle.
+3. **Error channels must carry identifiers.** If a failure message cannot name its
+   subject (URL, FIPS, file), fix the capture before debugging the failure.
+
+---
+
+### Observation (GFDE): Tests Forced Design Decisions — the Thesis, Confirmed Twice
+
+The contract claims strict TDD produces the design the behavior demands. Two concrete
+confirmations from this arc:
+
+**The swing calendar.** A fixture for "county absent from the previous election"
+contained no 2016 rows for ANY county — and the implementation, which derived the
+election calendar from the panel itself, marked an 8-year drift as a valid swing.
+The RED test forced the question into the open: what IS "the preceding election"?
+The answer (the presidential calendar, year minus four) is now an explicit contract
+that will survive the planned 1868 historical extension. Implemented TAD-style, the
+panel-derived behavior would have shipped and broken silently years of data later.
+
+**Islands in the keys.** Writing the adjacency test first forced the Hawaii question
+before any weights code existed: a county with no neighbors must still appear in the
+adjacency (empty set), because dropping it would shrink the weights matrix and
+misalign every index built on it. That decision, made in a test, became the all-zero-
+row semantics of W. The design flowed from the specification downward.
+
+---
+
+### The Frontend Line (GFDE): Where TDD Currently Does Not Reach
+
+`web/src/main.ts` accumulates real logic — color-expression builders, swing
+formatters, a metric registry — and none of it has unit tests. Four Playwright golden
+paths cover the integrated app. This was a defensible just-in-time call while the UI
+was a thin shell over tested data products; it is drifting toward exactly the shape
+this contract warns about.
+
+The line, drawn now: **E2E verifies integration, never logic.** The trigger for
+Vitest is either (a) the first frontend logic bug, or (b) the next arc that grows
+frontend logic — whichever comes first. Pure functions (formatters, expression
+builders) are already extractable and will be tested as contracts, the same as any
+Python function.
+
+---
+
+### OPEN INCIDENT (GFDE): The Single-File Commit — Unexplained
+
+Commit a72f9d1 was created from a corrupted index containing exactly one file,
+silently deleting 42 tracked files from main's tree (history intact, working tree
+intact; restored and verified the same day). The sequence was an ordinary
+`stash / checkout / pull / stash pop / add one file / commit` on Windows (git 2.24,
+core.autocrlf=true). The mechanism is NOT understood. The reflog looks normal. It has
+not recurred.
+
+An unexplained failure is a failure that can recur. Until the mechanism is found:
+
+- After any structural git operation (stash across branches, conflicted pops),
+  verify `git ls-files | wc -l` against the expected count before pushing.
+- Prefer committing work-in-progress over stashing across branch switches.
+- If it recurs: capture `git fsck`, the reflog, and the index file itself BEFORE
+  repairing, and consider upgrading the decade-old git 2.24.
+
+---
+
+### Updated Evidence (this retrospective)
+
+| Event | How Caught | Codified As |
+|---|---|---|
+| Format drift on one commit | CI format gate | Pre-commit hook; "promote violated rules to mechanism" |
+| CI token missing TILES:READ scope | Local repro with CI's exact inputs | "Diff the inputs first"; per-resource token checks |
+| Console errors without URLs cost 2 blind rounds | Manual log reading | E2E captures every >= 400 response with its URL |
+| Swing calendar ambiguity | RED test fixture without 2016 rows | Explicit year-minus-four contract |
+| Island counties and matrix alignment | Test written before W existed | Islands keep keys; W keeps zero rows |
+| Single-file commit corrupting main | Deploy failed: web/ absent on runner | Open incident; tree-count tripwire before push |
