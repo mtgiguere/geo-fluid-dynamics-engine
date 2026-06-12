@@ -12,6 +12,8 @@ impossible to express.
 
 import pandas as pd
 import pytest
+from hypothesis import assume, given
+from hypothesis import strategies as st
 
 from geofluid.spatial.moran import morans_i
 
@@ -96,3 +98,34 @@ def test_fewer_than_three_usable_counties_raises() -> None:
 
     with pytest.raises(ValueError, match="3"):
         morans_i(values, _PAIRS)
+
+
+# A fixed six-county ring for value-space property tests.
+_RING_FIPS = ["01001", "01003", "29189", "29510", "46102", "56001"]
+_RING = {
+    f: frozenset({_RING_FIPS[(i - 1) % 6], _RING_FIPS[(i + 1) % 6]})
+    for i, f in enumerate(_RING_FIPS)
+}
+
+
+@given(
+    raw=st.lists(st.floats(-100, 100, allow_nan=False), min_size=6, max_size=6),
+    shift=st.floats(-1000, 1000, allow_nan=False),
+    scale=st.one_of(st.floats(0.01, 100), st.floats(-100, -0.01)),
+)
+def test_moran_i_is_invariant_under_location_and_scale(
+    raw: list[float], shift: float, scale: float
+) -> None:
+    """Property: I(shift + scale * x) == I(x) for any shift and any nonzero
+    scale — including negative scale. Swing measured in percentage points,
+    fractions, or with a flipped sign convention must yield the same
+    autocorrelation; centering removes the shift and the ratio cancels the
+    scale. If the implementation ever centered or normalized incorrectly,
+    some draw here would expose it."""
+    values = pd.Series(dict(zip(_RING_FIPS, raw, strict=True)))
+    assume(float(values.var()) > 1e-6)
+
+    base = morans_i(values, _RING)
+    transformed = morans_i(shift + scale * values, _RING)
+
+    assert abs(base - transformed) < 1e-6
