@@ -13,7 +13,7 @@ import pandas as pd
 from hypothesis import assume, given
 from hypothesis import strategies as st
 
-from geofluid.spatial.moran import local_morans_i, morans_i
+from geofluid.spatial.moran import local_morans_by_year, local_morans_i, morans_i
 
 _PAIRS = {
     "01001": frozenset({"01003"}),
@@ -70,6 +70,45 @@ _RING = {
     f: frozenset({_RING_FIPS[(i - 1) % 6], _RING_FIPS[(i + 1) % 6]})
     for i, f in enumerate(_RING_FIPS)
 }
+
+
+def test_local_moran_by_year_returns_tidy_per_county_year_frame() -> None:
+    """The panel-shaped wrapper the export pipeline consumes: one LISA run
+    per election year over the chosen column, returned tidy (fips, year,
+    i_local, quadrant). Counties whose value is missing that year (swing in
+    a county's first appearance) simply have no row for that year — absence,
+    not a fabricated label."""
+    panel = pd.DataFrame(
+        [
+            # 2020: clustered pairs (+ around 01xxx, - around 29xxx)
+            {"fips": "01001", "year": 2020, "swing_dem_2p": 1.0},
+            {"fips": "01003", "year": 2020, "swing_dem_2p": 1.0},
+            {"fips": "29189", "year": 2020, "swing_dem_2p": -1.0},
+            {"fips": "29510", "year": 2020, "swing_dem_2p": -1.0},
+            # 2024: 29189 has no swing (NaN); others flip sign
+            {"fips": "01001", "year": 2024, "swing_dem_2p": -1.0},
+            {"fips": "01003", "year": 2024, "swing_dem_2p": -2.0},
+            {"fips": "29189", "year": 2024, "swing_dem_2p": float("nan")},
+            {"fips": "29510", "year": 2024, "swing_dem_2p": 3.0},
+        ]
+    )
+
+    tidy = local_morans_by_year(panel, _PAIRS, value_column="swing_dem_2p")
+
+    assert list(tidy.columns) == ["fips", "year", "i_local", "quadrant"]
+    by_key = tidy.set_index(["fips", "year"])
+    assert by_key.loc[("01001", 2020), "quadrant"] == "high-high"
+    assert by_key.loc[("29189", 2020), "quadrant"] == "low-low"
+    # 2024: 29189 is NaN -> no row for it, and its pair partner 29510 is
+    # orphaned -> also no row. Only the 01xxx pair remains — and a lone pair
+    # is measured against its own mean (-1.5), making it perfectly DISPERSED:
+    # 01001 (-1.0) sits above that mean with a below-mean neighbor.
+    # (First drafted as "low-low"; the implementation was right and the
+    # hand-math wrong — exclusion changes the reference mean.)
+    assert ("29189", 2024) not in by_key.index
+    assert ("29510", 2024) not in by_key.index
+    assert by_key.loc[("01001", 2024), "quadrant"] == "high-low"
+    assert by_key.loc[("01003", 2024), "quadrant"] == "low-high"
 
 
 @given(raw=st.lists(st.floats(-100, 100, allow_nan=False), min_size=6, max_size=6))

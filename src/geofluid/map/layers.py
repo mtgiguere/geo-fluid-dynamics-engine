@@ -18,6 +18,7 @@ _METRIC_COLUMNS = [
     "total_votes",
     "dem_share_2p",
     "swing_dem_2p",
+    "swing_lisa_quadrant",
     "acs_vintage",
     "total_population",
     "median_age",
