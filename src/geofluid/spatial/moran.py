@@ -142,14 +142,19 @@ def local_morans_by_year(
     panel: pd.DataFrame,
     adjacency: Mapping[str, frozenset[str]],
     value_column: str,
+    *,
+    permutations: int | None = None,
+    rng: np.random.Generator | None = None,
 ) -> pd.DataFrame:
     """One LISA run per election year, returned tidy: fips, year, i_local,
-    quadrant. Counties excluded for a year (missing value, island, orphan)
-    have no row that year — absence, never a fabricated label."""
+    quadrant (and p_value when permutations are requested). Counties
+    excluded for a year (missing value, island, orphan) have no row that
+    year — absence, never a fabricated label."""
     frames = []
     for year in sorted(panel["year"].unique()):
         values = panel[panel["year"] == year].set_index("fips")[value_column]
-        local = local_morans_i(values, adjacency).reset_index()
+        local = local_morans_i(values, adjacency, permutations=permutations, rng=rng)
+        local = local.reset_index()
         local.insert(1, "year", year)
         frames.append(local)
     return pd.concat(frames, ignore_index=True)

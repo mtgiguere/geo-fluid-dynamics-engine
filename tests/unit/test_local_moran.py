@@ -70,6 +70,23 @@ def test_quadrant_labels_classify_cores_and_outliers() -> None:
     assert pairs_local["quadrant"]["29189"] == "low-low"
 
 
+def test_local_moran_by_year_carries_permutation_p_values() -> None:
+    """The export path needs per-year p-values: by_year forwards the
+    permutation arguments and the tidy frame gains p_value, bounded by the
+    pseudo-p floor 1/(permutations+1) and 1.0 — for any rng."""
+    panel = pd.DataFrame(
+        [
+            {"fips": f, "year": 2020, "swing_dem_2p": v}
+            for f, v in [("01001", 1.0), ("01003", 1.5), ("29189", -1.0), ("29510", -2.0)]
+        ]
+    )
+
+    tidy = local_morans_by_year(panel, _PAIRS, value_column="swing_dem_2p", permutations=9)
+
+    assert list(tidy.columns) == ["fips", "year", "i_local", "quadrant", "p_value"]
+    assert ((tidy["p_value"] >= 0.1) & (tidy["p_value"] <= 1.0)).all()
+
+
 _RING_FIPS = ["01001", "01003", "29189", "29510", "46102", "56001"]
 _RING = {
     f: frozenset({_RING_FIPS[(i - 1) % 6], _RING_FIPS[(i + 1) % 6]})
