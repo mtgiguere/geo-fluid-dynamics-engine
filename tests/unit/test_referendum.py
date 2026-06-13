@@ -13,10 +13,12 @@ removed them). The panel carries raw yes/no and no_share; downstream
 analysis decides which side maps to which politics, per measure.
 """
 
+from pathlib import Path
+
 import pandas as pd
 import pytest
 
-from geofluid.ingest.referendum import load_ks_referendum
+from geofluid.ingest.referendum import load_ks_referendum, load_ks_referendum_workbook
 
 _NAME_TO_FIPS = {"ALLEN": "20001", "JOHNSON": "20091"}
 
@@ -88,3 +90,66 @@ def test_unexpected_candidate_label_fails_loudly() -> None:
 
     with pytest.raises(ValueError, match="ABSTAIN"):
         load_ks_referendum(raw, _NAME_TO_FIPS)
+
+
+def _write_ks_workbook(path: Path) -> None:
+    """Write a workbook reproducing the real Kansas SoS structure: a long
+    main sheet for most counties, plus a wide per-county sheet for a big
+    county — two 'Constitutional Amendment' columns whose Yes/No identity is
+    declared in a data row, preceded by a junk 'NON' row (as Johnson/Sedgwick/
+    Wyandotte actually are)."""
+    main = pd.DataFrame(
+        {
+            "County": ["Allen", "Allen"],
+            "Precinct": ["Carlyle", "Carlyle"],
+            "Race": ["Constitutional Amendment", "Constitutional Amendment"],
+            "Candidate": [
+                'Amendment, Constitutional - "YES"',
+                'Amendment, Constitutional - "NO"',
+            ],
+            "Party": [None, None],
+            "Votes": [66.0, 48.0],
+            "VTD": ["000010", "000010"],
+        }
+    )
+    # Wide sheet: header dedup gives the ".1" suffix; rows 0-1 are the NON
+    # junk row and the Yes/No marker row; precinct vote rows follow.
+    # Real sheets end with a "COUNTY TOTALS" row (precinct code ZZZ) that is
+    # the SoS's authoritative county figure — and in Shawnee and Wyandotte it
+    # EXCEEDS the precinct sum, because it includes provisional/advance votes
+    # not attributed to any precinct line. Here the precincts sum to 365/467
+    # but the official total is 370/470 (5 yes + 3 no provisional). The panel
+    # must report the official 370/470, not the precinct sum.
+    johnson = pd.DataFrame(
+        {
+            "PRECINCT CODE": [None, None, 1, 2, "ZZZ"],
+            "PRECINCT NAME": [None, None, "Aubry 01", "Aubry 02", "COUNTY TOTALS"],
+            "Constitutional Amendment": ["NON", "Yes", 52, 313, 370],
+            "Constitutional Amendment.1": ["NON", "No", 68, 399, 470],
+        }
+    )
+    with pd.ExcelWriter(path) as writer:
+        main.to_excel(writer, sheet_name="OfficialPrecinctLevelResults", index=False)
+        johnson.to_excel(writer, sheet_name="JOHNSON", index=False)
+
+
+def test_workbook_merges_long_main_sheet_and_wide_county_sheets(tmp_path: Path) -> None:
+    """The real file splits its four largest counties into separate WIDE
+    sheets (Johnson, Sedgwick, Shawnee, Wyandotte) — discovered when the
+    acceptance run captured only 52% of the certified NO vote. The workbook
+    reader must fold those back in, using each wide sheet's official COUNTY
+    TOTALS row (Johnson YES 370 / NO 470 — which includes provisional votes
+    beyond the 365/467 precinct sum), alongside Allen from the long main
+    sheet (precinct-summed, since the main sheet has no totals rows)."""
+    path = tmp_path / "ks.xlsx"
+    _write_ks_workbook(path)
+
+    panel = load_ks_referendum_workbook(path, _NAME_TO_FIPS)
+
+    assert list(panel["fips"]) == ["20001", "20091"]
+    johnson = panel[panel["fips"] == "20091"].iloc[0]
+    assert johnson["yes_votes"] == 370
+    assert johnson["no_votes"] == 470
+    allen = panel[panel["fips"] == "20001"].iloc[0]
+    assert allen["yes_votes"] == 66
+    assert allen["no_votes"] == 48
