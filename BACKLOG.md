@@ -5,6 +5,23 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
 
 ## Product / UX
 
+- **DONE (2026-06-13): Scoped views.** `geofluid/scope.py` (neighborhood
+  expansion + catalog) ships scopes.json (nation + every state + STL/KC
+  cross-border metro presets); frontend has a scope selector that filters,
+  fits the camera, and recounts storyline + status. Settled principle held:
+  scopes DISPLAY national statistics filtered, never recompute inside a
+  boundary. Deferred sub-item still open: a "fit colors to this view" ramp
+  toggle (rescaling breaks cross-scope comparison — only on request).
+
+- **Kansas / ballot-measure dissonance MAP view** (unblocked 2026-06-13:
+  scope=state exists, dissonance metric exists). Needs a referendum-data
+  export (per-measure no_share + dissonance vs a chosen presidential year)
+  and a categorical "False Bastion" map layer, shown when scope is a state
+  with measure data. Design Qs: which presidential baseline (2020 vs 2024);
+  how the UI signals "this view only exists for KS right now"; the
+  False-Bastion classification thresholds (the deferred classify cycle).
+  Trigger: when we add the dissonance layer / next ballot-measure arc.
+
 - **Explainer key for every map view** (2026-06-12, from a real misreading):
   Matt read wave-anchor red over Chicago as "Chicago votes Republican" — the
   layer shows clusters of *change*, and intuition does not supply that
