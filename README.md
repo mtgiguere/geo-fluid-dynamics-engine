@@ -18,6 +18,22 @@ Built in four stages:
    (wombling, dissonance indices), and regime-change sensing.
 4. **Prescriptive** — ranked, region-aware targeting recommendations.
 
+### Status
+
+Stages 1–2 are **live on the deployed map**, along with the first predictive layers:
+
+- Map views: election result, swing since last election, **wave anchors** (local
+  spatial clustering of swing, permutation-significant), six demographic layers, and
+  **ballot-measure dissonance** (issue vote vs. partisan lean — the "False Bastion").
+- **Scoped focus**: narrow to any state or a cross-border metro (St. Louis, Kansas
+  City) — the map is meant for organizers working one area, not just the nation.
+- **Play** the seven presidential elections (2000–2024) as a time-lapse.
+
+Under the hood, the analytical core includes Moran's I and LISA (with permutation
+significance), a maximum-likelihood spatial-lag (SAR) model, and the dissonance metric.
+Network node-classification, the chaos/anomaly sensor, and the phase-transition detector
+(spec Modules 2, 4, 5) are not yet built — see `BACKLOG.md`.
+
 ## Development
 
 This project is built with strict test-driven development. **`TDD_CONTRACT.md` is
