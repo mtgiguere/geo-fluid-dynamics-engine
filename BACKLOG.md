@@ -71,8 +71,14 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
 
 ## Science honesty notes
 
-- **SAR vs spatial-error/Durbin comparison** (2026-06-12): the SAR rho attributes
-  ALL spatial structure to transmission. A spatial error model (regionally
-  correlated shocks) or Durbin terms (neighbors' demographics) would separate
-  "change spreads" from "shocks cluster". Trigger: before any public claim that
-  rho measures contagion.
+- **PARTIALLY DONE (2026-06-13): Durbin half of the SAR honesty check.**
+  `fit_spatial_lag(..., durbin=True)` adds neighbors' covariates W·X. Finding:
+  rho does NOT drop controlling for neighbors' demographics (0.86→0.86 in 2008,
+  slightly higher in 2016/2020) — the wave is not observable demographic
+  confounding. STILL OPEN: the spatial-error model (SEM) — correlated UNOBSERVED
+  shocks. Why deferred: SEM's lambda is unidentified at zero noise, so the
+  noise-free recovery pattern that keeps SAR/SDM seed-free does not work; testing
+  SEM needs either a property over many noise draws or an analytic special case —
+  a real design problem against RED FLAG 3, not a quick add. Until SEM is done,
+  describe rho as "transmission not explained by self-or-neighbor demographics,"
+  not bare "contagion".

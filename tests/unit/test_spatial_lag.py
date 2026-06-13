@@ -69,6 +69,27 @@ def test_world_without_spillover_recovers_rho_of_zero() -> None:
     assert abs(fit.beta["x1"] - 1.25) < 1e-2
 
 
+def test_durbin_recovers_rho_own_and_neighbor_coefficients() -> None:
+    """The Spatial Durbin model (durbin=True) adds neighbors' covariates W·X
+    to the design — the honesty check on rho: does outcome transmission
+    survive controlling for the NEIGHBORS' demographics, not just a county's
+    own? Noise-free SDM world: y = (I - rho0 W)^-1 (intercept + slope·x1 +
+    theta·(W x1)). The fit must recover rho0, the own-coefficient slope0, and
+    the neighbor-coefficient theta0 (reported as x1_wx)."""
+    matrix, order = spatial_weights(_RING)
+    x1 = pd.Series(dict(zip(_RING_FIPS, _X1, strict=True))).loc[order].to_numpy()
+    wx1 = matrix @ x1
+    xb = 2.0 + 0.5 * x1 + 0.8 * wx1  # intercept, own slope, neighbor coefficient
+    y = pd.Series(np.linalg.solve(np.eye(len(order)) - 0.6 * matrix, xb), index=order)
+    x = pd.DataFrame({"x1": x1}, index=pd.Index(order, name="fips"))
+
+    fit = fit_spatial_lag(y, x, _RING, durbin=True)
+
+    assert abs(fit.rho - 0.6) < 1e-3
+    assert abs(fit.beta["x1"] - 0.5) < 1e-2
+    assert abs(fit.beta["x1_wx"] - 0.8) < 1e-2
+
+
 # deadline=None: each example fits the SAR model TWICE, and a fit is a
 # 2001-point grid search plus an eigvalsh (~27ms each, legitimately). The
 # default 200ms per-example deadline is a heuristic for ACCIDENTALLY slow
