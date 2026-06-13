@@ -39,7 +39,10 @@ MEASURES = [
         "label": "Kansas: Abortion rights (Aug 2022)",
         "scope": "20",
         "baseline_year": 2020,
-        "issue_label": "Voted NO — to keep abortion rights",
+        # A comparative noun: dissonance>0 means a county leaned more "pro-choice"
+        # than it voted Democratic — a comparison, NOT a claim it voted majority
+        # pro-choice. The frontend phrases it as "leaned more pro-choice than...".
+        "issue_label": "pro-choice",
         "workbook": "data/raw/ks_amendment_2022_precinct.xlsx",
     },
 ]

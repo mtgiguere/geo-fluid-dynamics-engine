@@ -95,6 +95,29 @@ test("scoping to a state focuses the map and recounts the storyline", async ({ p
   await expect(page.locator("#scope option", { hasText: "St. Louis" })).toHaveCount(1);
 });
 
+test("selecting the Kansas ballot measure shows dissonance, scoped and captioned", async ({
+  page,
+}) => {
+  await page.goto("./");
+  await expect(page.locator("#status")).toContainText("counties", { timeout: 30_000 });
+  await page.waitForTimeout(2_000);
+
+  await page.locator("#metric").selectOption("measure:ks_abortion_2022");
+
+  // Auto-scopes to Kansas (105 counties), explains the comparison, and the
+  // storyline states the False-Bastion count; the year slider is disabled
+  // because a ballot measure is a single fixed point in time.
+  await expect(page.locator("#status")).toContainText("105 counties", { timeout: 15_000 });
+  await expect(page.locator("#legend")).toContainText("False Bastion");
+  await expect(page.locator("#legend")).toContainText("year slider does not apply");
+  await expect(page.locator("#storyline")).toContainText("leaned more pro-choice");
+  await expect(page.locator("#year")).toBeDisabled();
+
+  // Switching back to a per-year metric re-enables the year controls.
+  await page.locator("#metric").selectOption("dem_share_2p");
+  await expect(page.locator("#year")).toBeEnabled();
+});
+
 test("play button runs the elections like a movie with a narrated storyline", async ({
   page,
 }) => {
