@@ -16,7 +16,7 @@ correct maximizer must land there, deterministically.
 
 import numpy as np
 import pandas as pd
-from hypothesis import assume, given
+from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 
 from geofluid.spatial.lag import fit_spatial_lag
@@ -69,6 +69,13 @@ def test_world_without_spillover_recovers_rho_of_zero() -> None:
     assert abs(fit.beta["x1"] - 1.25) < 1e-2
 
 
+# deadline=None: each example fits the SAR model TWICE, and a fit is a
+# 2001-point grid search plus an eigvalsh (~27ms each, legitimately). The
+# default 200ms per-example deadline is a heuristic for ACCIDENTALLY slow
+# code; under CPU contention (a parallel lint/commit) an example spikes past
+# it and the test flakes on timing, not correctness. The outcome stays
+# deterministic — only the timing guard is removed.
+@settings(deadline=None)
 @given(
     rho=st.floats(-0.8, 0.9),
     scale=st.one_of(st.floats(0.05, 20), st.floats(-20, -0.05)),
