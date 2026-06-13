@@ -28,6 +28,15 @@ it documents real bugs from the previous attempt at this exact project. The shor
 8. After structural git operations (stash across branches), verify
    `git ls-files | wc -l` against the expected count before pushing — see the
    contract's OPEN INCIDENT on the single-file commit.
+9. Stochastic/numerical code is verified WITHOUT seeds: deterministic
+   constructions, noise-free recovery worlds, invariance properties, and a
+   reproducibility (not seed-value) contract — see the contract's "Verifying
+   Stochastic and Numerical Machinery" section before writing any such test.
+10. Write the derivation into the test docstring BEFORE the assertion —
+    hand-math done in the head after the fixture has been wrong twice.
+11. A guardrail that has never run is decoration: schedule its first verified
+    execution as part of installing it.
+12. A handed-over PR is final; further work goes to a new branch.
 
 ## Pre-commit sequence (before every commit)
 
