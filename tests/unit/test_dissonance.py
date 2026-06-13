@@ -15,9 +15,11 @@ two shares the same direction is the caller's job, exactly as the referendum
 loader leaves the politics to the analysis layer.
 """
 
+import json
+
 import pandas as pd
 
-from geofluid.dissonance import compute_dissonance
+from geofluid.dissonance import build_measure_overlay, compute_dissonance
 
 
 def test_dissonance_is_issue_share_minus_partisan_share() -> None:
@@ -51,3 +53,30 @@ def test_county_missing_partisan_share_gets_nan_not_dropped() -> None:
     assert pd.isna(result.iloc[1]["dissonance"])
     assert pd.isna(result.iloc[1]["partisan_share"])
     assert result.iloc[1]["issue_share"] == 0.48  # the issue side is intact
+
+
+def test_measure_overlay_is_browser_ready_keyed_by_fips() -> None:
+    """The map overlay data product: {fips: {no_share, partisan_share,
+    dissonance}}. NaN (a county lacking a partisan baseline) becomes None so
+    the file survives browser JSON.parse — the lesson the metrics export
+    already learned. issue_share is surfaced as no_share for the popup."""
+    referendum = pd.DataFrame(
+        {
+            "fips": ["20001", "20201"],
+            "no_share": [0.55, 0.48],
+        }
+    )
+    partisan = pd.Series({"20001": 0.40})  # 20201 has no baseline
+
+    overlay = build_measure_overlay(referendum, partisan)
+
+    assert set(overlay) == {"20001", "20201"}
+    assert abs(overlay["20001"]["dissonance"] - 0.15) < 1e-12
+    assert abs(overlay["20001"]["no_share"] - 0.55) < 1e-12
+    assert abs(overlay["20001"]["partisan_share"] - 0.40) < 1e-12
+    # The county with no baseline: dissonance and partisan null, issue intact.
+    assert overlay["20201"]["dissonance"] is None
+    assert overlay["20201"]["partisan_share"] is None
+    assert abs(overlay["20201"]["no_share"] - 0.48) < 1e-12
+    # Proves it round-trips through strict JSON (no literal NaN).
+    json.dumps(overlay, allow_nan=False)

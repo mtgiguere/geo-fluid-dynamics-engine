@@ -17,9 +17,11 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from geofluid.dissonance import build_measure_overlay
 from geofluid.ingest.county_demographics import acs5_county_url, load_county_demographics
 from geofluid.ingest.county_geometry import county_shapefile_to_geojson
 from geofluid.ingest.county_returns import load_county_returns
+from geofluid.ingest.referendum import load_ks_referendum_workbook
 from geofluid.map.layers import export_year_metrics
 from geofluid.panel.master import build_master_panel
 from geofluid.scope import build_scope_catalog
@@ -27,6 +29,23 @@ from geofluid.spatial.moran import local_morans_by_year, significant_quadrants
 from geofluid.spatial.weights import county_adjacency
 
 OUT = Path("web/public/data")
+
+# Ballot measures — the modular "issue overlay" catalog. Each measure compares
+# a county's issue vote against its presidential lean (dissonance) and ships
+# its own data file. One entry today; append to add more states/measures.
+MEASURES = [
+    {
+        "id": "ks_abortion_2022",
+        "label": "Kansas: Abortion rights (Aug 2022)",
+        "scope": "20",
+        "baseline_year": 2020,
+        # A comparative noun: dissonance>0 means a county leaned more "pro-choice"
+        # than it voted Democratic — a comparison, NOT a claim it voted majority
+        # pro-choice. The frontend phrases it as "leaned more pro-choice than...".
+        "issue_label": "pro-choice",
+        "workbook": "data/raw/ks_amendment_2022_precinct.xlsx",
+    },
+]
 
 # Metro presets — cross-border by design (seeds expand through the adjacency
 # graph, so these span state lines). Seeds are core counties; hops=1 pulls in
@@ -102,6 +121,36 @@ def main() -> None:
     catalog = build_scope_catalog(fips_universe, adjacency, METROS)
     (OUT / "scopes.json").write_text(json.dumps(catalog, allow_nan=False))
     print(f"scopes.json: {len(catalog)} scopes")
+
+    # Ballot-measure overlays: dissonance = issue vote vs presidential lean.
+    # The source workbooks are gitignored (like the MIT returns CSV), so skip
+    # any measure whose file is absent rather than failing the whole export.
+    county_name_to_fips = {
+        f["properties"]["NAME"].upper() + "|" + f["id"][:2]: f["id"] for f in geojson["features"]
+    }
+    published = []
+    for measure in MEASURES:
+        if not Path(measure["workbook"]).exists():
+            print(f"  skip {measure['id']}: {measure['workbook']} not present")
+            continue
+        state = measure["scope"]
+        name_to_fips = {
+            name.split("|")[0]: fips
+            for name, fips in county_name_to_fips.items()
+            if name.endswith("|" + state)
+        }
+        referendum = load_ks_referendum_workbook(measure["workbook"], name_to_fips)
+        baseline = returns[
+            (returns["year"] == measure["baseline_year"]) & (returns["fips"].str.startswith(state))
+        ].set_index("fips")["dem_share_2p"]
+        overlay = build_measure_overlay(referendum, baseline)
+        (OUT / f"measure_{measure['id']}.json").write_text(json.dumps(overlay, allow_nan=False))
+        published.append(
+            {k: measure[k] for k in ("id", "label", "scope", "baseline_year", "issue_label")}
+        )
+        print(f"measure_{measure['id']}.json: {len(overlay)} counties")
+    (OUT / "measures.json").write_text(json.dumps(published, allow_nan=False))
+    print(f"measures.json: {len(published)} measures")
 
 
 if __name__ == "__main__":

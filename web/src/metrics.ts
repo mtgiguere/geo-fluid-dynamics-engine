@@ -26,9 +26,12 @@ export type Metrics = {
 const PARTISAN_RAMP = ["#b2182b", "#ef8a62", "#f7f7f7", "#67a9cf", "#2166ac"];
 const SEQUENTIAL_RAMP = ["#440154", "#3b528b", "#21918c", "#5ec962", "#fde725"];
 
+// `key` is the feature-state field the layer colors by. It is a string, not
+// `keyof Metrics`, because measure overlays (dissonance) add fields outside
+// the per-year Metrics shape; feature-state is dynamic at the Mapbox layer.
 interface RampMetric {
   kind: "ramp";
-  key: keyof Metrics;
+  key: string;
   label: string;
   stops: number[];
   colors: string[];
@@ -38,7 +41,7 @@ interface RampMetric {
 
 interface CategoricalMetric {
   kind: "categories";
-  key: keyof Metrics;
+  key: string;
   label: string;
   // Plain-language explanation rendered with the legend. Exists because a
   // real user read wave-anchor red over Chicago as "Chicago votes R" —
@@ -148,7 +151,7 @@ const NO_VALUE_GRAY = "#d4d4d4";
 // actual value for it (swing is null in 2000; quadrants are absent for
 // excluded counties; a few ACS medians are null). Gray always means
 // "no value here" — same as policy-excluded geographies.
-function guarded(key: keyof Metrics, valueType: "number" | "string", painted: unknown): unknown[] {
+function guarded(key: string, valueType: "number" | "string", painted: unknown): unknown[] {
   return [
     "case",
     [
@@ -185,11 +188,7 @@ export function fillColor(def: MetricDef): unknown[] {
 // retiree, a student, a barista — not a statistician. The sentence carries
 // the entire interpretation so the colors never have to.
 // ---------------------------------------------------------------------------
-export function storyline(
-  key: keyof Metrics,
-  year: number,
-  data: Record<string, Metrics>,
-): string {
+export function storyline(key: string, year: number, data: Record<string, Metrics>): string {
   const counties = Object.values(data);
   if (key === "dem_share_2p") {
     const rep = counties.filter((c) => c.dem_share_2p < 0.5).length;

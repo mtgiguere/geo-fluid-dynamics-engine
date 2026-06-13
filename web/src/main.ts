@@ -5,6 +5,8 @@ import { METRIC_DEFS, fillColor, legendModel, storyline } from "./metrics";
 import type { MetricDef, Metrics } from "./metrics";
 import { boundsForScope } from "./scope";
 import type { CountyFeature, Scope } from "./scope";
+import { DISSONANCE_DEF, measureCaption, measureStoryline } from "./measure";
+import type { Measure, MeasureOverlay } from "./measure";
 
 // Every static fetch is BASE_URL-prefixed. This is the lesson of the prior
 // project's Bug #8: an absolute "/data/..." path 404s the moment the app is
@@ -54,6 +56,15 @@ let currentMetrics: YearMetrics = {};
 let features: CountyFeature[] = [];
 let scopes: Scope[] = [];
 
+// Ballot-measure overlays. A measure is selected via a "measure:<id>" option
+// in the metric dropdown; while one is active the map colors by dissonance
+// (a single fixed measure), so the year controls are disabled.
+const MEASURE_PREFIX = "measure:";
+let measures: Measure[] = [];
+const measureCache = new Map<string, MeasureOverlay>();
+let activeMeasure: Measure | null = null;
+let activeOverlay: MeasureOverlay | null = null;
+
 function currentMetricDef(): MetricDef {
   return METRIC_DEFS.find((d) => d.key === metricSelect.value) ?? METRIC_DEFS[0]!;
 }
@@ -91,7 +102,68 @@ function renderLegend(def: MetricDef): void {
   legend.innerHTML = `<div>${chips}<div class="caption">${model.caption}</div></div>`;
 }
 
-function applyMetric(): void {
+// The legend for an active ballot measure: the dissonance ramp plus the
+// plain-language caption explaining the comparison (and that the year slider
+// does not apply).
+function renderMeasureLegend(measure: Measure): void {
+  const model = legendModel(DISSONANCE_DEF);
+  const ramp =
+    model.kind === "ramp"
+      ? `<span id="legend-left">${model.left}</span>
+         <div id="ramp" style="background: ${model.gradientCss}"></div>
+         <span id="legend-right">${model.right}</span>`
+      : "";
+  legend.innerHTML = `<div>${ramp}<div class="caption">${measureCaption(measure)}</div></div>`;
+}
+
+function setYearControlsEnabled(enabled: boolean): void {
+  slider.disabled = !enabled;
+  playButton.disabled = !enabled;
+  if (!enabled) stopPlaying();
+}
+
+async function loadMeasureOverlay(id: string): Promise<MeasureOverlay> {
+  if (!measureCache.has(id)) {
+    measureCache.set(id, await fetchJson<MeasureOverlay>(`data/measure_${id}.json`));
+  }
+  return measureCache.get(id)!;
+}
+
+// Apply the selected view — a per-year metric or a ballot measure. Measures
+// color by dissonance, push their data into feature-state, auto-focus the
+// measure's state, and disable the (irrelevant) year controls.
+async function applyView(): Promise<void> {
+  const value = metricSelect.value;
+  if (value.startsWith(MEASURE_PREFIX)) {
+    const id = value.slice(MEASURE_PREFIX.length);
+    const measure = measures.find((m) => m.id === id);
+    if (!measure) return;
+    activeMeasure = measure;
+    activeOverlay = await loadMeasureOverlay(id);
+    for (const fips of allFips) {
+      const county = activeOverlay[fips];
+      map.setFeatureState(
+        { source: "counties", id: fips },
+        county && county.dissonance != null
+          ? { has_data: true, dissonance: county.dissonance }
+          : { has_data: false },
+      );
+    }
+    map.setPaintProperty(
+      "county-fills",
+      "fill-color",
+      fillColor(DISSONANCE_DEF) as mapboxgl.ExpressionSpecification,
+    );
+    renderMeasureLegend(measure);
+    setYearControlsEnabled(false);
+    scopeSelect.value = measure.scope;
+    applyScope(); // filter + camera + status + (measure-aware) storyline
+    return;
+  }
+
+  activeMeasure = null;
+  activeOverlay = null;
+  setYearControlsEnabled(true);
   const def = currentMetricDef();
   map.setPaintProperty(
     "county-fills",
@@ -99,10 +171,15 @@ function applyMetric(): void {
     fillColor(def) as mapboxgl.ExpressionSpecification,
   );
   renderLegend(def);
-  renderStoryline();
+  // Restore the year's metrics into feature-state (a measure overwrote it).
+  await loadYear(YEARS[Number(slider.value)]!);
 }
 
 function renderStoryline(): void {
+  if (activeMeasure && activeOverlay) {
+    storyEl.textContent = measureStoryline(activeMeasure, activeOverlay);
+    return;
+  }
   const year = YEARS[Number(slider.value)]!;
   storyEl.textContent = storyline(currentMetricDef().key, year, scopedMetrics());
 }
@@ -238,9 +315,10 @@ function popupHtml(name: string, m: Metrics): string {
 
 map.on("load", async () => {
   type FC = { features: CountyFeature[] };
-  const [geojson, scopeCatalog] = await Promise.all([
+  const [geojson, scopeCatalog, measureCatalog] = await Promise.all([
     fetchJson<FC>("data/counties.geojson"),
     fetchJson<Scope[]>("data/scopes.json"),
+    fetchJson<Measure[]>("data/measures.json"),
   ]);
   features = geojson.features;
   allFips = features.map((f) => f.properties.fips);
@@ -251,6 +329,21 @@ map.on("load", async () => {
     option.value = scope.id;
     option.textContent = scope.label;
     scopeSelect.appendChild(option);
+  }
+
+  // Ballot measures join the metric dropdown under their own group, valued
+  // "measure:<id>" so the change handler can tell them from per-year metrics.
+  measures = measureCatalog;
+  if (measures.length > 0) {
+    const group = document.createElement("optgroup");
+    group.label = "Ballot measures";
+    for (const measure of measures) {
+      const option = document.createElement("option");
+      option.value = `${MEASURE_PREFIX}${measure.id}`;
+      option.textContent = measure.label;
+      group.appendChild(option);
+    }
+    metricSelect.appendChild(group);
   }
 
   map.addSource("counties", {
@@ -281,14 +374,15 @@ map.on("load", async () => {
     "waterway-label",
   );
 
-  applyMetric();
-  await loadYear(YEARS[Number(slider.value)]!);
+  await applyView(); // initial view is the default metric (loads the year too)
 
   slider.addEventListener("input", () => {
     stopPlaying();
     void loadYear(YEARS[Number(slider.value)]!);
   });
-  metricSelect.addEventListener("change", applyMetric);
+  metricSelect.addEventListener("change", () => {
+    void applyView();
+  });
   scopeSelect.addEventListener("change", () => {
     stopPlaying();
     applyScope();

@@ -13,14 +13,16 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
   boundary. Deferred sub-item still open: a "fit colors to this view" ramp
   toggle (rescaling breaks cross-scope comparison — only on request).
 
-- **Kansas / ballot-measure dissonance MAP view** (unblocked 2026-06-13:
-  scope=state exists, dissonance metric exists). Needs a referendum-data
-  export (per-measure no_share + dissonance vs a chosen presidential year)
-  and a categorical "False Bastion" map layer, shown when scope is a state
-  with measure data. Design Qs: which presidential baseline (2020 vs 2024);
-  how the UI signals "this view only exists for KS right now"; the
-  False-Bastion classification thresholds (the deferred classify cycle).
-  Trigger: when we add the dissonance layer / next ballot-measure arc.
+- **DONE (2026-06-13): Kansas dissonance map view.** Modular ballot-measure
+  overlay: measures.json catalog + measure_<id>.json, a "Ballot measures"
+  optgroup in the metric dropdown, dissonance coloring (baseline = 2020),
+  auto-scope to the measure's state, disabled year controls, comparative
+  storyline/caption. Remaining sub-items, deferred: (a) named False-Bastion
+  CLASSIFICATION tiers (a continuous gap ships now; thresholds were the
+  deferred classify cycle); (b) more measures (the catalog is built for it —
+  append to MEASURES in the export); (c) minor: selecting a measure at
+  national scope shows mostly gray (only the measure's state has data) — the
+  auto-scope mitigates it, but a guard/hint could be cleaner.
 
 - **Explainer key for every map view** (2026-06-12, from a real misreading):
   Matt read wave-anchor red over Chicago as "Chicago votes Republican" — the
