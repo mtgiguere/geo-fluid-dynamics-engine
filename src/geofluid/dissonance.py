@@ -13,6 +13,8 @@ two input shares the same direction is the caller's responsibility, exactly
 as the referendum loader leaves politics to the analysis layer.
 """
 
+from typing import Any
+
 import pandas as pd
 
 
@@ -38,3 +40,26 @@ def compute_dissonance(
         .sort_values("fips", ignore_index=True)
         .loc[:, ["fips", "issue_share", "partisan_share", "dissonance"]]
     )
+
+
+def build_measure_overlay(
+    referendum: pd.DataFrame,
+    partisan_share: "pd.Series[float]",
+) -> dict[str, dict[str, Any]]:
+    """The map overlay for a ballot measure: {fips: {no_share, partisan_share,
+    dissonance}}, browser-ready.
+
+    The referendum panel supplies each county's no_share (the issue position);
+    partisan_share is the chosen presidential baseline. NaN becomes None so the
+    file survives browser JSON.parse, exactly as the per-year metrics export
+    does. issue_share is surfaced as no_share for the county popup.
+    """
+    diss = compute_dissonance(referendum.set_index("fips")["no_share"], partisan_share)
+    overlay: dict[str, dict[str, Any]] = {}
+    for row in diss.to_dict("records"):
+        overlay[str(row["fips"])] = {
+            "no_share": row["issue_share"],
+            "partisan_share": None if pd.isna(row["partisan_share"]) else row["partisan_share"],
+            "dissonance": None if pd.isna(row["dissonance"]) else row["dissonance"],
+        }
+    return overlay
