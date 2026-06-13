@@ -17,8 +17,6 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
 
 ## Science (Module 1+)
 
-- **Spatial lag / Durbin regression**: how far does a neighbor's swing travel
-  after demographics have said their piece. Trigger: next science arc.
 - **Hybrid W**: blend queen adjacency with connectivity (commuting flows,
   broadband, media markets) per the spec's W_hybrid. Trigger: when the lag
   model's residuals show non-contiguous structure.
@@ -40,9 +38,13 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
 
 ## Engineering
 
-- **Mutation score baseline**: first mutmut run (nightly workflow exists;
-  predictions on record: _ACS_SENTINELS and _TOTAL_MODES members will
-  survive). Trigger: first completed nightly run — read results, turn
+- **Mutation score baseline**: workflow exists but has NEVER executed
+  (confirmed 2026-06-12: zero runs in three days — GitHub skips crons on
+  quiet repos; see the contract's "a guardrail that has never run is
+  decoration"). Predictions on record: _ACS_SENTINELS and _TOTAL_MODES
+  members will survive. NEXT STEP: Matt dispatches once (Actions →
+  Mutation testing → Run workflow); if the next cron also skips, move the
+  schedule into a push-triggered workflow. Then read results and turn
   survivors into pinning tests.
 - **Git single-file-commit mystery** (TDD_CONTRACT.md OPEN INCIDENT):
   unexplained; tripwire in place. Trigger: any recurrence — capture

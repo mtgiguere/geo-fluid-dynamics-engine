@@ -1331,3 +1331,104 @@ An unexplained failure is a failure that can recur. Until the mechanism is found
 | Swing calendar ambiguity | RED test fixture without 2016 rows | Explicit year-minus-four contract |
 | Island counties and matrix alignment | Test written before W existed | Islands keep keys; W keeps zero rows |
 | Single-file commit corrupting main | Deploy failed: web/ absent on runner | Open incident; tree-count tripwire before push |
+
+---
+
+## Third GFDE Retrospective — Verifying the Unverifiable, and Guardrails That Never Ran
+
+*Added 2026-06-12, after the statistics arcs (Moran's I, LISA, permutation
+inference, the SAR estimator) and the volunteer-facing UX arcs. The theme:
+what strict TDD looks like when the code under test is stochastic, numerical,
+and scientific — and what happens to a guardrail nobody exercises.*
+
+---
+
+### Technique (GFDE): Verifying Stochastic and Numerical Machinery Without Seeds
+
+RED FLAG 3 bans seed-specific assertions. This period built a permutation
+test and a maximum-likelihood estimator anyway. The patterns that made it
+possible — stronger than seeded snapshots, not weaker:
+
+**1. The deterministic construction.** Find an input where the stochastic
+machinery's output is forced by logic, for ANY rng. A county adjacent to all
+other counties sees the identical neighbor-mean under every conditional
+permutation, so its pseudo p-value must be exactly 1.0. One fixture verifies
+the entire permutation pathway with zero randomness. Ask: "is there an input
+where chance has no room to act?"
+
+**2. The noise-free recovery world.** For an estimator, build the world from
+known parameters exactly — y = (I - rho0 W)^-1 X beta0, no error term — and
+demand the truth back. At the true parameters the residual is zero, so any
+correct maximizer must land there, deterministically. (Implementation note:
+floor sigma^2 inside the log so the perfect fit is the unambiguous maximum
+instead of a crash.) A seeded test asserts "this run looked right once";
+recovery asserts the mathematics cannot be wrong.
+
+**3. Reproducibility is not a seed assertion.** Two identically-seeded
+INJECTED generators must produce identical output — that asserts determinism
+of the machinery, which published science requires. Production analysis runs
+MAY use a documented seed so a published map is exactly re-derivable. What
+remains banned is the original sin: asserting that seed 42 produces a value
+you copied from the first run.
+
+**4. Properties carry the rest.** Location-scale invariance for Moran's I,
+unit-invariance of rho, mean(I_i) == global I as the decomposition theorem.
+When two implementations must agree by mathematics, write the equality as a
+Hypothesis property — it snaps the moment they drift.
+
+---
+
+### Process Rule (GFDE): Derive in the Docstring Before Writing the Assertion
+
+Twice this project, a hand-built fixture carried wrong hand-math — the swing
+fixture (a panel with no 2016 rows anywhere) and the LISA pair fixture (a
+lone surviving pair is measured against its own mean, so exclusion changes
+the reference frame). Both times the implementation was right and the test's
+expectation wrong; both times the RED step surfaced it; both times the
+arithmetic had been done in the head after the fixture was written.
+
+The countermeasure, now policy: **write the derivation into the test
+docstring BEFORE writing the assertion.** The tests authored that way this
+period (the p = 1.0 construction, the SAR recovery worlds, the hand-computed
+Moran cases) were right on the first run. Bug #3's comment lied because it
+described code; a derivation cannot lie about itself — and when it is wrong,
+it is wrong VISIBLY, next to the assertion it justifies.
+
+---
+
+### Process Rule (GFDE): A Guardrail That Has Never Run Is Decoration
+
+The mutation-testing workflow was installed with predictions on record —
+and three days later had executed ZERO times. GitHub silently skips cron
+schedules on quiet repositories, and both humans and models reliably fail
+to click a dispatch button. The cost is worse than absence: an installed
+gate FEELS like coverage while verifying nothing.
+
+The rule: when installing any scheduled or manual guardrail, **schedule its
+first verified execution as part of installing it** — dispatch it before
+merging, or wire its trigger to an event that provably fires (a push), or
+put a check on the calendar. "It will run tonight" is a hypothesis; treat
+it like one.
+
+---
+
+### Convention (GFDE): A Handed-Over PR Is Final
+
+A PR was merged while its branch was still receiving commits, recreating
+the remote branch and orphaning a commit into a follow-up PR. No harm —
+but the convention is now explicit: when a PR link is handed over for
+review, that branch is final unless stated otherwise; further work goes to
+a new branch.
+
+---
+
+### Updated Evidence (this retrospective)
+
+| Event | How Caught | Codified As |
+|---|---|---|
+| Permutation machinery needed seed-free verification | Design-time constraint (RED FLAG 3) | Deterministic-construction pattern (p exactly 1.0) |
+| ML estimator needed seed-free verification | Same | Noise-free recovery worlds |
+| Hand-math wrong in two fixtures | RED step, both times | Derivation-in-docstring-before-assertion rule |
+| Mutation workflow: zero executions in three days | API check during retrospective | "A guardrail that has never run is decoration" |
+| Branch recreated by mid-flight merge | Push output ("new branch") | Handed-over PRs are final |
+| pandas 3 string dtype turned None into NaN | RED on mask contract | Object-cast noted; None is a decision, NaN is an accident |
