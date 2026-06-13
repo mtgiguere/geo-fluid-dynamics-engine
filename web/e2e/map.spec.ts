@@ -71,6 +71,30 @@ test("metric switcher recolors the map and relabels the legend", async ({ page }
   await expect(page.locator("#legend")).toContainText("not partisan lean");
 });
 
+test("scoping to a state focuses the map and recounts the storyline", async ({ page }) => {
+  await page.goto("./");
+  await expect(page.locator("#status")).toContainText("counties", { timeout: 30_000 });
+  await page.waitForTimeout(2_000);
+
+  // Nationwide, the storyline counts thousands of counties.
+  const national = await page.locator("#storyline").textContent();
+  expect(national).toMatch(/[0-9],[0-9]{3}/); // a comma-grouped thousands count
+
+  // Scope to Kansas (105 counties): the storyline must recount to a small
+  // number, proving the scope filters the data, not just the camera.
+  await page.locator("#scope").selectOption("20");
+  await expect
+    .poll(async () => page.locator("#storyline").textContent())
+    .not.toEqual(national);
+  const kansas = await page.locator("#storyline").textContent();
+  expect(kansas).not.toMatch(/[0-9],[0-9]{3}/); // no thousands — Kansas is 105
+  // The status recounts to the scope too (105 KS counties, not national 3,112).
+  await expect(page.locator("#status")).toContainText("105 counties");
+
+  // The cross-border metro preset exists and is selectable.
+  await expect(page.locator("#scope option", { hasText: "St. Louis" })).toHaveCount(1);
+});
+
 test("play button runs the elections like a movie with a narrated storyline", async ({
   page,
 }) => {

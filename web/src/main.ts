@@ -3,6 +3,8 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import "./style.css";
 import { METRIC_DEFS, fillColor, legendModel, storyline } from "./metrics";
 import type { MetricDef, Metrics } from "./metrics";
+import { boundsForScope } from "./scope";
+import type { CountyFeature, Scope } from "./scope";
 
 // Every static fetch is BASE_URL-prefixed. This is the lesson of the prior
 // project's Bug #8: an absolute "/data/..." path 404s the moment the app is
@@ -18,9 +20,16 @@ const status = document.getElementById("status")!;
 const yearLabel = document.getElementById("year-label")!;
 const slider = document.getElementById("year") as HTMLInputElement;
 const metricSelect = document.getElementById("metric") as HTMLSelectElement;
+const scopeSelect = document.getElementById("scope") as HTMLSelectElement;
 const legend = document.getElementById("legend")!;
 const storyEl = document.getElementById("storyline")!;
 const playButton = document.getElementById("play") as HTMLButtonElement;
+
+// Continental-US bounds, the camera target for the nation scope.
+const US_BOUNDS: [[number, number], [number, number]] = [
+  [-125, 24],
+  [-66.5, 49.5],
+];
 
 for (const def of METRIC_DEFS) {
   const option = document.createElement("option");
@@ -42,9 +51,26 @@ const map = new mapboxgl.Map({
 const metricsCache = new Map<number, YearMetrics>();
 let allFips: string[] = [];
 let currentMetrics: YearMetrics = {};
+let features: CountyFeature[] = [];
+let scopes: Scope[] = [];
 
 function currentMetricDef(): MetricDef {
   return METRIC_DEFS.find((d) => d.key === metricSelect.value) ?? METRIC_DEFS[0]!;
+}
+
+function currentScope(): Scope | undefined {
+  return scopes.find((s) => s.id === scopeSelect.value);
+}
+
+// The metrics restricted to the active scope — what the storyline counts over,
+// so "12 counties moved toward..." means 12 in THIS area, not nationwide.
+function scopedMetrics(): YearMetrics {
+  const scope = currentScope();
+  if (!scope || scope.kind === "nation") return currentMetrics;
+  const inScope = new Set(scope.fips);
+  return Object.fromEntries(
+    Object.entries(currentMetrics).filter(([fips]) => inScope.has(fips)),
+  );
 }
 
 function renderLegend(def: MetricDef): void {
@@ -78,7 +104,30 @@ function applyMetric(): void {
 
 function renderStoryline(): void {
   const year = YEARS[Number(slider.value)]!;
-  storyEl.textContent = storyline(currentMetricDef().key, year, currentMetrics);
+  storyEl.textContent = storyline(currentMetricDef().key, year, scopedMetrics());
+}
+
+// Apply the active scope: show only its counties (Mapbox layer filter), point
+// the camera at them, and recount the storyline. A scope is a DISPLAY lens —
+// it filters and zooms, never recomputes the statistics (border counties keep
+// their cross-state neighbors in the national math).
+function applyScope(): void {
+  const scope = currentScope();
+  if (!scope || scope.kind === "nation") {
+    map.setFilter("county-fills", null);
+    map.setFilter("county-lines", null);
+    map.fitBounds(US_BOUNDS, { padding: 20, duration: 700 });
+  } else {
+    const filter = ["in", ["get", "fips"], ["literal", scope.fips]] as never;
+    map.setFilter("county-fills", filter);
+    map.setFilter("county-lines", filter);
+    map.fitBounds(boundsForScope(features, new Set(scope.fips)), {
+      padding: 40,
+      duration: 700,
+    });
+  }
+  renderStatus();
+  renderStoryline();
 }
 
 async function fetchJson<T>(path: string): Promise<T> {
@@ -100,9 +149,16 @@ async function loadYear(year: number): Promise<void> {
     );
   }
   yearLabel.textContent = String(year);
-  const counted = Object.keys(currentMetrics).length;
-  status.textContent = `${counted.toLocaleString()} counties · ${year}`;
+  renderStatus();
   renderStoryline();
+}
+
+// The status counts counties IN THE ACTIVE SCOPE, so it agrees with the map
+// and the storyline (Kansas reads "105 counties", not the national 3,112).
+function renderStatus(): void {
+  const year = YEARS[Number(slider.value)]!;
+  const counted = Object.keys(scopedMetrics()).length;
+  status.textContent = `${counted.toLocaleString()} counties · ${year}`;
 }
 
 // The time-lapse: the spec's founding pitch is "current tools take a
@@ -181,9 +237,21 @@ function popupHtml(name: string, m: Metrics): string {
 }
 
 map.on("load", async () => {
-  type FC = { features: { properties: { fips: string } }[] };
-  const geojson = await fetchJson<FC>("data/counties.geojson");
-  allFips = geojson.features.map((f) => f.properties.fips);
+  type FC = { features: CountyFeature[] };
+  const [geojson, scopeCatalog] = await Promise.all([
+    fetchJson<FC>("data/counties.geojson"),
+    fetchJson<Scope[]>("data/scopes.json"),
+  ]);
+  features = geojson.features;
+  allFips = features.map((f) => f.properties.fips);
+
+  scopes = scopeCatalog;
+  for (const scope of scopes) {
+    const option = document.createElement("option");
+    option.value = scope.id;
+    option.textContent = scope.label;
+    scopeSelect.appendChild(option);
+  }
 
   map.addSource("counties", {
     type: "geojson",
@@ -221,6 +289,10 @@ map.on("load", async () => {
     void loadYear(YEARS[Number(slider.value)]!);
   });
   metricSelect.addEventListener("change", applyMetric);
+  scopeSelect.addEventListener("change", () => {
+    stopPlaying();
+    applyScope();
+  });
   playButton.addEventListener("click", () => {
     if (playTimer !== null) {
       stopPlaying();
