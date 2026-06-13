@@ -22,10 +22,21 @@ from geofluid.ingest.county_geometry import county_shapefile_to_geojson
 from geofluid.ingest.county_returns import load_county_returns
 from geofluid.map.layers import export_year_metrics
 from geofluid.panel.master import build_master_panel
+from geofluid.scope import build_scope_catalog
 from geofluid.spatial.moran import local_morans_by_year, significant_quadrants
 from geofluid.spatial.weights import county_adjacency
 
 OUT = Path("web/public/data")
+
+# Metro presets — cross-border by design (seeds expand through the adjacency
+# graph, so these span state lines). Seeds are core counties; hops=1 pulls in
+# the surrounding metro including the other side of the river / state line.
+METROS = [
+    # St. Louis City + County -> reaches Madison/St. Clair/Monroe IL.
+    {"id": "stl", "label": "St. Louis (MO-IL)", "seed": ["29510", "29189"], "hops": 1},
+    # Jackson MO (Kansas City) + Wyandotte KS -> spans the state line.
+    {"id": "kc", "label": "Kansas City (MO-KS)", "seed": ["29095", "20209"], "hops": 1},
+]
 
 
 def fetch_acs(year: int, api_key: str) -> pd.DataFrame:
@@ -84,6 +95,13 @@ def main() -> None:
         path = OUT / f"metrics_{year}.json"
         path.write_text(json.dumps(metrics, allow_nan=False))
         print(f"{path.name}: {len(metrics)} counties")
+
+    # Scope catalog: nation + every state + the cross-border metro presets,
+    # built on the analysis-grade adjacency (so metros span state lines).
+    fips_universe = [f["id"] for f in geojson["features"]]
+    catalog = build_scope_catalog(fips_universe, adjacency, METROS)
+    (OUT / "scopes.json").write_text(json.dumps(catalog, allow_nan=False))
+    print(f"scopes.json: {len(catalog)} scopes")
 
 
 if __name__ == "__main__":
