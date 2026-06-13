@@ -61,6 +61,8 @@ def fit_spatial_lag(
     y: "pd.Series[float]",
     covariates: pd.DataFrame,
     adjacency: Mapping[str, frozenset[str]],
+    *,
+    durbin: bool = False,
 ) -> SpatialLagFit:
     """Fit y = rho W y + X beta + eps by concentrated maximum likelihood.
 
@@ -68,6 +70,11 @@ def fit_spatial_lag(
     an intercept column is always added. Counties with a missing value in
     y or any covariate are excluded listwise along with their orphaned
     neighbors (same closure as Moran's I).
+
+    With durbin=True, the neighbors' covariates W·X are appended to the design
+    (the Spatial Durbin model), each reported as "<name>_wx". This is the
+    honesty check on rho: does outcome transmission survive controlling for
+    the neighbors' demographics, or was the "wave" demographic confounding?
     """
     frame = covariates.copy()
     frame["__y__"] = y
@@ -79,10 +86,17 @@ def fit_spatial_lag(
     matrix, order = spatial_weights(sub_adjacency)
     n = len(order)
     target = complete.loc[order, "__y__"].to_numpy(dtype=float)
-    names = ["intercept", *covariates.columns]
-    design = np.column_stack(
-        [np.ones(n), complete.loc[order, list(covariates.columns)].to_numpy(dtype=float)]
-    )
+    cov_names = list(covariates.columns)
+    cov = complete.loc[order, cov_names].to_numpy(dtype=float)
+    columns = [np.ones(n), cov]
+    names = ["intercept", *cov_names]
+    if durbin:
+        # Neighbors' covariates, on the SAME W (computed after exclusion) so
+        # the lag and the design stay aligned. The intercept is not lagged
+        # (W·1 = 1 for non-islands — redundant with the intercept).
+        columns.append(matrix @ cov)
+        names += [f"{name}_wx" for name in cov_names]
+    design = np.column_stack(columns)
 
     lag = matrix @ target
     beta_y, resid_y = _ols_residuals(design, target)
