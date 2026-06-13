@@ -5,6 +5,25 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
 
 ## Product / UX
 
+- **Scoped views — "my area," not the whole country** (2026-06-13, Matt's
+  product insight): most orgs work a state, region, district, or locality
+  (state-senate cluster, a House district, a media market), and the national
+  map is too much. Build SCOPE as a first-class filter = a set of FIPS, with
+  state (fips prefix) as one preset — the SAME mechanism serves state /
+  region / district / locality. Mostly a frontend filter: everything is
+  FIPS-keyed, national metrics already load in the browser, so filter
+  client-side + fit camera to scope bounds + recount the storyline for the
+  scope. No new export artifacts.
+  KEY DECISION (settled): scoped views DISPLAY the national statistics
+  filtered — they do NOT recompute spatial stats (LISA/Moran/SAR) inside the
+  boundary, because border counties have real cross-state neighbors and
+  severing them contradicts the engine's thesis. Dissonance is the lone
+  intrinsically-scoped metric (referendum data is state-bounded by nature).
+  Minor, deferred: keep the national color ramp by default (a "fit colors to
+  this view" toggle only on request — rescaling breaks cross-scope
+  comparison). Unlocks the Kansas dissonance view as scope=KS.
+  Trigger: next UX arc / when Matt greenlights.
+
 - **Explainer key for every map view** (2026-06-12, from a real misreading):
   Matt read wave-anchor red over Chicago as "Chicago votes Republican" — the
   layer shows clusters of *change*, and intuition does not supply that
