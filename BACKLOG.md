@@ -57,14 +57,17 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
 
 ## Engineering
 
-- **Mutation score baseline**: workflow exists but has NEVER executed
-  (confirmed 2026-06-12: zero runs in three days — GitHub skips crons on
-  quiet repos; see the contract's "a guardrail that has never run is
-  decoration"). Predictions on record: _ACS_SENTINELS and _TOTAL_MODES
-  members will survive. NEXT STEP: Matt dispatches once (Actions →
-  Mutation testing → Run workflow); if the next cron also skips, move the
-  schedule into a push-triggered workflow. Then read results and turn
-  survivors into pinning tests.
+- **Mutation gate** (2026-06-13): workflow is now SELF-RUNNING (push to main
+  on code paths + weekly backstop + dispatch; writes score to job summary +
+  artifact). Manual mutation analysis done for the two recorded predictions:
+  _ACS_SENTINELS was a real survivor (only 1 of 7 values tested) — now pinned
+  by a parametrized test, proven by removing a sentinel and seeing the test
+  fail. _TOTAL_MODES prediction was WRONG (both members already tested).
+  STILL OPEN: (a) the automated mutmut 3.x run on src-layout is unvalidated
+  locally (Windows blocks mutmut) — the first merge-to-main run is its test;
+  if it errors, read the job-summary/artifact and tune (likely needs
+  `also_copy`/mutants-dir or runner config for the src/ editable install).
+  (b) Once it runs clean, read the full survivor list and harden the rest.
 - **Git single-file-commit mystery** (TDD_CONTRACT.md OPEN INCIDENT):
   unexplained; tripwire in place. Trigger: any recurrence — capture
   evidence before repairing; consider upgrading git 2.24.

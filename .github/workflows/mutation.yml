@@ -1,22 +1,35 @@
 name: Mutation testing
 
 # The watchdog for hollow tests (TDD_CONTRACT.md Bug #5): coverage measures
-# which lines EXECUTED; mutation score measures which tests actually FAIL
-# when the code is wrong. Too slow for the PR loop — runs nightly,
-# report-only: surviving mutants are work items, not build failures.
+# which lines EXECUTED; mutation score measures which tests actually FAIL when
+# the code is wrong. Report-only — surviving mutants are work items, never a
+# build failure.
 #
-# Note: mutmut does not run natively on Windows (its own startup message),
-# so this CI job is the only place it executes for this project.
+# Self-running by design: a cron alone proved unreliable (GitHub skips
+# schedules on quiet repos — it had zero runs in three days, the "a guardrail
+# that has never run is decoration" lesson). So it ALSO runs on every push to
+# main that touches code, plus a weekly backstop and manual dispatch. Results
+# are written to the run's job summary so the score is visible without digging
+# through logs, and the full output is uploaded as an artifact.
+#
+# Note: mutmut refuses to run on Windows (the dev box), so this Linux job is
+# the ONLY place it executes — it cannot be validated locally.
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "pyproject.toml"
   schedule:
-    - cron: "0 6 * * *"
+    - cron: "0 6 * * 1" # weekly Monday 06:00 UTC backstop
   workflow_dispatch:
 
 jobs:
   mutmut:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
 
@@ -27,8 +40,28 @@ jobs:
         run: uv sync --frozen
 
       - name: Run mutation testing (report-only)
-        run: uv run mutmut run || echo "::warning::Surviving mutants found — see results below"
+        run: uv run mutmut run 2>&1 | tee mutmut_run.log || true
 
-      - name: Results
+      - name: Publish score to job summary
         if: always()
-        run: uv run mutmut results
+        run: |
+          {
+            echo "## Mutation testing"
+            echo ""
+            echo '```'
+            uv run mutmut results 2>&1 | tail -60 || true
+            echo '```'
+            echo ""
+            echo "_Tail of the run log:_"
+            echo '```'
+            tail -20 mutmut_run.log 2>/dev/null || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload full results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutmut-results
+          path: mutmut_run.log
+          retention-days: 14
