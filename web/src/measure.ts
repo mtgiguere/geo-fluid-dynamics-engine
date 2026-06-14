@@ -25,6 +25,9 @@ export const DISSONANCE_DEF: MetricDef = {
   colors: ["#b2182b", "#ef8a62", "#f7f7f7", "#67a9cf", "#2166ac"],
   legendLeft: "Trailed its party",
   legendRight: "Ran ahead (False Bastion)",
+  // Satisfies the MetricDef contract; in measure mode the richer,
+  // measure-specific measureCaption() is shown instead of this.
+  caption: "How far a county's issue vote ran ahead of its partisan lean.",
 };
 
 export interface MeasureCounty {

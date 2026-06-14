@@ -88,9 +88,12 @@ function renderLegend(def: MetricDef): void {
   const model = legendModel(def);
   if (model.kind === "ramp") {
     legend.innerHTML = `
-      <span id="legend-left">${model.left}</span>
-      <div id="ramp" style="background: ${model.gradientCss}"></div>
-      <span id="legend-right">${model.right}</span>`;
+      <div class="ramp-row">
+        <span id="legend-left">${model.left}</span>
+        <div id="ramp" style="background: ${model.gradientCss}"></div>
+        <span id="legend-right">${model.right}</span>
+      </div>
+      <div class="caption">${model.caption}</div>`;
     return;
   }
   const chips = model.items

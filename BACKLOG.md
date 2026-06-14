@@ -24,15 +24,13 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
   national scope shows mostly gray (only the measure's state has data) — the
   auto-scope mitigates it, but a guard/hint could be cleaner.
 
-- **Explainer key for every map view** (2026-06-12, from a real misreading):
-  Matt read wave-anchor red over Chicago as "Chicago votes Republican" — the
-  layer shows clusters of *change*, and intuition does not supply that
-  distinction. The interim fix (chip wording + legend caption) helps, but the
-  final product needs a proper key: per-view plain-language explanations of
-  what is shown, what colors mean, what gray means, and what question the
-  view answers — visible without hovering, written for the spec's audience
-  (policymakers, journalists, students, organizers — not statisticians).
-  Trigger: before any public-facing milestone / first outside user.
+- **DONE (2026-06-14): Explainer key — every view explains itself.** Every
+  MetricDef + the dissonance measure now carries a required `caption` (what it
+  shows, what gray means), rendered always-visible under the legend; Vitest
+  pins that no view can ship without one. Closes the Chicago-misreading risk
+  for all layers, not just the categorical ones. Possible future polish (not
+  needed now): a dedicated "how to read this map" help panel / first-visit
+  tour for the spec's broader audience.
 
 ## Science (Module 1+)
 

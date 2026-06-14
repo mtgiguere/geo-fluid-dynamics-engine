@@ -37,6 +37,10 @@ interface RampMetric {
   colors: string[];
   legendLeft: string;
   legendRight: string;
+  // The explainer line, always shown: what this view answers and what gray
+  // means. Required on every view (the "map must explain itself" rule) so a
+  // first-time volunteer is never left guessing what a color stands for.
+  caption: string;
 }
 
 interface CategoricalMetric {
@@ -62,6 +66,8 @@ export const METRIC_DEFS: MetricDef[] = [
     colors: PARTISAN_RAMP,
     legendLeft: "More Republican",
     legendRight: "More Democratic",
+    caption:
+      "Which party won each county's presidential vote. Darker = bigger margin. Gray = no county-level data.",
   },
   {
     kind: "ramp",
@@ -71,6 +77,8 @@ export const METRIC_DEFS: MetricDef[] = [
     colors: PARTISAN_RAMP,
     legendLeft: "Swung Republican",
     legendRight: "Swung Democratic",
+    caption:
+      "Which way each county moved since the last election — not who won. Gray = no comparison yet (first election or no data).",
   },
   {
     // The wave-anchor layer: LISA quadrants of swing. high-high = a county
@@ -97,6 +105,7 @@ export const METRIC_DEFS: MetricDef[] = [
     colors: SEQUENTIAL_RAMP,
     legendLeft: "Younger",
     legendRight: "Older",
+    caption: "Median resident age (Census ACS). Gray = no data. Does not change with the year.",
   },
   {
     kind: "ramp",
@@ -106,6 +115,7 @@ export const METRIC_DEFS: MetricDef[] = [
     colors: SEQUENTIAL_RAMP,
     legendLeft: "Fewer seniors",
     legendRight: "More seniors",
+    caption: "Share of residents 65 and older (Census ACS). Gray = no data.",
   },
   {
     kind: "ramp",
@@ -115,6 +125,7 @@ export const METRIC_DEFS: MetricDef[] = [
     colors: SEQUENTIAL_RAMP,
     legendLeft: "$40k",
     legendRight: "$120k+",
+    caption: "Median household income (Census ACS). Gray = no data.",
   },
   {
     kind: "ramp",
@@ -124,6 +135,7 @@ export const METRIC_DEFS: MetricDef[] = [
     colors: SEQUENTIAL_RAMP,
     legendLeft: "$80k",
     legendRight: "$520k+",
+    caption: "Median home value (Census ACS). Gray = no data.",
   },
   {
     kind: "ramp",
@@ -133,6 +145,7 @@ export const METRIC_DEFS: MetricDef[] = [
     colors: SEQUENTIAL_RAMP,
     legendLeft: "More renters",
     legendRight: "More owners",
+    caption: "Share of homes lived in by their owner (Census ACS). Gray = no data.",
   },
   {
     kind: "ramp",
@@ -142,6 +155,7 @@ export const METRIC_DEFS: MetricDef[] = [
     colors: SEQUENTIAL_RAMP,
     legendLeft: "Less college",
     legendRight: "More college",
+    caption: "Share of adults 25+ with a bachelor's degree or higher (Census ACS). Gray = no data.",
   },
 ];
 
@@ -215,7 +229,7 @@ export function storyline(key: string, year: number, data: Record<string, Metric
 }
 
 export type LegendModel =
-  | { kind: "ramp"; left: string; right: string; gradientCss: string }
+  | { kind: "ramp"; left: string; right: string; gradientCss: string; caption: string }
   | { kind: "categories"; caption: string; items: { label: string; color: string }[] };
 
 export function legendModel(def: MetricDef): LegendModel {
@@ -225,6 +239,7 @@ export function legendModel(def: MetricDef): LegendModel {
       left: def.legendLeft,
       right: def.legendRight,
       gradientCss: `linear-gradient(to right, ${def.colors.join(", ")})`,
+      caption: def.caption,
     };
   }
   return {
