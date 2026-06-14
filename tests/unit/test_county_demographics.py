@@ -13,6 +13,7 @@ schema and semantics are specified here before any implementation exists.
 """
 
 import pandas as pd
+import pytest
 
 from geofluid.ingest.county_demographics import acs5_county_url, load_county_demographics
 
@@ -143,6 +144,24 @@ def test_acs_sentinel_values_become_nan_not_numbers() -> None:
     assert pd.isna(row["median_home_value"])
     assert pd.isna(row["median_hh_income"])
     assert abs(row["median_age"] - 41.1) < 1e-9  # valid columns untouched
+
+
+@pytest.mark.parametrize(
+    "sentinel",
+    [-111111111, -222222222, -333333333, -555555555, -666666666, -888888888, -999999999],
+)
+def test_every_documented_acs_sentinel_becomes_nan(sentinel: int) -> None:
+    """Pin EVERY documented ACS annotation sentinel, not just the one in the
+    test above — manual mutation analysis (2026-06-13) found that dropping
+    any other value from the code's sentinel set would let that code leak
+    through as a real number, undetected. The values are written literally,
+    not imported from the module, so this catches the constant changing
+    (TDD_CONTRACT.md Bug #3)."""
+    payload = _payload([{"B25077_001E": str(sentinel)}])
+
+    df = load_county_demographics(payload, year=2023)
+
+    assert pd.isna(df.iloc[0]["median_home_value"])
 
 
 def test_panel_is_sorted_by_fips_regardless_of_payload_order() -> None:

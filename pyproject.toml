@@ -61,6 +61,7 @@ addopts = "--no-header -q"
 [tool.mutmut]
 # Mutation testing: the watchdog for hollow tests (TDD_CONTRACT.md Bug #5 —
 # coverage measures execution, mutation score measures verification).
-# Runs nightly in CI, report-only: surviving mutants are work items.
-paths_to_mutate = ["src/geofluid/"]
-tests_dir = ["tests/"]
+# Report-only in CI; surviving mutants are work items. mutmut 3.x keys
+# (source_paths replaces the deprecated paths_to_mutate; tests are found via
+# the [tool.pytest.ini_options] testpaths above).
+source_paths = ["src/geofluid"]
