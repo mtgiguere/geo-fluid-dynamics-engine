@@ -120,7 +120,7 @@ describe("storyline — the plain-language sentence for campaign volunteers", ()
 });
 
 describe("legendModel", () => {
-  it("ramp metrics produce end labels and a CSS gradient", () => {
+  it("ramp metrics produce end labels, a gradient, and a plain-language caption", () => {
     const legend = legendModel(result);
 
     expect(legend).toEqual({
@@ -129,7 +129,18 @@ describe("legendModel", () => {
       right: "More Democratic",
       gradientCss:
         "linear-gradient(to right, #b2182b, #ef8a62, #f7f7f7, #67a9cf, #2166ac)",
+      caption:
+        "Which party won each county's presidential vote. Darker = bigger margin. Gray = no county-level data.",
     });
+  });
+
+  it("every view carries a non-empty caption — the explainer key", () => {
+    // The "before any outside user" rule: no view may ship without a
+    // plain-language line saying what it shows and what gray means. A ramp
+    // metric with only color labels (the pre-explainer state) would fail here.
+    for (const def of METRIC_DEFS) {
+      expect(legendModel(def).caption.length).toBeGreaterThan(10);
+    }
   });
 
   it("categorical metrics produce labeled chips and a plain-language caption", () => {

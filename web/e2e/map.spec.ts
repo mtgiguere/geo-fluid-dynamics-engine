@@ -57,8 +57,13 @@ test("metric switcher recolors the map and relabels the legend", async ({ page }
   await page.goto("./");
   await expect(page.locator("#status")).toContainText("counties", { timeout: 30_000 });
 
+  // Every view carries an always-visible explainer line — the default
+  // "Who won" must say what gray means, not just show color labels.
+  await expect(page.locator("#legend")).toContainText("Gray = no county-level data");
+
   await page.locator("#metric").selectOption("swing_dem_2p");
   await expect(page.locator("#legend-left")).toHaveText("Swung Republican");
+  await expect(page.locator("#legend")).toContainText("not who won"); // swing explainer
 
   await page.locator("#metric").selectOption("median_hh_income");
   await expect(page.locator("#legend-left")).toHaveText("$40k");
