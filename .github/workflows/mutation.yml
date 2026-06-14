@@ -42,20 +42,33 @@ jobs:
       - name: Run mutation testing (report-only)
         run: uv run mutmut run 2>&1 | tee mutmut_run.log || true
 
-      - name: Publish score to job summary
+      - name: Collect survivor diffs (actionable, not just opaque IDs)
+        if: always()
+        run: |
+          uv run mutmut results 2>/dev/null | awk '/: survived/{print $1}' > survivors.txt || true
+          : > survivor_diffs.txt
+          # Cap the per-mutant `show` loop so the report stays bounded in time;
+          # the count line below records the true total.
+          head -80 survivors.txt | while read -r m; do
+            [ -z "$m" ] && continue
+            echo "===== $m =====" >> survivor_diffs.txt
+            uv run mutmut show "$m" >> survivor_diffs.txt 2>&1 || true
+          done
+
+      - name: Publish score + survivor diffs to job summary
         if: always()
         run: |
           {
             echo "## Mutation testing"
             echo ""
-            echo '```'
-            uv run mutmut results 2>&1 | tail -60 || true
-            echo '```'
+            echo "Surviving mutants: **$(wc -l < survivors.txt 2>/dev/null || echo '?')**"
             echo ""
-            echo "_Tail of the run log:_"
+            echo "<details><summary>Survivor diffs (first 80)</summary>"
+            echo ""
+            echo '```diff'
+            head -300 survivor_diffs.txt 2>/dev/null || true
             echo '```'
-            tail -20 mutmut_run.log 2>/dev/null || true
-            echo '```'
+            echo "</details>"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload full results
@@ -63,5 +76,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: mutmut-results
-          path: mutmut_run.log
+          path: |
+            mutmut_run.log
+            survivors.txt
+            survivor_diffs.txt
           retention-days: 14

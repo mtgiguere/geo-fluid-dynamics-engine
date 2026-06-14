@@ -57,6 +57,22 @@ def test_noise_free_sar_world_recovers_rho_and_beta() -> None:
     assert abs(fit.beta["x1"] - 0.5) < 1e-2
 
 
+def test_inferential_outputs_are_pinned_not_just_rho_and_beta() -> None:
+    """Mutation testing (2026-06-13) found fit_spatial_lag's n / loglik /
+    loglik_null / lr_pvalue entirely unasserted — mutations to them survived.
+    Pin what is robustly checkable under the no-seed rule: the usable count,
+    that adding rho improves the likelihood, and that a strong-rho world
+    decisively rejects rho=0. (sigma2's magnitude needs noise to pin, which
+    the no-seed rule precludes — noted, not faked.)"""
+    y, x = _sar_world(rho=0.6, intercept=2.0, slope=0.5)
+
+    fit = fit_spatial_lag(y, x, _RING)
+
+    assert fit.n == 8  # one row per usable ring county
+    assert fit.loglik > fit.loglik_null  # rho improves the fit over rho=0
+    assert fit.lr_pvalue < 1e-6  # rho=0 is decisively rejected
+
+
 def test_world_without_spillover_recovers_rho_of_zero() -> None:
     """rho0 = 0: y is pure demographics. The estimator must NOT hallucinate
     transmission — rho lands on zero and beta on the truth."""

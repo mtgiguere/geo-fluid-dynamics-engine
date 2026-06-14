@@ -57,17 +57,21 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
 
 ## Engineering
 
-- **Mutation gate** (2026-06-13): workflow is now SELF-RUNNING (push to main
-  on code paths + weekly backstop + dispatch; writes score to job summary +
-  artifact). Manual mutation analysis done for the two recorded predictions:
-  _ACS_SENTINELS was a real survivor (only 1 of 7 values tested) — now pinned
-  by a parametrized test, proven by removing a sentinel and seeing the test
-  fail. _TOTAL_MODES prediction was WRONG (both members already tested).
-  STILL OPEN: (a) the automated mutmut 3.x run on src-layout is unvalidated
-  locally (Windows blocks mutmut) — the first merge-to-main run is its test;
-  if it errors, read the job-summary/artifact and tune (likely needs
-  `also_copy`/mutants-dir or runner config for the src/ editable install).
-  (b) Once it runs clean, read the full survivor list and harden the rest.
+- **Mutation gate** (2026-06-13): SELF-RUNNING and VALIDATED — mutmut 3.x runs
+  clean on our src layout in CI (runs #1 cron + #2 push both succeeded; the
+  numbered gaps in the survivor list prove most mutants are killed, harness
+  is real). The workflow now also emits survivor DIFFS (not just opaque IDs)
+  to the job summary + artifact, so triage is actionable.
+  FIRST RESULTS (~115 survivors, pre-sentinel-hardening run): concentrated in
+  the math modules — `fit_spatial_lag` ~80, `local_morans_i` ~15,
+  `load_county_returns` ~10. Hardened so far: _ACS_SENTINELS (all 7 pinned);
+  SAR inferential outputs n / loglik ordering / lr_pvalue (were unasserted).
+  STILL OPEN, as a TRIAGED multi-arc effort (do NOT chase 100% — equivalent
+  mutants exist): (a) read the diffs from the next run and target the
+  high-value SAR/Moran survivors; (b) KNOWN HARD CLASS — mutants on the
+  noise parameters (sigma2 magnitude, exact lr_pvalue) resist killing under
+  the no-seed rule, same root tension as SEM; may need property-based or
+  constructed-residual approaches, or accept as documented equivalent-ish.
 - **Git single-file-commit mystery** (TDD_CONTRACT.md OPEN INCIDENT):
   unexplained; tripwire in place. Trigger: any recurrence — capture
   evidence before repairing; consider upgrading git 2.24.
