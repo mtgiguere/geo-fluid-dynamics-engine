@@ -34,6 +34,20 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
 
 ## Science (Module 1+)
 
+- **Module 2 node classification — FIRST ATTEMPT FALSIFIED (2026-06-15).**
+  Built `county_influence` (conformity = co-movement with neighbourhood;
+  volatility) + `classify_nodes` (Buffer/Bastion/ordinary/unknown), tested.
+  The real-data acceptance falsified the contemporaneous-conformity approach:
+  96% "buffer", spec's Pulaski bastion → buffer, "bastions" were tiny noisy
+  counties. Root cause: swing is so spatially autocorrelated that everyone
+  co-moves — conformity can't separate roles. NOT wired to the map. Paths
+  forward: (a) a temporal LEAD-LAG method to split Bellwether (leads) from
+  Buffer (follows) — needs more elections than 7, so likely gated on the
+  historical-returns extension; (b) define the Bastion via issue-resistance
+  (the dissonance metric) rather than swing co-movement, which may match the
+  spec's meaning better. The `county_influence` primitives stay as tested
+  building blocks for whichever path we take.
+
 - **Hybrid W**: blend queen adjacency with connectivity (commuting flows,
   broadband, media markets) per the spec's W_hybrid. Trigger: when the lag
   model's residuals show non-contiguous structure.
