@@ -14,6 +14,11 @@ The descriptive map and the first analytical layers are live and deployed
 - **Data spine** (`ingest/` → `panel/master`): county presidential returns 2000–2024
   (MIT) joined to ACS demographics on a harmonized FIPS key; `swing_dem_2p` and LISA
   quadrants merged in. County geometry from Census cb_2021.
+- **Historical spine** (`ingest/historical_returns` + `panel/spine`): returns
+  extended back to **1868** (Algara–Sharif, pre-2000) joined to MIT (2000+) into one
+  validated 40-election panel (1868–2024, ~117k county-years; modern source wins the
+  overlap; cross-validates vs MIT at corr 0.9999 in 2020). Demographics remain 2000+
+  (NHGIS decennial is future).
 - **Module 1 (Wave Predictor), core built**: `spatial/weights` (queen adjacency +
   row-standardized W), `spatial/moran` (global Moran's I, LISA with permutation
   significance), `spatial/lag` (SAR maximum-likelihood spatial-lag model, ρ, with a
@@ -31,8 +36,18 @@ The descriptive map and the first analytical layers are live and deployed
   Data products are static JSON built by `scripts/export_web_data.py`.
 - **Tooling**: self-running mutation gate (validated on Linux CI; emits survivor
   diffs), the pre-commit hook, and the Playwright E2E deploy gate.
-- **Modules 2, 4, 5** (Gravity node-classification, Chaos Sensor, Phase Transition):
-  not started. See `BACKLOG.md` for sequenced next work and open design questions.
+- **Module 4 (Chaos & Anomaly Sensor), seed built**: `realignment.trend_surprise`
+  — each county's residual from its own linear trend, extrapolated one election
+  ahead (the realignment signal). Demonstrated in an analysis notebook (`notebooks/`,
+  1964 vs 2016) on the 1868–2024 spine: 1964 ≈ purely regional, 2016 adds an
+  education cleavage. Still to come: the live surprise-field monitor (magnitude +
+  spatial coherence + axis) that is the actual Module 4 product.
+- **Module 2 (Gravity Engine), first attempt falsified**: `county_influence` +
+  `classify_nodes` primitives are tested, but contemporaneous-conformity
+  node-classification was falsified on real data (swing is so autocorrelated that
+  everyone co-moves). Lead-lag retry now unblocked by the 40-election spine.
+- **Module 5 (Systemic Phase Transition)**: not started. See `BACKLOG.md` for
+  sequenced next work and open design questions.
 
 ## Non-negotiable: read TDD_CONTRACT.md before writing any code
 
@@ -94,6 +109,9 @@ the contract's "ruff format is not optional" rule, demonstrated live.)
 - `CENSUS_API_KEY=... uv run python scripts/export_web_data.py` — rebuild the
   frontend's static data products into `web/public/data/` (needs the gitignored
   MIT returns CSV + cb_2021 shapefiles + KS measure workbook under `data/raw/`)
+- `uv run jupytext --to ipynb --execute notebooks/<name>.py` — execute an analysis
+  notebook into its paired `.ipynb` with rendered outputs (needs the gitignored raw
+  data under `data/raw/`; notebooks are TDD-exempt EDA)
 - Frontend (in `web/`): `npm test` (Vitest), `npx playwright test` (E2E against the
   production build), `npm run dev` (local at :5173)
 
@@ -108,15 +126,20 @@ watchdog for hollow tests. (mutmut only runs on Linux CI — it refuses on Windo
 ## Layout
 
 - `src/geofluid/ingest/` — raw public data → canonical panels (`county_returns`,
-  `county_demographics`, `county_geometry`, `referendum`)
+  `county_demographics`, `county_geometry`, `referendum`, `historical_returns`)
 - `src/geofluid/panel/master` — joins returns + demographics into the master panel
-  (FIPS-harmonized; adds swing)
+  (FIPS-harmonized; adds swing); `panel/spine` — joins historical + MIT returns into
+  the 1868–2024 panel
 - `src/geofluid/spatial/` — `weights` (adjacency + W), `moran` (global I, LISA,
   permutation significance), `lag` (SAR model)
 - `src/geofluid/dissonance` — issue-vs-party gap + ballot-measure overlay
+- `src/geofluid/realignment` — `trend_surprise` (Module 4 seed: per-county residual
+  from its own trend)
 - `src/geofluid/scope` — geographic scope catalog + cross-border neighborhood expansion
 - `src/geofluid/map/layers` — GeoJSON layer + per-year metrics export shaping
 - `scripts/export_web_data.py` — thin orchestration → `web/public/data/*.json`
+- `notebooks/` — exploratory analysis (jupytext py:percent + paired executed .ipynb);
+  EDA that leans on the tested `geofluid` library, **TDD-exempt** (see TDD_CONTRACT.md)
 - `web/` — Vite + TS + Mapbox frontend (`src/metrics.ts`, `src/scope.ts`,
   `src/measure.ts`; `e2e/` Playwright)
 - `tests/unit/` — Python unit tests (one file per module)

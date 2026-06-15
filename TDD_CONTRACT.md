@@ -1422,6 +1422,36 @@ a new branch.
 
 ---
 
+### Convention (GFDE): Notebooks / EDA Are TDD-Exempt (2026-06-15)
+
+The strict TDD + JIT discipline above governs **library and shipped code**
+(`src/geofluid/`, anything in the test suite). It does **not** govern
+exploratory analysis notebooks (`notebooks/`, jupytext py:percent + paired
+executed `.ipynb`). Matt, settling it: *"I don't mind not doing TDD on
+notebooks/EDA — it's kinda bad practice to unit test EDA anyway."* Unit-testing
+exploratory analysis ossifies code meant to stay fluid; the notebook leans on
+the already-tested `geofluid` library for the real computation.
+
+The line, so it isn't re-litigated:
+
+- A notebook calls tested library functions. New *analytical capability* still
+  arrives as a tested library function first (e.g. `realignment.trend_surprise`);
+  the notebook only narrates and visualizes it.
+- A bug fixed *inside a notebook* (the realignment EDA had a silent `read_json`
+  FIPS leading-zero coercion that NaN'd a whole axis) does **not** require a RED
+  regression test — UNLESS the same hazard exists in shipped code (grep to check;
+  in that case it did not). Inventing a tested helper purely to satisfy TDD on
+  notebook-local logic would itself violate JIT.
+- This is the same boundary as *"E2E verifies integration, never logic"* — a
+  layer that leans on tested code, exempt until it grows reusable logic of its own.
+- **Executing a notebook against real data is still a real-data acceptance run**
+  in the sense of Bugs #10–#12: the realignment run falsified the model of the
+  world twice (the NaN'd education axis; prose overstating a clean
+  region→education swap) and both were corrected. The exemption is from
+  test-first, not from honesty against real data.
+
+---
+
 ### Updated Evidence (this retrospective)
 
 | Event | How Caught | Codified As |
