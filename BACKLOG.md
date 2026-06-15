@@ -34,6 +34,24 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
 
 ## Science (Module 1+)
 
+- **Module 4 (Chaos Sensor) — SEED DONE (2026-06-15).** `realignment.trend_surprise`:
+  per-county residual from its own linear trend over the trailing window of
+  presidential elections, extrapolated one ahead (actual − predicted). Tested
+  seed-free (residual math, min-obs/missing-target exclusion, no-future-leakage).
+  Showcase EDA notebook (`notebooks/realignment_1964_vs_2016.{py,ipynb}`, jupytext
+  + paired executed .ipynb) over the 1868–2024 spine: 1964 reads as an almost-
+  purely-REGIONAL break (median surprise 22.9pts, Moran's I 0.89, −0.58 with
+  South); 2016 layers a NEW education cleavage (~0.36 with college share) on top
+  of a still-regional map (~0.39) — an axis added, not swapped. The real-data run
+  was itself an acceptance run: it caught + fixed a silent `read_json` FIPS
+  leading-zero coercion (NaN'd the whole education axis) and corrected prose that
+  overstated a clean region→education dichotomy. (Notebooks are TDD-exempt — they
+  lean on the tested `geofluid` library.) STILL TO COME: spatial-coherence + axis
+  detection wired into a live "surprise field" monitor (the actual Module 4
+  product); the linear-trend baseline is deliberately simple (overstates landslide
+  years like 1964); time-resolved education (NHGIS decennial) rather than ACS-2024
+  as a static county trait.
+
 - **Module 2 node classification — FIRST ATTEMPT FALSIFIED (2026-06-15).**
   Built `county_influence` (conformity = co-movement with neighbourhood;
   volatility) + `classify_nodes` (Buffer/Bastion/ordinary/unknown), tested.
@@ -66,9 +84,11 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
   corr 0.9999 / 99.8% within 1pt. SPINE DONE (2026-06-15): `build_returns_spine`
   joins Algara (pre-2000) + MIT (2000+) into one validated 1868-2024 panel
   (40 elections, 116,983 county-years, national arc matches history; modern
-  wins the overlap). NEXT: the lead-lag node method (Module 2 retry — now has
-  40 elections of depth) and Module 4 regime analysis. NHGIS decennial
-  demographics still future (pre-2005 years are returns-only).
+  wins the overlap). Module 4 realignment seed now built on it (see Science →
+  Module 4 Chaos Sensor). NEXT: the lead-lag node method (Module 2 retry — now
+  has 40 elections of depth). NHGIS decennial demographics still future
+  (pre-2005 years are returns-only; Module 4's education axis currently leans on
+  static ACS-2024).
 - **Midterms** (district→county crosswalks, uncontested-race handling).
   Trigger: when the hazard model demands 2-year cadence.
 - **Connecticut crosswalk**: planning regions ↔ old counties, to retire the
