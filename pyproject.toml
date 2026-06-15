@@ -22,6 +22,10 @@ dev = [
     "hypothesis>=6.155.2",
     "mutmut>=3.6.0",
     "pyreadr>=0.5.6",
+    "jupytext>=1.19.3",
+    "matplotlib>=3.11.0",
+    "ipykernel>=7.3.0",
+    "nbconvert>=7.17.1",
 ]
 
 [build-system]
@@ -44,6 +48,10 @@ select = ["E", "F", "W", "I", "UP", "B", "S", "C4", "PT", "SIM"]
 [tool.ruff.lint.per-file-ignores]
 # S101: pytest tests assert by design.
 "tests/**" = ["S101"]
+# Analysis notebooks (jupytext py:percent) follow notebook idiom, not module style:
+# E402 — imports come after the intro markdown cell; B018 — a bare `df` in a cell
+# is how a notebook renders a table, not a useless expression.
+"notebooks/**" = ["E402", "B018"]
 
 [tool.mypy]
 strict = true
