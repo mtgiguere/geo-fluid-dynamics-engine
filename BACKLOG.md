@@ -63,9 +63,12 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
   the canonical returns schema; free download (no guestbook), already
   FIPS-coded (authors did the boundary harmonization), read via pyreadr from
   RData. Acceptance: landmarks correct, 2020 cross-validates vs MIT at
-  corr 0.9999 / 99.8% within 1pt. NEXT: integrate into one 1868-2024 spine
-  (Algara pre-2000, MIT 2000+), then the lead-lag node method (Module 2) and
-  Module 4 regime analysis. NHGIS decennial demographics still future.
+  corr 0.9999 / 99.8% within 1pt. SPINE DONE (2026-06-15): `build_returns_spine`
+  joins Algara (pre-2000) + MIT (2000+) into one validated 1868-2024 panel
+  (40 elections, 116,983 county-years, national arc matches history; modern
+  wins the overlap). NEXT: the lead-lag node method (Module 2 retry — now has
+  40 elections of depth) and Module 4 regime analysis. NHGIS decennial
+  demographics still future (pre-2005 years are returns-only).
 - **Midterms** (district→county crosswalks, uncontested-race handling).
   Trigger: when the hazard model demands 2-year cadence.
 - **Connecticut crosswalk**: planning regions ↔ old counties, to retire the
