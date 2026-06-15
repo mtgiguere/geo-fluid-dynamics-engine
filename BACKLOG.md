@@ -58,9 +58,14 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
   Aug 2022 first): unlocks Module 3 dissonance/False Bastions with real
   topic votes. Trigger: after the core engine is proven on the presidential
   spine.
-- **Historical extension** (Algara–Sharif 1868–2020 + NHGIS decennials):
-  regime diversity for Module 4, era-similarity tests, replay depth.
-  Trigger: when Module 4 work begins, or when the replay UX wants depth.
+- **Historical extension** (Algara–Sharif 1868–2020): **LOADER DONE +
+  VALIDATED (2026-06-15)** — `load_historical_returns` maps the dataset onto
+  the canonical returns schema; free download (no guestbook), already
+  FIPS-coded (authors did the boundary harmonization), read via pyreadr from
+  RData. Acceptance: landmarks correct, 2020 cross-validates vs MIT at
+  corr 0.9999 / 99.8% within 1pt. NEXT: integrate into one 1868-2024 spine
+  (Algara pre-2000, MIT 2000+), then the lead-lag node method (Module 2) and
+  Module 4 regime analysis. NHGIS decennial demographics still future.
 - **Midterms** (district→county crosswalks, uncontested-race handling).
   Trigger: when the hazard model demands 2-year cadence.
 - **Connecticut crosswalk**: planning regions ↔ old counties, to retire the
