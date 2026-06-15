@@ -6,25 +6,31 @@ diffusion), Gravity Engine (network influence), Friction & Dissonance Mapper, Ch
 Anomaly Sensor, Systemic Phase Transition detector.
 Full spec: `docs/geo-fluid-dynamics-engine.docx`. Deployed: https://mtgiguere.github.io/geo-fluid-dynamics-engine/
 
-## What's built (as of 2026-06-13)
+## What's built (as of 2026-06-15)
 
-The descriptive map and the first analytical layers are live and deployed:
+The descriptive map and the first analytical layers are live and deployed
+(https://mtgiguere.github.io/geo-fluid-dynamics-engine/):
 
 - **Data spine** (`ingest/` → `panel/master`): county presidential returns 2000–2024
   (MIT) joined to ACS demographics on a harmonized FIPS key; `swing_dem_2p` and LISA
   quadrants merged in. County geometry from Census cb_2021.
 - **Module 1 (Wave Predictor), core built**: `spatial/weights` (queen adjacency +
   row-standardized W), `spatial/moran` (global Moran's I, LISA with permutation
-  significance), `spatial/lag` (SAR maximum-likelihood spatial-lag model, ρ). Still
-  to come: the survival/hazard *timing* model and hybrid W.
-- **Module 3 (Friction & Dissonance), seeded**: `dissonance` (issue-vs-party gap) +
-  the Kansas Aug-2022 ballot-measure overlay. Still to come: wombling, roll-off,
-  False-Bastion classification tiers.
+  significance), `spatial/lag` (SAR maximum-likelihood spatial-lag model, ρ, with a
+  `durbin=True` honesty check — ρ survives controlling for neighbors' demographics).
+  Still to come: the survival/hazard *timing* model, hybrid W, and the spatial-error
+  (SEM) half of the honesty check (hard under the no-seed rule — see BACKLOG).
+- **Module 3 (Friction & Dissonance), live**: `dissonance` (issue-vs-party gap) and
+  the Kansas Aug-2022 ballot-measure overlay, shipped as a map view (the "False
+  Bastions"). Still to come: wombling, roll-off, False-Bastion classification tiers,
+  more ballot measures (the overlay catalog is modular — append to `MEASURES`).
 - **Frontend** (`web/`, Vite + TS + Mapbox GL): map views for result, swing, wave
   anchors, six demographics, and ballot-measure dissonance; scoped focus
   (nation / any state / cross-border metro presets); play-the-decades time-lapse;
-  plain-language storyline. Data products are static JSON built by
-  `scripts/export_web_data.py`.
+  plain-language storyline; and an always-visible explainer caption on every view.
+  Data products are static JSON built by `scripts/export_web_data.py`.
+- **Tooling**: self-running mutation gate (validated on Linux CI; emits survivor
+  diffs), the pre-commit hook, and the Playwright E2E deploy gate.
 - **Modules 2, 4, 5** (Gravity node-classification, Chaos Sensor, Phase Transition):
   not started. See `BACKLOG.md` for sequenced next work and open design questions.
 
@@ -59,6 +65,9 @@ it documents real bugs from the previous attempt at this exact project. The shor
 11. A guardrail that has never run is decoration: schedule its first verified
     execution as part of installing it.
 12. A handed-over PR is final; further work goes to a new branch.
+13. Never pipe `pytest` through `tail` (or any filter) in a `&&` gate chain —
+    the pipe's exit code masks a test failure and lets a red commit through
+    (it did once; the pre-commit hook caught it). Run pytest as its own step.
 
 ## Pre-commit sequence (before every commit)
 
@@ -92,8 +101,9 @@ CI gates (`.github/workflows/ci.yml`): gitleaks → ruff check → ruff format -
 mypy → pytest with branch coverage ≥ 90% → pip-audit → uv lock --check, plus a web
 job (npm ci + typecheck/build). Deployment (`deploy.yml`): Playwright E2E against the
 production build at the real Pages base path gates every deploy. Mutation testing
-(`mutation.yml`): nightly, report-only — surviving mutants are work items, the
-watchdog for hollow tests.
+(`mutation.yml`): runs on every push to main touching code (+ weekly backstop +
+dispatch), report-only — emits survivor diffs to the job summary/artifact; the
+watchdog for hollow tests. (mutmut only runs on Linux CI — it refuses on Windows.)
 
 ## Layout
 

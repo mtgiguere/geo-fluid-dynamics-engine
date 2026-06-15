@@ -28,11 +28,15 @@ Stages 1–2 are **live on the deployed map**, along with the first predictive l
 - **Scoped focus**: narrow to any state or a cross-border metro (St. Louis, Kansas
   City) — the map is meant for organizers working one area, not just the nation.
 - **Play** the seven presidential elections (2000–2024) as a time-lapse.
+- **Every view explains itself**: an always-visible plain-language caption says what
+  the colors mean and what gray means — written for organizers, not statisticians.
 
 Under the hood, the analytical core includes Moran's I and LISA (with permutation
-significance), a maximum-likelihood spatial-lag (SAR) model, and the dissonance metric.
-Network node-classification, the chaos/anomaly sensor, and the phase-transition detector
-(spec Modules 2, 4, 5) are not yet built — see `BACKLOG.md`.
+significance), a maximum-likelihood spatial-lag (SAR) model — with a Spatial Durbin
+honesty check confirming the spatial signal survives controlling for neighbors'
+demographics — and the dissonance metric. Network node-classification, the
+chaos/anomaly sensor, and the phase-transition detector (spec Modules 2, 4, 5) are
+not yet built — see `BACKLOG.md`.
 
 ## Development
 
