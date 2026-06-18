@@ -45,7 +45,13 @@ def _lagged_corr(
     mask = ~(np.isnan(own) | np.isnan(hood))
     if int(mask.sum()) < min_paired:
         return None
-    return float(np.corrcoef(own[mask], hood[mask])[0, 1])
+    own_paired, hood_paired = own[mask], hood[mask]
+    # Correlation is undefined when either series is constant — it divides by a
+    # zero standard deviation. Exclude rather than let np.corrcoef return (and
+    # warn about) a NaN that would leak into the score.
+    if own_paired.std() == 0 or hood_paired.std() == 0:
+        return None
+    return float(np.corrcoef(own_paired, hood_paired)[0, 1])
 
 
 def lead_lag(

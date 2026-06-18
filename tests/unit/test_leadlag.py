@@ -123,3 +123,33 @@ def test_island_with_no_neighbours_is_excluded() -> None:
 
     assert "15003" not in s.index
     assert "01001" in s.index
+
+
+def test_county_with_constant_swing_is_excluded() -> None:
+    """Correlation is undefined when a series has no variance — dividing by a zero
+    standard deviation. A county whose swing never moves (constant across every
+    election) therefore has no lead or lag correlation and is excluded, rather than
+    leaking a NaN score into the result.
+
+    A line A - B - K. K's swing is a flat 0.5 throughout. K has enough paired
+    elections (it is not sparse), so the only reason to drop it is the zero
+    variance — this isolates the constant-series case from the min-paired case. A
+    and B vary and remain; K's flatness does not exclude B, whose neighbourhood
+    mean still varies through A."""
+    panel = _panel(
+        {
+            "01001": {2000: 0.0, 2004: 0.1, 2008: 0.2, 2012: 0.1, 2016: 0.3},  # A: varies
+            "01003": {2000: 0.2, 2004: 0.0, 2008: 0.3, 2012: 0.2, 2016: 0.1},  # B: varies
+            "01005": {2000: 0.5, 2004: 0.5, 2008: 0.5, 2012: 0.5, 2016: 0.5},  # K: constant
+        }
+    )
+    adjacency = {
+        "01001": frozenset({"01003"}),
+        "01003": frozenset({"01001", "01005"}),
+        "01005": frozenset({"01003"}),
+    }
+
+    s = lead_lag(panel, adjacency, value_column="swing")
+
+    assert "01005" not in s.index
+    assert list(s.index) == ["01001", "01003"]
