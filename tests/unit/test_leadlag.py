@@ -18,6 +18,8 @@ contest, not the next calendar year), so it survives the irregular pre-2000 spac
 """
 
 import pandas as pd
+from hypothesis import given
+from hypothesis import strategies as st
 
 from geofluid.spatial.leadlag import lead_lag
 
@@ -153,3 +155,37 @@ def test_county_with_constant_swing_is_excluded() -> None:
 
     assert "01005" not in s.index
     assert list(s.index) == ["01001", "01003"]
+
+
+@given(
+    a_series=st.lists(st.floats(-100, 100, allow_nan=False), min_size=6, max_size=6, unique=True),
+    b_series=st.lists(st.floats(-100, 100, allow_nan=False), min_size=6, max_size=6, unique=True),
+)
+def test_lead_lag_is_antisymmetric_within_a_mutual_pair(
+    a_series: list[float], b_series: list[float]
+) -> None:
+    """Property: in a two-county mutual-neighbour pair, score(A) == -score(B) for
+    any pair of swing histories.
+
+    Correlation is symmetric, so A's lead correlation corr(A(t), B(t+1)) equals B's
+    lag correlation corr(B(t+1), A(t)); likewise A's lag equals B's lead. Hence
+        score_B = lead_B - lag_B = lag_A - lead_A = -(lead_A - lag_A) = -score_A.
+    Leading is exactly the mirror of following within a pair — an invariant that is
+    exact and independent of the specific values, which is why it is a property
+    rather than a single worked example.
+
+    Unique series guarantee every one-election-shifted window has variance, so both
+    counties are always scored and neither is excluded; the property can therefore
+    be asserted unconditionally, with no guard."""
+    years = [2000, 2004, 2008, 2012, 2016, 2020]
+    panel = _panel(
+        {
+            "01001": dict(zip(years, a_series, strict=True)),
+            "01003": dict(zip(years, b_series, strict=True)),
+        }
+    )
+    adjacency = {"01001": frozenset({"01003"}), "01003": frozenset({"01001"})}
+
+    s = lead_lag(panel, adjacency, value_column="swing")
+
+    assert abs(s["01001"] + s["01003"]) < 1e-9
