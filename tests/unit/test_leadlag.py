@@ -65,3 +65,34 @@ def test_leader_scores_positive_follower_scores_negative() -> None:
 
     assert abs(s["01001"] - 1.0) < 1e-9
     assert abs(s["01003"] - (-1.0)) < 1e-9
+
+
+def test_county_with_too_few_paired_elections_is_excluded() -> None:
+    """A lagged correlation from two paired points is +/-1 by construction, so a
+    county whose own series is too sparse to form one cannot have a meaningful
+    score and is dropped — never fabricated.
+
+    A line A - B - C over five elections. A and B are present throughout. C joins
+    only in the last two elections (2012, 2016), so after the one-election shift
+    its lead pairing has a single non-NaN pair and its lag pairing two — both below
+    the minimum of three. C is excluded; A and B remain.
+
+    C's sparseness must not exclude its well-populated neighbour B: B's
+    neighbourhood mean draws on A (full), so B's own pairings stay complete. The
+    exclusion is about a county's OWN observations, not its neighbours'."""
+    panel = _panel(
+        {
+            "01001": {2000: 0.0, 2004: 0.1, 2008: 0.2, 2012: 0.1, 2016: 0.3},  # A: full
+            "01003": {2000: 0.2, 2004: 0.0, 2008: 0.3, 2012: 0.2, 2016: 0.1},  # B: full
+            "01005": {2012: 0.5, 2016: 0.4},  # C: only two elections
+        }
+    )
+    adjacency = {
+        "01001": frozenset({"01003"}),
+        "01003": frozenset({"01001", "01005"}),
+        "01005": frozenset({"01003"}),
+    }
+
+    s = lead_lag(panel, adjacency, value_column="swing")
+
+    assert list(s.index) == ["01001", "01003"]

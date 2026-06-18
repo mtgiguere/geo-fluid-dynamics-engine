@@ -23,13 +23,36 @@ provides; over seven modern elections alone the lagged correlations were too thi
 from collections.abc import Mapping
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
+
+# Minimum non-missing paired observations for a lagged correlation to mean
+# anything. Two paired points are always +/-1 by construction; require more.
+_MIN_PAIRED = 3
+
+
+def _lagged_corr(
+    own: npt.NDArray[np.float64],
+    hood: npt.NDArray[np.float64],
+    min_paired: int,
+) -> float | None:
+    """Pearson correlation of own(t) against hood(t) over the elections where both
+    are present. Returns None when fewer than `min_paired` pairs survive, so the
+    caller can exclude the county rather than fabricate a score from too little.
+
+    `own` and `hood` are passed already shifted by one election relative to each
+    other (own[:-1] with hood[1:] for the lead, own[1:] with hood[:-1] for the lag)."""
+    mask = ~(np.isnan(own) | np.isnan(hood))
+    if int(mask.sum()) < min_paired:
+        return None
+    return float(np.corrcoef(own[mask], hood[mask])[0, 1])
 
 
 def lead_lag(
     panel: pd.DataFrame,
     adjacency: Mapping[str, frozenset[str]],
     value_column: str,
+    min_paired: int = _MIN_PAIRED,
 ) -> pd.Series:
     """Per-county lead-lag score from a long (fips, year, value) panel.
 
@@ -37,6 +60,10 @@ def lead_lag(
     neighbourhood one election in the future, minus its correlation one election
     in the past. Positive means the county tends to move before its region
     (Bellwether-like); negative means it moves after (Buffer-like).
+
+    A county is excluded (absent from the Series) when either its lead or its lag
+    correlation has fewer than `min_paired` paired elections — a score from too
+    little overlap is meaningless, so it is never fabricated.
     """
     wide = panel.pivot_table(index="fips", columns="year", values=value_column)
 
@@ -48,8 +75,10 @@ def lead_lag(
 
         # Pair own(t) with the neighbourhood one election later (lead) and one
         # election earlier (lag), positionally over the sorted election columns.
-        lead = np.corrcoef(own[:-1], hood[1:])[0, 1]
-        lag = np.corrcoef(own[1:], hood[:-1])[0, 1]
-        scores[fips] = float(lead - lag)
+        lead = _lagged_corr(own[:-1], hood[1:], min_paired)
+        lag = _lagged_corr(own[1:], hood[:-1], min_paired)
+        if lead is None or lag is None:
+            continue
+        scores[fips] = lead - lag
 
-    return pd.Series(scores, name="lead_lag").sort_index()
+    return pd.Series(scores, name="lead_lag", dtype=float).sort_index()
