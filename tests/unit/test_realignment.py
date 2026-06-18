@@ -74,3 +74,20 @@ def test_only_pre_target_elections_train_the_trend() -> None:
     s = trend_surprise(panel, target_year=2016, value_column="dem_share_2p", min_obs=3)
 
     assert abs(s["01001"]) < 1e-9  # 2020's 0.10 must not pull the 2016 prediction
+
+
+def test_target_year_absent_from_panel_returns_empty() -> None:
+    """A target election the panel has never recorded has no actual values to take
+    residuals against, so the result is empty — never fabricated, never a crash.
+    Here the panel holds only 2000-2012; asking for 2016 (which no county has) must
+    return an empty trend_surprise series rather than raising on the missing column."""
+    panel = _panel(
+        {
+            "01001": {2000: 0.30, 2004: 0.40, 2008: 0.50, 2012: 0.60},
+        }
+    )
+
+    s = trend_surprise(panel, target_year=2016, value_column="dem_share_2p", min_obs=3)
+
+    assert s.empty
+    assert s.name == "trend_surprise"

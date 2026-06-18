@@ -34,9 +34,14 @@ Stages 1–2 are **live on the deployed map**, along with the first predictive l
 Under the hood, the analytical core includes Moran's I and LISA (with permutation
 significance), a maximum-likelihood spatial-lag (SAR) model — with a Spatial Durbin
 honesty check confirming the spatial signal survives controlling for neighbors'
-demographics — and the dissonance metric. Network node-classification, the
-chaos/anomaly sensor, and the phase-transition detector (spec Modules 2, 4, 5) are
-not yet built — see `BACKLOG.md`.
+demographics — and the dissonance metric. The county returns now reach back to
+**1868** (a 40-election spine, 1868–2024), and the first seed of the chaos/anomaly
+sensor (spec Module 4) is built on it: a per-county *trend-surprise* that detects
+realignments, walked through in the
+[1964-vs-2016 analysis notebook](notebooks/realignment_1964_vs_2016.ipynb) — 1964 was
+an almost-purely-regional break, 2016 added a new education cleavage. Network
+node-classification (Module 2) has an exploratory first attempt; the phase-transition
+detector (Module 5) is not yet built — see `BACKLOG.md`.
 
 ## Development
 

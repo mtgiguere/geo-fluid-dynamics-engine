@@ -70,6 +70,30 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
   broadband, media markets) per the spec's W_hybrid. Trigger: when the lag
   model's residuals show non-contiguous structure.
 
+## NLP / text (future phase)
+
+- **NLP stack decision — PyTorch + Hugging Face `transformers` (agreed
+  2026-06-15).** When the project reaches a text/NLP phase, default to PyTorch +
+  HF rather than alternatives (Matt's call; it's the right modern NLP stack and a
+  deliberate portfolio signal). Candidate tasks, none scoped yet: embedding ballot-
+  measure / platform / speech text to track how *ideas* (not just vote share)
+  diffuse across counties; issue/topic classification feeding Module 3 dissonance
+  real text instead of proxies; semantic-similarity to detect a new cleavage
+  forming. Architecture is chosen once the task is pinned — **JIT: don't build
+  ahead of the trigger.**
+  Constraints, recorded so they aren't rediscovered:
+  - Fits the no-seed TDD rule best via **inference in `eval()` mode** (deterministic
+    → satisfies the reproducibility-contract rule, not seed-value snapshots).
+    Embeddings / zero-shot / similarity are inference, not training.
+  - If fine-tuning: test pipeline contracts (tokenization, tensor shapes, label
+    maps, pre/post-processing) plus a noise-free property ("overfit a tiny batch →
+    loss → ~0"), never an asserted seeded loss value.
+  - Dependency/CI weight: torch is GB-scale; pin CPU-only wheels and watch
+    `uv lock --check` + pip-audit. Treat model **inference as an offline build step**
+    (like `scripts/export_web_data.py`), not inside the coverage-gated unit path.
+  - Trigger: a defined text-analysis need (most likely real ballot-measure / platform
+    text to deepen Module 3), plus the text data to ingest.
+
 ## Data
 
 - **Ballot measures ingest** (county-level, per-state SoS sources; Kansas
