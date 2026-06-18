@@ -96,3 +96,30 @@ def test_county_with_too_few_paired_elections_is_excluded() -> None:
     s = lead_lag(panel, adjacency, value_column="swing")
 
     assert list(s.index) == ["01001", "01003"]
+
+
+def test_island_with_no_neighbours_is_excluded() -> None:
+    """An island (empty adjacency, like Hawaii or Nantucket) has no neighbourhood
+    series to correlate against, so it cannot have a lead-lag score and is dropped.
+    Spatial weights deliberately keep islands in the keys with an all-zero row (so
+    the matrix stays aligned); here the consequence is that the island simply has
+    no neighbourhood mean, so no pairs survive and it is excluded — not crashed on,
+    not scored as zero. A normal adjacent pair is present to show it is the
+    islandness, not some global effect, doing the excluding."""
+    panel = _panel(
+        {
+            "01001": {2000: 0.0, 2004: 0.1, 2008: 0.2, 2012: 0.1, 2016: 0.3},  # mainland
+            "01003": {2000: 0.2, 2004: 0.0, 2008: 0.3, 2012: 0.2, 2016: 0.1},  # mainland
+            "15003": {2000: 0.4, 2004: 0.5, 2008: 0.3, 2012: 0.6, 2016: 0.2},  # island
+        }
+    )
+    adjacency = {
+        "01001": frozenset({"01003"}),
+        "01003": frozenset({"01001"}),
+        "15003": frozenset(),  # island: no neighbours
+    }
+
+    s = lead_lag(panel, adjacency, value_column="swing")
+
+    assert "15003" not in s.index
+    assert "01001" in s.index
