@@ -66,6 +66,32 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
   spec's meaning better. The `county_influence` primitives stay as tested
   building blocks for whichever path we take.
 
+- **Module 2 lead-lag retry — SECOND FALSIFICATION (2026-06-18).** Built
+  `spatial/leadlag.lead_lag` (path (a) above): per-county
+  `corr(own swing(t), neighbourhood(t+1)) − corr(own swing(t), neighbourhood(t−1))`
+  — positive leads, negative follows. Tested seed-free (deterministic
+  leader/follower construction; sparse / island / constant-series exclusions; an
+  antisymmetry property), 100% branch coverage. Acceptance run on the full 40-
+  election spine (`notebooks/leadlag_node_roles.{py,ipynb}`, TDD-exempt):
+    - The GOOD news — timing recovers a distinction conformity could not:
+      contemporaneous conformity collapses (median 0.94, 100% > 0.5, the attempt-#1
+      disease), while lead-lag SPREADS (49% lead / 51% follow, std 0.13). The
+      *information* is there.
+    - The bad news — it's not a usable Bellwether map: signal weak (median ≈ 0);
+      spatially incoherent (Moran's I ≈ −0.14, and that negativity is partly
+      MECHANICAL — within a pair, if I lead you then you follow me, so the metric's
+      own antisymmetry pushes neighbours to opposite signs and Moran's I isn't even
+      a clean coherence test for it); and the strongest "leaders" are small,
+      idiosyncratic counties (VA independent cities, Broomfield CO — created 2001 so
+      its history is backfill, sparse UT/SD counties), not the metros change
+      radiates from. Not a simple volatility artefact (corr ≈ 0); a mild thin-data
+      pull (corr |score| vs #elections ≈ −0.22). NOT wired to the map.
+  REFINED paths forward (supersede (a)): population-/metro-weighted or -restricted
+  scoring (candidate hubs); a DIRECTED influence graph instead of a symmetric
+  pairwise score (whose antisymmetry forces the checkerboard); or path (b), the
+  issue-resistance route via the dissonance metric. `lead_lag` stays a tested
+  primitive for whichever we take next.
+
 - **Hybrid W**: blend queen adjacency with connectivity (commuting flows,
   broadband, media markets) per the spec's W_hybrid. Trigger: when the lag
   model's residuals show non-contiguous structure.
