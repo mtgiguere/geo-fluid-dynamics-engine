@@ -131,7 +131,9 @@ watchdog for hollow tests. (mutmut only runs on Linux CI — it refuses on Windo
   (FIPS-harmonized; adds swing); `panel/spine` — joins historical + MIT returns into
   the 1868–2024 panel
 - `src/geofluid/spatial/` — `weights` (adjacency + W), `moran` (global I, LISA,
-  permutation significance), `lag` (SAR model)
+  permutation significance), `lag` (SAR model), `influence` (`county_influence` +
+  `classify_nodes`: Module 2 node primitives — tested, contemporaneous-conformity
+  classification falsified on real data; see BACKLOG.md)
 - `src/geofluid/dissonance` — issue-vs-party gap + ballot-measure overlay
 - `src/geofluid/realignment` — `trend_surprise` (Module 4 seed: per-county residual
   from its own trend)
