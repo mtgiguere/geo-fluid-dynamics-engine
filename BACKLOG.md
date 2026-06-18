@@ -122,10 +122,35 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
 
 ## Data
 
-- **Ballot measures ingest** (county-level, per-state SoS sources; Kansas
-  Aug 2022 first): unlocks Module 3 dissonance/False Bastions with real
-  topic votes. Trigger: after the core engine is proven on the presidential
-  spine.
+- **Ballot measures ingest — STARTER SET SCOPED + IN PROGRESS (2026-06-18).**
+  County-level, per-state SoS sources; Kansas Aug 2022 done. The two Module 2
+  falsifications (see Science) showed presidential swing is too synchronized/sticky
+  to localize influence; Matt's hypothesis is that cleaner single-issue contests
+  are the better signal (see the project memory). So this ingest is now the
+  highest-leverage move — it unblocks BOTH the issue-resistance route (Module 2
+  path b) AND a future lead-lag retry on single-issue contests. The decisive
+  reason: influence/resistance is a *multi-observation* structure — one measure
+  (N=1) has no structure to find, so we need variation across issues/states/time
+  to model on (the same depth lesson the 40-election spine taught lead-lag).
+  Starter set — same issue (abortion) across partisan contexts + one off-issue,
+  ingested ONE AT A TIME, each test-first + a real-data acceptance run vs the
+  certified statewide total (Bugs #10–12 pattern), reusing the `referendum.py`
+  pattern (each state's SoS file format differs — the KS loader is KS-specific):
+    1. **KS** Aug-2022 abortion (red; pro-choice won) — DONE, the anchor.
+    2. **KY** Nov-2022 Amdt 2 (deep red; pro-choice won) — NEXT; highest-signal
+       False Bastion. Source: KY State Board of Elections.
+    3. **OH** Nov-2023 Issue 1 (purple; pro-choice won) — adds a 2023 time point.
+       Source: Ohio SoS (clean county-level Excel/CSV).
+    4. **MI** Nov-2022 Prop 3 (purple/blue; passed) — the blue end of the contrast.
+       Source: Michigan Bureau of Elections.
+    5. **MO** Nov-2022 Amdt 3 (cannabis, red; passed) — DIFFERENT issue: tests
+       whether persuadability is issue-general or issue-specific. Source: MO SoS.
+       (FL/MO 2024 abortion are swappable alternates — red-state 2024 with strong
+       dissonance.)
+  CONTEST DIMENSION (deferred, JIT): each measure is its own panel today; modelling
+  across them will need a tidy `fips × measure_id` schema + a measure metadata
+  table (state, date, issue, which side is "progressive"). Let it emerge from the
+  real need when the first TWO measures are combined — do not pre-build it.
 - **Historical extension** (Algara–Sharif 1868–2020): **LOADER DONE +
   VALIDATED (2026-06-15)** — `load_historical_returns` maps the dataset onto
   the canonical returns schema; free download (no guestbook), already
