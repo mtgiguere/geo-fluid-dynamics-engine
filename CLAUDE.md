@@ -42,10 +42,17 @@ The descriptive map and the first analytical layers are live and deployed
   1964 vs 2016) on the 1868–2024 spine: 1964 ≈ purely regional, 2016 adds an
   education cleavage. Still to come: the live surprise-field monitor (magnitude +
   spatial coherence + axis) that is the actual Module 4 product.
-- **Module 2 (Gravity Engine), first attempt falsified**: `county_influence` +
+- **Module 2 (Gravity Engine), two attempts falsified**: `county_influence` +
   `classify_nodes` primitives are tested, but contemporaneous-conformity
   node-classification was falsified on real data (swing is so autocorrelated that
-  everyone co-moves). Lead-lag retry now unblocked by the 40-election spine.
+  everyone co-moves). The lead-lag retry (`spatial/leadlag`, tested) — own swing
+  vs neighbourhood one election ahead minus one behind — was then falsified too:
+  it spreads where conformity collapsed (so the timing signal exists), but the
+  field is weak, spatially incoherent (Moran's I ≈ −0.14, partly a mechanical
+  artefact of the metric's own antisymmetry), and its extremes are small
+  idiosyncratic counties, not influence hubs (acceptance notebook, 2026-06-18).
+  Neither is wired to the map. Refined paths in BACKLOG (population/metro-aware or
+  directed graph; or the issue-resistance route via dissonance).
 - **Module 5 (Systemic Phase Transition)**: not started. See `BACKLOG.md` for
   sequenced next work and open design questions.
 
@@ -133,7 +140,8 @@ watchdog for hollow tests. (mutmut only runs on Linux CI — it refuses on Windo
 - `src/geofluid/spatial/` — `weights` (adjacency + W), `moran` (global I, LISA,
   permutation significance), `lag` (SAR model), `influence` (`county_influence` +
   `classify_nodes`: Module 2 node primitives — tested, contemporaneous-conformity
-  classification falsified on real data; see BACKLOG.md)
+  classification falsified on real data; see BACKLOG.md), `leadlag` (`lead_lag`:
+  Module 2 temporal retry — tested, also falsified on real data; see BACKLOG.md)
 - `src/geofluid/dissonance` — issue-vs-party gap + ballot-measure overlay
 - `src/geofluid/realignment` — `trend_surprise` (Module 4 seed: per-county residual
   from its own trend)
