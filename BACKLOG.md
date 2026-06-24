@@ -156,10 +156,17 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
        whether persuadability is issue-general or issue-specific. Source: MO SoS.
        (FL/MO 2024 abortion are swappable alternates — red-state 2024 with strong
        dissonance.)
-  CONTEST DIMENSION (deferred, JIT): each measure is its own panel today; modelling
-  across them will need a tidy `fips × measure_id` schema + a measure metadata
-  table (state, date, issue, which side is "progressive"). Let it emerge from the
-  real need when the first TWO measures are combined — do not pre-build it.
+  CONTEST DIMENSION — TIDY PANEL DONE (2026-06-24): with KS + KY combined, the
+  trigger arrived. `panel/measures.build_measures_panel` stacks per-measure
+  referendum panels into one tidy `fips × measure_id` panel and adds
+  `progressive_share` (the progressive vote's share, oriented per measure via
+  `Measure.progressive_side` so it is comparable across measures — NO for the
+  abortion measures, YES for a future cannabis one). Tested seed-free, 100%
+  branch coverage. STILL DEFERRED (JIT — no consumer yet): the normalized measure
+  METADATA table (state, date, issue); it emerges when the resistance analysis
+  actually groups by those dimensions and the normalize-vs-denormalize access
+  pattern is concrete. Wiring to the map overlay is per-measure (each measure
+  ships its own dissonance file) and is independent of this modelling panel.
 - **Historical extension** (Algara–Sharif 1868–2020): **LOADER DONE +
   VALIDATED (2026-06-15)** — `load_historical_returns` maps the dataset onto
   the canonical returns schema; free download (no guestbook), already
