@@ -137,8 +137,17 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
   certified statewide total (Bugs #10–12 pattern), reusing the `referendum.py`
   pattern (each state's SoS file format differs — the KS loader is KS-specific):
     1. **KS** Aug-2022 abortion (red; pro-choice won) — DONE, the anchor.
-    2. **KY** Nov-2022 Amdt 2 (deep red; pro-choice won) — NEXT; highest-signal
-       False Bastion. Source: KY State Board of Elections.
+    2. **KY** Nov-2022 Amdt 2 (deep red; "NO" won, preserving rights) — DONE
+       (2026-06-24). `load_ky_referendum` (KY SoS plain-text export, a distinct
+       format from the KS workbook; shared `_assemble_referendum_panel` so both
+       emit the canonical schema). Acceptance: all 120 counties map, panel
+       matches the raw file to the vote, NO% = certified 52.35%; the 59-vote
+       (0.004%) gap vs the certified canvass is a pre-certification export
+       vintage artifact (Russell at 99.01% est), not a loader bug. False-Bastion
+       structure confirmed (Louisville 71% / Lexington 73% NO vs rural Bell
+       34% NO). NOT yet wired to the map overlay (see CONTEST DIMENSION below —
+       KY is now the second measure, so combining it with KS is the JIT trigger
+       for the tidy fips × measure_id schema).
     3. **OH** Nov-2023 Issue 1 (purple; pro-choice won) — adds a 2023 time point.
        Source: Ohio SoS (clean county-level Excel/CSV).
     4. **MI** Nov-2022 Prop 3 (purple/blue; passed) — the blue end of the contrast.
