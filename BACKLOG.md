@@ -148,8 +148,16 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
        34% NO). NOT yet wired to the map overlay (see CONTEST DIMENSION below —
        KY is now the second measure, so combining it with KS is the JIT trigger
        for the tidy fips × measure_id schema).
-    3. **OH** Nov-2023 Issue 1 (purple; pro-choice won) — adds a 2023 time point.
-       Source: Ohio SoS (clean county-level Excel/CSV).
+    3. **OH** Nov-2023 Issue 1 (purple; pro-choice won) — DONE (2026-06-24).
+       `load_oh_referendum` (SoS precinct-summary workbook: header on the 3rd row,
+       both statewide issues side by side — Issue 1 abortion, Issue 2 cannabis;
+       "Total"/"Percentage" summary rows excluded, the Bug #11 pattern). Acceptance:
+       all 88 counties map, panel matches the certified canvass EXACTLY (YES
+       2,227,384 / NO 1,695,480, delta 0/0). The ORIENTATION FLIP (YES = pro-choice
+       here) drove the overlay's new `progressive_side` param so dissonance is
+       signed correctly; wired to the map. Adds the 2023 time point AND a YES-side
+       measure. (Issue 2 cannabis sits in the same file — a future off-issue measure,
+       the MO-cannabis slot's natural substitute; not ingested yet, JIT.)
     4. **MI** Nov-2022 Prop 3 (purple/blue; passed) — the blue end of the contrast.
        Source: Michigan Bureau of Elections.
     5. **MO** Nov-2022 Amdt 3 (cannabis, red; passed) — DIFFERENT issue: tests

@@ -26,11 +26,14 @@ The descriptive map and the first analytical layers are live and deployed
   Still to come: the survival/hazard *timing* model, hybrid W, and the spatial-error
   (SEM) half of the honesty check (hard under the no-seed rule — see BACKLOG).
 - **Module 3 (Friction & Dissonance), live**: `dissonance` (issue-vs-party gap) and
-  the Kansas Aug-2022 + Kentucky Nov-2022 abortion ballot-measure overlays, shipped
-  as map views (the "False Bastions"). Each state's SoS format differs, so each is a
-  state-specific loader sharing one canonical panel (`referendum.py`); the export
-  catalog dispatches per-measure loaders. Still to come: wombling, roll-off,
-  False-Bastion classification tiers, more measures (append to `MEASURES`).
+  the Kansas Aug-2022 + Kentucky Nov-2022 + Ohio Nov-2023 abortion ballot-measure
+  overlays, shipped as map views (the "False Bastions"). Each state's SoS format
+  differs, so each is a state-specific loader sharing one canonical panel
+  (`referendum.py`); the export catalog dispatches per-measure loaders and an
+  overlay `progressive_side` ("no" for KS/KY where a NO preserved rights, "yes" for
+  OH Issue 1 where a YES established them) so dissonance is oriented correctly per
+  measure. Still to come: wombling, roll-off, False-Bastion classification tiers,
+  more measures (append to `MEASURES`).
 - **Frontend** (`web/`, Vite + TS + Mapbox GL): map views for result, swing, wave
   anchors, six demographics, and ballot-measure dissonance; scoped focus
   (nation / any state / cross-border metro presets); play-the-decades time-lapse;
