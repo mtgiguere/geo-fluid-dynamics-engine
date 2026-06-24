@@ -131,6 +131,35 @@ def load_ky_referendum(path: str | Path, county_fips: Mapping[str, str]) -> pd.D
     return _assemble_referendum_panel(df, "votes")
 
 
+def load_oh_referendum(path: str | Path, county_fips: Mapping[str, str]) -> pd.DataFrame:
+    """Load the Ohio Nov-2023 State Issue 1 panel from the SoS canvass workbook.
+
+    A third source format: the official precinct-summary workbook. Its one sheet
+    ("Statewide Issues") carries the real column header on the third row (two
+    title rows above it, hence header=2) and reports BOTH statewide issues side
+    by side — Issue 1 (abortion) in the first Yes/No pair, Issue 2 (cannabis) in
+    the second, which pandas dedups to Yes/No and Yes.1/No.1. This reader takes
+    Issue 1. Politics stays with the analysis layer: a YES here was the
+    rights-establishing vote, but the panel reports raw yes/no + no_share like
+    every other state's, so the contest panel orients it.
+    """
+    df = pd.read_excel(path, sheet_name="Statewide Issues", header=2)
+
+    # The sheet opens with two summary rows ("Total", "Percentage") that are not
+    # counties. Drop them before aggregating — summing the Total row would
+    # double the statewide count (the Bug #11 coexisting-totals pattern).
+    df = df[~df["County Name"].isin(["Total", "Percentage"])]
+
+    names = df["County Name"].astype(str).str.upper()
+    unknown = sorted(set(names) - set(county_fips))
+    if unknown:
+        raise ValueError(f"County names with no FIPS mapping: {unknown}")
+    long = pd.DataFrame(
+        {"fips": names.map(dict(county_fips)), "yes_votes": df["Yes"], "no_votes": df["No"]}
+    ).melt(id_vars="fips", var_name="side", value_name="votes")
+    return _assemble_referendum_panel(long, "votes")
+
+
 def _wide_county_sheet_to_long(county_name: str, sheet: pd.DataFrame) -> pd.DataFrame:
     """Normalize one wide per-county sheet into the long (County, Candidate,
     Votes) shape the aggregator consumes.
