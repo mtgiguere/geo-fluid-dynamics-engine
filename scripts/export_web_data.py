@@ -21,7 +21,11 @@ from geofluid.dissonance import build_measure_overlay
 from geofluid.ingest.county_demographics import acs5_county_url, load_county_demographics
 from geofluid.ingest.county_geometry import county_shapefile_to_geojson
 from geofluid.ingest.county_returns import load_county_returns
-from geofluid.ingest.referendum import load_ks_referendum_workbook, load_ky_referendum
+from geofluid.ingest.referendum import (
+    load_ks_referendum_workbook,
+    load_ky_referendum,
+    load_oh_referendum,
+)
 from geofluid.map.layers import export_year_metrics
 from geofluid.panel.master import build_master_panel
 from geofluid.scope import build_scope_catalog
@@ -40,8 +44,9 @@ OUT = Path("web/public/data")
 # The issue_label is a comparative noun: dissonance>0 means a county leaned
 # more "pro-choice" than it voted Democratic — a comparison, NOT a claim it
 # voted majority pro-choice. The frontend phrases it as "leaned more pro-choice
-# than...". For both abortion measures a NO vote preserved abortion rights, so
-# the panel's no_share IS the pro-choice share the overlay compares.
+# than...". progressive_side names which ballot answer was the pro-choice vote:
+# "no" for KS/KY (a NO defeated/blocked an abortion ban), "yes" for OH Issue 1
+# (a YES established abortion rights). The overlay orients the dissonance by it.
 MEASURES = [
     {
         "id": "ks_abortion_2022",
@@ -49,6 +54,7 @@ MEASURES = [
         "scope": "20",
         "baseline_year": 2020,
         "issue_label": "pro-choice",
+        "progressive_side": "no",
         "source": "data/raw/ks_amendment_2022_precinct.xlsx",
         "loader": load_ks_referendum_workbook,
     },
@@ -58,8 +64,19 @@ MEASURES = [
         "scope": "21",
         "baseline_year": 2020,
         "issue_label": "pro-choice",
+        "progressive_side": "no",
         "source": "data/raw/2022 Kentucky Amendment 2 - No Right To Abortion Election Results.txt",
         "loader": load_ky_referendum,
+    },
+    {
+        "id": "oh_abortion_2023",
+        "label": "Ohio: Abortion rights (Nov 2023)",
+        "scope": "39",
+        "baseline_year": 2020,
+        "issue_label": "pro-choice",
+        "progressive_side": "yes",
+        "source": "data/raw/precinct-summary.xlsx",
+        "loader": load_oh_referendum,
     },
 ]
 
@@ -159,7 +176,7 @@ def main() -> None:
         baseline = returns[
             (returns["year"] == measure["baseline_year"]) & (returns["fips"].str.startswith(state))
         ].set_index("fips")["dem_share_2p"]
-        overlay = build_measure_overlay(referendum, baseline)
+        overlay = build_measure_overlay(referendum, baseline, measure["progressive_side"])
         (OUT / f"measure_{measure['id']}.json").write_text(json.dumps(overlay, allow_nan=False))
         published.append(
             {k: measure[k] for k in ("id", "label", "scope", "baseline_year", "issue_label")}
