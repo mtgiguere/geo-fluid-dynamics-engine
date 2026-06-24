@@ -18,7 +18,11 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from geofluid.ingest.referendum import load_ks_referendum, load_ks_referendum_workbook
+from geofluid.ingest.referendum import (
+    load_ks_referendum,
+    load_ks_referendum_workbook,
+    load_ky_referendum,
+)
 
 _NAME_TO_FIPS = {"ALLEN": "20001", "JOHNSON": "20091"}
 
@@ -153,3 +157,171 @@ def test_workbook_merges_long_main_sheet_and_wide_county_sheets(tmp_path: Path) 
     allen = panel[panel["fips"] == "20001"].iloc[0]
     assert allen["yes_votes"] == 66
     assert allen["no_votes"] == 48
+
+
+# --- Kentucky Nov-2022 Amendment 2 ("No Right To Abortion") -----------------
+#
+# A SECOND source in a DIFFERENT format. The Kentucky State Board of Elections
+# publishes a plain-text export, not the precinct workbook Kansas uses: a title
+# line, then per county a name line ("<X> County"), a "<pct>% Est. Vote Counted"
+# line, a "Choices / Total Votes / % Votes" tab-separated header, and one "Yes"
+# and one "No" row (whose order varies county to county). The KY loader is
+# KY-specific (each state's SoS format differs) but emits the SAME canonical
+# panel as Kansas, so the dissonance layer consumes both identically.
+#
+# Semantics, again inverting intuition: Amendment 2 would have declared NO right
+# to abortion in the state constitution. "NO" DEFEATED it — so "NO" is the
+# abortion-rights-preserving side, exactly as in Kansas. The panel stays
+# politics-agnostic; no_share is the comparable metric.
+
+_KY_NAME_TO_FIPS = {"ADAIR": "21001", "ALLEN": "21003", "ANDERSON": "21005"}
+
+_KY_TITLE = "2022 Kentucky Amendment 2 - No Right To Abortion Election Results"
+
+
+def _write_ky_file(path: Path, blocks: str) -> None:
+    """Write a miniature of the real KY State Board of Elections text export:
+    the title line, then the given per-county blocks verbatim. The real file
+    uses CRLF; we write LF and rely on the loader's line splitting to absorb
+    both (the real CRLF file is the acceptance-run check)."""
+    path.write_text(_KY_TITLE + "\n" + blocks)
+
+
+def test_ky_single_county_parses_to_canonical_row(tmp_path: Path) -> None:
+    """One KY county block -> one canonical referendum row, identical in shape
+    to the Kansas panel. The vote count is read from the 'Total Votes' column
+    BY the Yes/No label (never the percent column, which is the source's own
+    rounding). Adair-style block, Yes 60 / No 40: total 100,
+    no_share = 40 / 100 = 0.40 (derived here before the assertion). The county
+    name 'Adair County' normalizes to 'ADAIR' to join the boundary-file FIPS
+    map (Census NAME uppercased, no 'County' suffix), and votes are int64."""
+    path = tmp_path / "ky.txt"
+    _write_ky_file(
+        path,
+        "Adair County\n"
+        "100% Est. Vote Counted\n"
+        "Choices\tTotal Votes\t% Votes\n"
+        "Yes\t60\t60.0%\n"
+        "No\t40\t40.0%\n",
+    )
+
+    panel = load_ky_referendum(path, _KY_NAME_TO_FIPS)
+
+    assert list(panel.columns) == ["fips", "yes_votes", "no_votes", "total_votes", "no_share"]
+    assert len(panel) == 1
+    row = panel.iloc[0]
+    assert row["fips"] == "21001"
+    assert row["yes_votes"] == 60
+    assert row["no_votes"] == 40
+    assert row["total_votes"] == 100
+    assert abs(row["no_share"] - 0.40) < 1e-12
+    assert panel["yes_votes"].dtype == "int64"
+
+
+def test_ky_assigns_votes_by_label_not_row_order(tmp_path: Path) -> None:
+    """In the real file the Yes/No rows are NOT in a fixed order — some
+    counties (Bourbon, Boyle, Woodford) list No first. Votes must be assigned
+    by the row's LABEL, never its position. Here Anderson lists No (50) before
+    Yes (30): yes_votes must be 30 and no_votes 50, not the reverse."""
+    path = tmp_path / "ky.txt"
+    _write_ky_file(
+        path,
+        "Anderson County\n"
+        "100% Est. Vote Counted\n"
+        "Choices\tTotal Votes\t% Votes\n"
+        "No\t50\t62.5%\n"
+        "Yes\t30\t37.5%\n",
+    )
+
+    panel = load_ky_referendum(path, _KY_NAME_TO_FIPS)
+
+    row = panel.iloc[0]
+    assert row["fips"] == "21005"
+    assert row["yes_votes"] == 30
+    assert row["no_votes"] == 50
+
+
+def test_ky_parses_thousands_separators(tmp_path: Path) -> None:
+    """The export formats vote counts with thousands separators (Boone really
+    reads 'Yes 22,540'). The loader must read 22,540 as the integer 22540, not
+    choke on the comma. Yes 22,540 / No 21,581 (Boone's real figures):
+    total 44,121, no_share = 21581 / 44121 (derived before the assertion)."""
+    path = tmp_path / "ky.txt"
+    _write_ky_file(
+        path,
+        "Adair County\n"
+        "100% Est. Vote Counted\n"
+        "Choices\tTotal Votes\t% Votes\n"
+        "Yes\t22,540\t51.1%\n"
+        "No\t21,581\t48.9%\n",
+    )
+
+    panel = load_ky_referendum(path, _KY_NAME_TO_FIPS)
+
+    row = panel.iloc[0]
+    assert row["yes_votes"] == 22540
+    assert row["no_votes"] == 21581
+    assert row["total_votes"] == 44121
+    assert abs(row["no_share"] - 21581 / 44121) < 1e-12
+
+
+def test_ky_multiple_counties_one_row_each_sorted_by_fips(tmp_path: Path) -> None:
+    """Each county block becomes exactly one panel row, and the panel is sorted
+    by FIPS ascending regardless of the file's order. The file here lists Allen
+    (21003) before Adair (21001); the panel must come back [21001, 21003], one
+    row apiece — so an index built on this panel aligns with every other
+    FIPS-sorted product."""
+    path = tmp_path / "ky.txt"
+    _write_ky_file(
+        path,
+        "Allen County\n"
+        "100% Est. Vote Counted\n"
+        "Choices\tTotal Votes\t% Votes\n"
+        "Yes\t10\t50.0%\n"
+        "No\t10\t50.0%\n"
+        "Adair County\n"
+        "100% Est. Vote Counted\n"
+        "Choices\tTotal Votes\t% Votes\n"
+        "Yes\t7\t70.0%\n"
+        "No\t3\t30.0%\n",
+    )
+
+    panel = load_ky_referendum(path, _KY_NAME_TO_FIPS)
+
+    assert list(panel["fips"]) == ["21001", "21003"]
+    assert list(panel["yes_votes"]) == [7, 10]
+
+
+def test_ky_unknown_county_name_fails_loudly(tmp_path: Path) -> None:
+    """A county name that maps to no FIPS is a join defect (misspelling, a new
+    independent city, format drift) — silent dropping would shrink the panel
+    invisibly. Raise, naming the offending county, exactly as the Kansas loader
+    does. 'Fayette' is omitted from the test map to force the failure."""
+    path = tmp_path / "ky.txt"
+    _write_ky_file(
+        path,
+        "Fayette County\n"
+        "100% Est. Vote Counted\n"
+        "Choices\tTotal Votes\t% Votes\n"
+        "Yes\t5\t50.0%\n"
+        "No\t5\t50.0%\n",
+    )
+
+    with pytest.raises(ValueError, match="FAYETTE"):
+        load_ky_referendum(path, _KY_NAME_TO_FIPS)
+
+
+def test_ky_county_missing_a_side_fails_loudly(tmp_path: Path) -> None:
+    """A referendum has exactly two sides. A county block reporting only a Yes
+    (or only a No) is format drift — a dropped row, a parse slip — and must
+    raise, naming the county. Otherwise the pivot pads the missing side to a
+    phantom 0, producing a no_share that looks real but is fabricated. Adair
+    here has a Yes and no No."""
+    path = tmp_path / "ky.txt"
+    _write_ky_file(
+        path,
+        "Adair County\n100% Est. Vote Counted\nChoices\tTotal Votes\t% Votes\nYes\t60\t100.0%\n",
+    )
+
+    with pytest.raises(ValueError, match="ADAIR"):
+        load_ky_referendum(path, _KY_NAME_TO_FIPS)
