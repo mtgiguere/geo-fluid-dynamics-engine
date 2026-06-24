@@ -451,3 +451,38 @@ def test_oh_excludes_total_and_percentage_summary_rows(tmp_path: Path) -> None:
     adams = panel.iloc[0]
     assert adams["yes_votes"] == 15
     assert adams["no_votes"] == 35
+
+
+def test_oh_issue_2_reads_the_second_yes_no_pair(tmp_path: Path) -> None:
+    """The canvass carries two statewide issues side by side — Issue 1 (abortion)
+    in the first Yes/No pair, Issue 2 (cannabis) in the second. issue=2 must read
+    the SECOND pair. Adams' two precincts have Issue 2 (99,1) + (88,2) => yes 187
+    / no 3, total 190, no_share = 3/190 (derived before the assertion). The Issue
+    1 columns carry different values, so reading the wrong pair would fail."""
+    path = tmp_path / "oh.xlsx"
+    _write_oh_workbook(
+        path,
+        [
+            _oh_row("Adams", "BRATTON", 10, 20, i2_yes=99, i2_no=1),
+            _oh_row("Adams", "BRUSH CREEK", 5, 15, i2_yes=88, i2_no=2),
+        ],
+    )
+
+    panel = load_oh_referendum(path, _OH_NAME_TO_FIPS, issue=2)
+
+    row = panel.iloc[0]
+    assert row["fips"] == "39001"
+    assert row["yes_votes"] == 187
+    assert row["no_votes"] == 3
+    assert abs(row["no_share"] - 3 / 190) < 1e-12
+
+
+def test_oh_issue_must_be_1_or_2(tmp_path: Path) -> None:
+    """The canvass has exactly two statewide issues. An out-of-range issue number
+    is a caller error and must raise loudly, naming the bad value — never silently
+    fall through to the wrong column pair (or a bare KeyError)."""
+    path = tmp_path / "oh.xlsx"
+    _write_oh_workbook(path, [_oh_row("Adams", "BRATTON", 10, 20)])
+
+    with pytest.raises(ValueError, match="3"):
+        load_oh_referendum(path, _OH_NAME_TO_FIPS, issue=3)
