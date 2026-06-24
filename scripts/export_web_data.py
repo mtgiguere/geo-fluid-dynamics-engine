@@ -21,7 +21,7 @@ from geofluid.dissonance import build_measure_overlay
 from geofluid.ingest.county_demographics import acs5_county_url, load_county_demographics
 from geofluid.ingest.county_geometry import county_shapefile_to_geojson
 from geofluid.ingest.county_returns import load_county_returns
-from geofluid.ingest.referendum import load_ks_referendum_workbook
+from geofluid.ingest.referendum import load_ks_referendum_workbook, load_ky_referendum
 from geofluid.map.layers import export_year_metrics
 from geofluid.panel.master import build_master_panel
 from geofluid.scope import build_scope_catalog
@@ -32,18 +32,34 @@ OUT = Path("web/public/data")
 
 # Ballot measures — the modular "issue overlay" catalog. Each measure compares
 # a county's issue vote against its presidential lean (dissonance) and ships
-# its own data file. One entry today; append to add more states/measures.
+# its own data file. Each state's SoS publishes a DIFFERENT source format, so
+# every entry names its own loader (the KS workbook reader, the KY text-export
+# reader); both share the (source, name->fips) -> canonical-panel signature.
+# Append to add more states/measures.
+#
+# The issue_label is a comparative noun: dissonance>0 means a county leaned
+# more "pro-choice" than it voted Democratic — a comparison, NOT a claim it
+# voted majority pro-choice. The frontend phrases it as "leaned more pro-choice
+# than...". For both abortion measures a NO vote preserved abortion rights, so
+# the panel's no_share IS the pro-choice share the overlay compares.
 MEASURES = [
     {
         "id": "ks_abortion_2022",
         "label": "Kansas: Abortion rights (Aug 2022)",
         "scope": "20",
         "baseline_year": 2020,
-        # A comparative noun: dissonance>0 means a county leaned more "pro-choice"
-        # than it voted Democratic — a comparison, NOT a claim it voted majority
-        # pro-choice. The frontend phrases it as "leaned more pro-choice than...".
         "issue_label": "pro-choice",
-        "workbook": "data/raw/ks_amendment_2022_precinct.xlsx",
+        "source": "data/raw/ks_amendment_2022_precinct.xlsx",
+        "loader": load_ks_referendum_workbook,
+    },
+    {
+        "id": "ky_abortion_2022",
+        "label": "Kentucky: Abortion rights (Nov 2022)",
+        "scope": "21",
+        "baseline_year": 2020,
+        "issue_label": "pro-choice",
+        "source": "data/raw/2022 Kentucky Amendment 2 - No Right To Abortion Election Results.txt",
+        "loader": load_ky_referendum,
     },
 ]
 
@@ -130,8 +146,8 @@ def main() -> None:
     }
     published = []
     for measure in MEASURES:
-        if not Path(measure["workbook"]).exists():
-            print(f"  skip {measure['id']}: {measure['workbook']} not present")
+        if not Path(measure["source"]).exists():
+            print(f"  skip {measure['id']}: {measure['source']} not present")
             continue
         state = measure["scope"]
         name_to_fips = {
@@ -139,7 +155,7 @@ def main() -> None:
             for name, fips in county_name_to_fips.items()
             if name.endswith("|" + state)
         }
-        referendum = load_ks_referendum_workbook(measure["workbook"], name_to_fips)
+        referendum = measure["loader"](measure["source"], name_to_fips)
         baseline = returns[
             (returns["year"] == measure["baseline_year"]) & (returns["fips"].str.startswith(state))
         ].set_index("fips")["dem_share_2p"]
