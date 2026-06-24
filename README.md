@@ -24,7 +24,9 @@ Stages 1–2 are **live on the deployed map**, along with the first predictive l
 
 - Map views: election result, swing since last election, **wave anchors** (local
   spatial clustering of swing, permutation-significant), six demographic layers, and
-  **ballot-measure dissonance** (issue vote vs. partisan lean — the "False Bastion").
+  **ballot-measure dissonance** (issue vote vs. partisan lean — the "False Bastion"),
+  now spanning three abortion measures across both ballot polarities (Kansas Aug
+  2022, Kentucky Nov 2022, Ohio Issue 1 Nov 2023).
 - **Scoped focus**: narrow to any state or a cross-border metro (St. Louis, Kansas
   City) — the map is meant for organizers working one area, not just the nation.
 - **Play** the seven presidential elections (2000–2024) as a time-lapse.
@@ -39,9 +41,12 @@ demographics — and the dissonance metric. The county returns now reach back to
 sensor (spec Module 4) is built on it: a per-county *trend-surprise* that detects
 realignments, walked through in the
 [1964-vs-2016 analysis notebook](notebooks/realignment_1964_vs_2016.ipynb) — 1964 was
-an almost-purely-regional break, 2016 added a new education cleavage. Network
-node-classification (Module 2) has an exploratory first attempt; the phase-transition
-detector (Module 5) is not yet built — see `BACKLOG.md`.
+an almost-purely-regional break, 2016 added a new education cleavage. Network influence
+(Module 2) saw two approaches falsified on real data (contemporaneous conformity, then
+a lead-lag timing signal); the current route reframes influence as *issue resistance* —
+a county's persuadability on single-issue ballot measures versus its partisan identity —
+built on a growing multi-state measure set and a cross-measure contest panel. The
+phase-transition detector (Module 5) is not yet built — see `BACKLOG.md`.
 
 ## Development
 

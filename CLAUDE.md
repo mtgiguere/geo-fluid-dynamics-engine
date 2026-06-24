@@ -6,7 +6,7 @@ diffusion), Gravity Engine (network influence), Friction & Dissonance Mapper, Ch
 Anomaly Sensor, Systemic Phase Transition detector.
 Full spec: `docs/geo-fluid-dynamics-engine.docx`. Deployed: https://mtgiguere.github.io/geo-fluid-dynamics-engine/
 
-## What's built (as of 2026-06-15)
+## What's built (as of 2026-06-24)
 
 The descriptive map and the first analytical layers are live and deployed
 (https://mtgiguere.github.io/geo-fluid-dynamics-engine/):

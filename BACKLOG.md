@@ -196,6 +196,28 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
 
 ## Engineering
 
+- **Committed data products can go stale silently** (2026-06-24 footgun): the
+  deploy serves `web/public/data/*.json` as COMMITTED to git — it does NOT run
+  `scripts/export_web_data.py` (which needs CENSUS_API_KEY + the gitignored raw
+  data). So changing a loader wired into `MEASURES`, or the export itself,
+  without regenerating + committing the affected JSON ships a stale map with no
+  guard. Mitigation discipline today: after touching the export or a wired
+  loader, regenerate and commit the affected products (and diff byte-for-byte
+  when the change is meant to be output-preserving — see TDD_CONTRACT.md "Byte-
+  Identical Regeneration"). BETTER (deferred): a CI check that the committed
+  products match a fresh export — blocked on getting CENSUS_API_KEY + raw data
+  into CI, which is the very reason they are committed; revisit if a stale
+  product ever ships. Trigger: first stale-data incident, or a cheap way to
+  pin the no-Census-key products (measures + overlays) in CI.
+- **E2E only covers the Kansas measure** (2026-06-24): the Playwright suite
+  selects `measure:ks_abortion_2022` and asserts its scope/caption/dissonance.
+  KY is data-identical to that path (no new code), but OH exercises a NEW code
+  path — `build_measure_overlay`'s `progressive_side="yes"` orientation produces
+  the dissonance the map colors. That orientation is unit-tested, but nothing
+  verifies OH RENDERS correctly on the built app (the Bug #8 class: unit-green ≠
+  deployed-correct, lower-risk here because it is data not config). Trigger: add
+  a measure E2E (or parametrize the existing one) when the next measure lands, or
+  before relying on the OH overlay for outreach.
 - **Mutation gate** (2026-06-13): SELF-RUNNING and VALIDATED — mutmut 3.x runs
   clean on our src layout in CI (runs #1 cron + #2 push both succeeded; the
   numbered gaps in the survivor list prove most mutants are killed, harness
