@@ -6,7 +6,7 @@ diffusion), Gravity Engine (network influence), Friction & Dissonance Mapper, Ch
 Anomaly Sensor, Systemic Phase Transition detector.
 Full spec: `docs/geo-fluid-dynamics-engine.docx`. Deployed: https://mtgiguere.github.io/geo-fluid-dynamics-engine/
 
-## What's built (as of 2026-06-15)
+## What's built (as of 2026-06-24)
 
 The descriptive map and the first analytical layers are live and deployed
 (https://mtgiguere.github.io/geo-fluid-dynamics-engine/):
@@ -26,9 +26,14 @@ The descriptive map and the first analytical layers are live and deployed
   Still to come: the survival/hazard *timing* model, hybrid W, and the spatial-error
   (SEM) half of the honesty check (hard under the no-seed rule — see BACKLOG).
 - **Module 3 (Friction & Dissonance), live**: `dissonance` (issue-vs-party gap) and
-  the Kansas Aug-2022 ballot-measure overlay, shipped as a map view (the "False
-  Bastions"). Still to come: wombling, roll-off, False-Bastion classification tiers,
-  more ballot measures (the overlay catalog is modular — append to `MEASURES`).
+  the Kansas Aug-2022 + Kentucky Nov-2022 + Ohio Nov-2023 abortion ballot-measure
+  overlays, shipped as map views (the "False Bastions"). Each state's SoS format
+  differs, so each is a state-specific loader sharing one canonical panel
+  (`referendum.py`); the export catalog dispatches per-measure loaders and an
+  overlay `progressive_side` ("no" for KS/KY where a NO preserved rights, "yes" for
+  OH Issue 1 where a YES established them) so dissonance is oriented correctly per
+  measure. Still to come: wombling, roll-off, False-Bastion classification tiers,
+  more measures (append to `MEASURES`).
 - **Frontend** (`web/`, Vite + TS + Mapbox GL): map views for result, swing, wave
   anchors, six demographics, and ballot-measure dissonance; scoped focus
   (nation / any state / cross-border metro presets); play-the-decades time-lapse;
@@ -51,8 +56,13 @@ The descriptive map and the first analytical layers are live and deployed
   field is weak, spatially incoherent (Moran's I ≈ −0.14, partly a mechanical
   artefact of the metric's own antisymmetry), and its extremes are small
   idiosyncratic counties, not influence hubs (acceptance notebook, 2026-06-18).
-  Neither is wired to the map. Refined paths in BACKLOG (population/metro-aware or
-  directed graph; or the issue-resistance route via dissonance).
+  Neither is wired to the map. **Path (b), the issue-resistance route via
+  dissonance, is now the plan of record**: `panel/measures` (the contest-dimension
+  schema — stacks per-measure referendum panels into one tidy `fips × measure_id`
+  panel with an orientation-corrected `progressive_share`) is built, fed by the
+  growing ballot-measure starter set (KS + KY done). Still to model: a county's
+  cross-measure persuadability vs its partisan identity. Other refined paths in
+  BACKLOG (population/metro-aware or directed graph).
 - **Module 5 (Systemic Phase Transition)**: not started. See `BACKLOG.md` for
   sequenced next work and open design questions.
 
@@ -136,7 +146,9 @@ watchdog for hollow tests. (mutmut only runs on Linux CI — it refuses on Windo
   `county_demographics`, `county_geometry`, `referendum`, `historical_returns`)
 - `src/geofluid/panel/master` — joins returns + demographics into the master panel
   (FIPS-harmonized; adds swing); `panel/spine` — joins historical + MIT returns into
-  the 1868–2024 panel
+  the 1868–2024 panel; `panel/measures` — stacks per-measure referendum panels into
+  the tidy `fips × measure_id` contest panel (orientation-corrected
+  `progressive_share`; Module 2 path-b foundation)
 - `src/geofluid/spatial/` — `weights` (adjacency + W), `moran` (global I, LISA,
   permutation significance), `lag` (SAR model), `influence` (`county_influence` +
   `classify_nodes`: Module 2 node primitives — tested, contemporaneous-conformity

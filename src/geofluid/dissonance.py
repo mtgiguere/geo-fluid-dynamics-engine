@@ -45,20 +45,37 @@ def compute_dissonance(
 def build_measure_overlay(
     referendum: pd.DataFrame,
     partisan_share: "pd.Series[float]",
+    progressive_side: str = "no",
 ) -> dict[str, dict[str, Any]]:
     """The map overlay for a ballot measure: {fips: {no_share, partisan_share,
     dissonance}}, browser-ready.
 
-    The referendum panel supplies each county's no_share (the issue position);
-    partisan_share is the chosen presidential baseline. NaN becomes None so the
-    file survives browser JSON.parse, exactly as the per-year metrics export
-    does. issue_share is surfaced as no_share for the county popup.
+    `progressive_side` names which ballot answer was the progressive vote, and
+    so which share is compared against the Democratic baseline: "no" for Kansas
+    and Kentucky (a NO vote preserved abortion rights), "yes" for Ohio Issue 1
+    (a YES vote established them). The dissonance is computed against that
+    oriented issue share, so positive always means "more progressive on the
+    issue than its partisan lean" regardless of which side was on the ballot.
+
+    The reported `no_share` stays the literal NO share — a politics-agnostic
+    field; the orientation lives only in the dissonance the map colours. NaN
+    becomes None so the file survives browser JSON.parse, exactly as the
+    per-year metrics export does.
     """
-    diss = compute_dissonance(referendum.set_index("fips")["no_share"], partisan_share)
+    ref = referendum.set_index("fips")
+    if progressive_side == "no":
+        issue_share = ref["no_share"]
+    elif progressive_side == "yes":
+        issue_share = ref["yes_votes"] / ref["total_votes"]
+    else:
+        raise ValueError(f"progressive_side must be 'yes' or 'no', got {progressive_side!r}")
+
+    diss = compute_dissonance(issue_share, partisan_share)
+    diss["no_share"] = diss["fips"].map(ref["no_share"])
     overlay: dict[str, dict[str, Any]] = {}
     for row in diss.to_dict("records"):
         overlay[str(row["fips"])] = {
-            "no_share": row["issue_share"],
+            "no_share": row["no_share"],
             "partisan_share": None if pd.isna(row["partisan_share"]) else row["partisan_share"],
             "dissonance": None if pd.isna(row["dissonance"]) else row["dissonance"],
         }

@@ -35,6 +35,26 @@ def _side(candidate: str) -> str:
     raise ValueError(f"Unexpected referendum candidate label: {candidate!r}")
 
 
+def _assemble_referendum_panel(df: pd.DataFrame, votes_col: str) -> pd.DataFrame:
+    """Pivot a long (fips, side, <votes_col>) frame into the canonical
+    referendum panel: yes_votes, no_votes, total_votes, and no_share =
+    NO / (YES + NO), one row per county, sorted by FIPS. Every per-state loader
+    funnels through here so all sources — whatever their raw format — emit an
+    identical schema for the dissonance layer to consume.
+    """
+    panel = (
+        df.pivot_table(index="fips", columns="side", values=votes_col, aggfunc="sum", fill_value=0)
+        .reindex(columns=["yes_votes", "no_votes"], fill_value=0)
+        .reset_index()
+    )
+    panel[["yes_votes", "no_votes"]] = panel[["yes_votes", "no_votes"]].astype("int64")
+    panel["total_votes"] = panel["yes_votes"] + panel["no_votes"]
+    panel["no_share"] = panel["no_votes"] / panel["total_votes"]
+    return panel.sort_values("fips", ignore_index=True).loc[
+        :, ["fips", "yes_votes", "no_votes", "total_votes", "no_share"]
+    ]
+
+
 def load_ks_referendum(raw: pd.DataFrame, county_fips: Mapping[str, str]) -> pd.DataFrame:
     """Aggregate the Kansas precinct file to the county referendum panel.
 
@@ -52,17 +72,92 @@ def load_ks_referendum(raw: pd.DataFrame, county_fips: Mapping[str, str]) -> pd.
         raise ValueError(f"County names with no FIPS mapping: {unknown}")
     df["fips"] = names.map(dict(county_fips))
 
-    panel = (
-        df.pivot_table(index="fips", columns="side", values="Votes", aggfunc="sum", fill_value=0)
-        .reindex(columns=["yes_votes", "no_votes"], fill_value=0)
-        .reset_index()
-    )
-    panel[["yes_votes", "no_votes"]] = panel[["yes_votes", "no_votes"]].astype("int64")
-    panel["total_votes"] = panel["yes_votes"] + panel["no_votes"]
-    panel["no_share"] = panel["no_votes"] / panel["total_votes"]
-    return panel.sort_values("fips", ignore_index=True).loc[
-        :, ["fips", "yes_votes", "no_votes", "total_votes", "no_share"]
-    ]
+    return _assemble_referendum_panel(df, "Votes")
+
+
+def _normalize_ky_county(name: str) -> str:
+    """Map a KY result line's county name to the boundary-file join key.
+
+    The KY export names counties "Adair County"; the FIPS map is keyed by the
+    Census NAME field uppercased ("ADAIR"). Strip the suffix and upcase.
+    """
+    return name.removesuffix(" County").strip().upper()
+
+
+def load_ky_referendum(path: str | Path, county_fips: Mapping[str, str]) -> pd.DataFrame:
+    """Load the Kentucky Nov-2022 Amendment 2 panel from the SoS text export.
+
+    A different source format from Kansas (plain text, not the precinct
+    workbook), so a KY-specific reader — but it emits the SAME canonical panel
+    (fips, yes_votes, no_votes, total_votes, no_share) so the dissonance layer
+    consumes both identically. The file is a title line followed by per-county
+    blocks: a "<X> County" name line, an estimate line, a tab-separated
+    "Choices" header, and one "Yes" and one "No" row. Votes are read from the
+    Total Votes column by the Yes/No label; the source's percent column (its
+    own rounding) is ignored.
+    """
+    rows: list[dict[str, object]] = []
+    current_fips: str | None = None
+    current_name: str | None = None
+    for raw_line in Path(path).read_text().splitlines():
+        # A blank or junk line (title, estimate, header) falls through
+        # harmlessly: its first cell is neither "Yes"/"No" nor a "... County"
+        # name, so it matches no branch below and is skipped.
+        line = raw_line.strip()
+        cells = line.split("\t")
+        label = cells[0].strip()
+        if label in ("Yes", "No"):
+            side = "yes_votes" if label == "Yes" else "no_votes"
+            votes = int(cells[1].strip().replace(",", ""))
+            rows.append({"fips": current_fips, "name": current_name, "side": side, "votes": votes})
+        elif line.endswith("County"):
+            current_name = _normalize_ky_county(line)
+            if current_name not in county_fips:
+                raise ValueError(f"County name with no FIPS mapping: {current_name!r}")
+            current_fips = county_fips[current_name]
+
+    df = pd.DataFrame(rows)
+
+    # A referendum has exactly two sides. A county that reports only one (a
+    # dropped row, a parse slip) must fail loudly — otherwise the pivot below
+    # pads the missing side to 0 and emits a fabricated no_share that looks
+    # real. Each county must contribute both a "yes_votes" and a "no_votes".
+    distinct_sides = df.groupby("fips")["side"].nunique()
+    incomplete = distinct_sides[distinct_sides != 2].index
+    if len(incomplete):
+        bad = sorted(df.loc[df["fips"].isin(incomplete), "name"].unique())
+        raise ValueError(f"Counties not reporting both a Yes and a No row: {bad}")
+
+    return _assemble_referendum_panel(df, "votes")
+
+
+def load_oh_referendum(path: str | Path, county_fips: Mapping[str, str]) -> pd.DataFrame:
+    """Load the Ohio Nov-2023 State Issue 1 panel from the SoS canvass workbook.
+
+    A third source format: the official precinct-summary workbook. Its one sheet
+    ("Statewide Issues") carries the real column header on the third row (two
+    title rows above it, hence header=2) and reports BOTH statewide issues side
+    by side — Issue 1 (abortion) in the first Yes/No pair, Issue 2 (cannabis) in
+    the second, which pandas dedups to Yes/No and Yes.1/No.1. This reader takes
+    Issue 1. Politics stays with the analysis layer: a YES here was the
+    rights-establishing vote, but the panel reports raw yes/no + no_share like
+    every other state's, so the contest panel orients it.
+    """
+    df = pd.read_excel(path, sheet_name="Statewide Issues", header=2)
+
+    # The sheet opens with two summary rows ("Total", "Percentage") that are not
+    # counties. Drop them before aggregating — summing the Total row would
+    # double the statewide count (the Bug #11 coexisting-totals pattern).
+    df = df[~df["County Name"].isin(["Total", "Percentage"])]
+
+    names = df["County Name"].astype(str).str.upper()
+    unknown = sorted(set(names) - set(county_fips))
+    if unknown:
+        raise ValueError(f"County names with no FIPS mapping: {unknown}")
+    long = pd.DataFrame(
+        {"fips": names.map(dict(county_fips)), "yes_votes": df["Yes"], "no_votes": df["No"]}
+    ).melt(id_vars="fips", var_name="side", value_name="votes")
+    return _assemble_referendum_panel(long, "votes")
 
 
 def _wide_county_sheet_to_long(county_name: str, sheet: pd.DataFrame) -> pd.DataFrame:

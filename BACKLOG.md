@@ -122,10 +122,59 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
 
 ## Data
 
-- **Ballot measures ingest** (county-level, per-state SoS sources; Kansas
-  Aug 2022 first): unlocks Module 3 dissonance/False Bastions with real
-  topic votes. Trigger: after the core engine is proven on the presidential
-  spine.
+- **Ballot measures ingest — STARTER SET SCOPED + IN PROGRESS (2026-06-18).**
+  County-level, per-state SoS sources; Kansas Aug 2022 done. The two Module 2
+  falsifications (see Science) showed presidential swing is too synchronized/sticky
+  to localize influence; Matt's hypothesis is that cleaner single-issue contests
+  are the better signal (see the project memory). So this ingest is now the
+  highest-leverage move — it unblocks BOTH the issue-resistance route (Module 2
+  path b) AND a future lead-lag retry on single-issue contests. The decisive
+  reason: influence/resistance is a *multi-observation* structure — one measure
+  (N=1) has no structure to find, so we need variation across issues/states/time
+  to model on (the same depth lesson the 40-election spine taught lead-lag).
+  Starter set — same issue (abortion) across partisan contexts + one off-issue,
+  ingested ONE AT A TIME, each test-first + a real-data acceptance run vs the
+  certified statewide total (Bugs #10–12 pattern), reusing the `referendum.py`
+  pattern (each state's SoS file format differs — the KS loader is KS-specific):
+    1. **KS** Aug-2022 abortion (red; pro-choice won) — DONE, the anchor.
+    2. **KY** Nov-2022 Amdt 2 (deep red; "NO" won, preserving rights) — DONE
+       (2026-06-24). `load_ky_referendum` (KY SoS plain-text export, a distinct
+       format from the KS workbook; shared `_assemble_referendum_panel` so both
+       emit the canonical schema). Acceptance: all 120 counties map, panel
+       matches the raw file to the vote, NO% = certified 52.35%; the 59-vote
+       (0.004%) gap vs the certified canvass is a pre-certification export
+       vintage artifact (Russell at 99.01% est), not a loader bug. False-Bastion
+       structure confirmed (Louisville 71% / Lexington 73% NO vs rural Bell
+       34% NO). NOT yet wired to the map overlay (see CONTEST DIMENSION below —
+       KY is now the second measure, so combining it with KS is the JIT trigger
+       for the tidy fips × measure_id schema).
+    3. **OH** Nov-2023 Issue 1 (purple; pro-choice won) — DONE (2026-06-24).
+       `load_oh_referendum` (SoS precinct-summary workbook: header on the 3rd row,
+       both statewide issues side by side — Issue 1 abortion, Issue 2 cannabis;
+       "Total"/"Percentage" summary rows excluded, the Bug #11 pattern). Acceptance:
+       all 88 counties map, panel matches the certified canvass EXACTLY (YES
+       2,227,384 / NO 1,695,480, delta 0/0). The ORIENTATION FLIP (YES = pro-choice
+       here) drove the overlay's new `progressive_side` param so dissonance is
+       signed correctly; wired to the map. Adds the 2023 time point AND a YES-side
+       measure. (Issue 2 cannabis sits in the same file — a future off-issue measure,
+       the MO-cannabis slot's natural substitute; not ingested yet, JIT.)
+    4. **MI** Nov-2022 Prop 3 (purple/blue; passed) — the blue end of the contrast.
+       Source: Michigan Bureau of Elections.
+    5. **MO** Nov-2022 Amdt 3 (cannabis, red; passed) — DIFFERENT issue: tests
+       whether persuadability is issue-general or issue-specific. Source: MO SoS.
+       (FL/MO 2024 abortion are swappable alternates — red-state 2024 with strong
+       dissonance.)
+  CONTEST DIMENSION — TIDY PANEL DONE (2026-06-24): with KS + KY combined, the
+  trigger arrived. `panel/measures.build_measures_panel` stacks per-measure
+  referendum panels into one tidy `fips × measure_id` panel and adds
+  `progressive_share` (the progressive vote's share, oriented per measure via
+  `Measure.progressive_side` so it is comparable across measures — NO for the
+  abortion measures, YES for a future cannabis one). Tested seed-free, 100%
+  branch coverage. STILL DEFERRED (JIT — no consumer yet): the normalized measure
+  METADATA table (state, date, issue); it emerges when the resistance analysis
+  actually groups by those dimensions and the normalize-vs-denormalize access
+  pattern is concrete. Wiring to the map overlay is per-measure (each measure
+  ships its own dissonance file) and is independent of this modelling panel.
 - **Historical extension** (Algara–Sharif 1868–2020): **LOADER DONE +
   VALIDATED (2026-06-15)** — `load_historical_returns` maps the dataset onto
   the canonical returns schema; free download (no guestbook), already
@@ -147,6 +196,28 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
 
 ## Engineering
 
+- **Committed data products can go stale silently** (2026-06-24 footgun): the
+  deploy serves `web/public/data/*.json` as COMMITTED to git — it does NOT run
+  `scripts/export_web_data.py` (which needs CENSUS_API_KEY + the gitignored raw
+  data). So changing a loader wired into `MEASURES`, or the export itself,
+  without regenerating + committing the affected JSON ships a stale map with no
+  guard. Mitigation discipline today: after touching the export or a wired
+  loader, regenerate and commit the affected products (and diff byte-for-byte
+  when the change is meant to be output-preserving — see TDD_CONTRACT.md "Byte-
+  Identical Regeneration"). BETTER (deferred): a CI check that the committed
+  products match a fresh export — blocked on getting CENSUS_API_KEY + raw data
+  into CI, which is the very reason they are committed; revisit if a stale
+  product ever ships. Trigger: first stale-data incident, or a cheap way to
+  pin the no-Census-key products (measures + overlays) in CI.
+- **E2E only covers the Kansas measure** (2026-06-24): the Playwright suite
+  selects `measure:ks_abortion_2022` and asserts its scope/caption/dissonance.
+  KY is data-identical to that path (no new code), but OH exercises a NEW code
+  path — `build_measure_overlay`'s `progressive_side="yes"` orientation produces
+  the dissonance the map colors. That orientation is unit-tested, but nothing
+  verifies OH RENDERS correctly on the built app (the Bug #8 class: unit-green ≠
+  deployed-correct, lower-risk here because it is data not config). Trigger: add
+  a measure E2E (or parametrize the existing one) when the next measure lands, or
+  before relying on the OH overlay for outreach.
 - **Mutation gate** (2026-06-13): SELF-RUNNING and VALIDATED — mutmut 3.x runs
   clean on our src layout in CI (runs #1 cron + #2 push both succeeded; the
   numbered gaps in the survivor list prove most mutants are killed, harness

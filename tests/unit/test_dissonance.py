@@ -18,6 +18,7 @@ loader leaves the politics to the analysis layer.
 import json
 
 import pandas as pd
+import pytest
 
 from geofluid.dissonance import build_measure_overlay, compute_dissonance
 
@@ -80,3 +81,48 @@ def test_measure_overlay_is_browser_ready_keyed_by_fips() -> None:
     assert abs(overlay["20201"]["no_share"] - 0.48) < 1e-12
     # Proves it round-trips through strict JSON (no literal NaN).
     json.dumps(overlay, allow_nan=False)
+
+
+def test_overlay_orients_issue_share_by_progressive_side() -> None:
+    """For a measure where YES is the progressive vote (Ohio Issue 1, which
+    ESTABLISHED abortion rights and passed), the county's pro-choice position is
+    its YES share, not NO. build_measure_overlay(..., progressive_side="yes")
+    must compute dissonance against yes/total: county 39001 votes 60 yes / 40 no
+    (yes-share 0.60) and was 45% Democratic in the baseline, so dissonance =
+    0.60 - 0.45 = +0.15 (derived before the assertion) — the False-Bastion
+    signal oriented correctly, the opposite of the Kansas/Kentucky default. The
+    reported no_share stays the literal NO share: the field is politics-agnostic
+    and the orientation lives only in the dissonance the map actually colours."""
+    referendum = pd.DataFrame(
+        {
+            "fips": ["39001"],
+            "yes_votes": [60],
+            "no_votes": [40],
+            "total_votes": [100],
+            "no_share": [0.40],
+        }
+    )
+    partisan = pd.Series({"39001": 0.45})
+
+    overlay = build_measure_overlay(referendum, partisan, progressive_side="yes")
+
+    assert abs(overlay["39001"]["dissonance"] - 0.15) < 1e-12
+    assert abs(overlay["39001"]["no_share"] - 0.40) < 1e-12
+
+
+def test_overlay_progressive_side_must_be_yes_or_no() -> None:
+    """progressive_side decides which ballot answer is the progressive vote and
+    so the SIGN of every county's dissonance. A typo must raise, naming the bad
+    value, never silently fall to one orientation and invert the whole map."""
+    referendum = pd.DataFrame(
+        {
+            "fips": ["39001"],
+            "yes_votes": [60],
+            "no_votes": [40],
+            "total_votes": [100],
+            "no_share": [0.40],
+        }
+    )
+
+    with pytest.raises(ValueError, match="maybe"):
+        build_measure_overlay(referendum, pd.Series({"39001": 0.45}), progressive_side="maybe")
