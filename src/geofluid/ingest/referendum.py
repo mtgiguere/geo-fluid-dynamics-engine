@@ -131,18 +131,26 @@ def load_ky_referendum(path: str | Path, county_fips: Mapping[str, str]) -> pd.D
     return _assemble_referendum_panel(df, "votes")
 
 
-def load_oh_referendum(path: str | Path, county_fips: Mapping[str, str]) -> pd.DataFrame:
-    """Load the Ohio Nov-2023 State Issue 1 panel from the SoS canvass workbook.
+def load_oh_referendum(
+    path: str | Path, county_fips: Mapping[str, str], issue: int = 1
+) -> pd.DataFrame:
+    """Load an Ohio Nov-2023 statewide issue panel from the SoS canvass workbook.
 
     A third source format: the official precinct-summary workbook. Its one sheet
     ("Statewide Issues") carries the real column header on the third row (two
     title rows above it, hence header=2) and reports BOTH statewide issues side
     by side — Issue 1 (abortion) in the first Yes/No pair, Issue 2 (cannabis) in
-    the second, which pandas dedups to Yes/No and Yes.1/No.1. This reader takes
-    Issue 1. Politics stays with the analysis layer: a YES here was the
-    rights-establishing vote, but the panel reports raw yes/no + no_share like
-    every other state's, so the contest panel orients it.
+    the second, which pandas dedups to Yes/No and Yes.1/No.1. `issue` selects
+    which (1 = abortion, the default; 2 = cannabis). Politics stays with the
+    analysis layer: a YES established abortion rights and a YES legalized
+    cannabis, but the panel reports raw yes/no + no_share like every other
+    state's, so the contest panel orients each.
     """
+    issue_columns = {1: ("Yes", "No"), 2: ("Yes.1", "No.1")}
+    if issue not in issue_columns:
+        raise ValueError(f"issue must be 1 (abortion) or 2 (cannabis), got {issue}")
+    yes_col, no_col = issue_columns[issue]
+
     df = pd.read_excel(path, sheet_name="Statewide Issues", header=2)
 
     # The sheet opens with two summary rows ("Total", "Percentage") that are not
@@ -155,7 +163,7 @@ def load_oh_referendum(path: str | Path, county_fips: Mapping[str, str]) -> pd.D
     if unknown:
         raise ValueError(f"County names with no FIPS mapping: {unknown}")
     long = pd.DataFrame(
-        {"fips": names.map(dict(county_fips)), "yes_votes": df["Yes"], "no_votes": df["No"]}
+        {"fips": names.map(dict(county_fips)), "yes_votes": df[yes_col], "no_votes": df[no_col]}
     ).melt(id_vars="fips", var_name="side", value_name="votes")
     return _assemble_referendum_panel(long, "votes")
 
