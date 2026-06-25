@@ -57,12 +57,22 @@ The descriptive map and the first analytical layers are live and deployed
   artefact of the metric's own antisymmetry), and its extremes are small
   idiosyncratic counties, not influence hubs (acceptance notebook, 2026-06-18).
   Neither is wired to the map. **Path (b), the issue-resistance route via
-  dissonance, is now the plan of record**: `panel/measures` (the contest-dimension
-  schema — stacks per-measure referendum panels into one tidy `fips × measure_id`
-  panel with an orientation-corrected `progressive_share`) is built, fed by the
-  growing ballot-measure starter set (KS + KY done). Still to model: a county's
-  cross-measure persuadability vs its partisan identity. Other refined paths in
-  BACKLOG (population/metro-aware or directed graph).
+  dissonance, is the plan of record and has its first POSITIVE result**:
+  `panel/measures` (the contest-dimension schema — stacks per-measure referendum
+  panels into one tidy `fips × measure_id` panel with an orientation-corrected
+  `progressive_share`) is built and fed by the ballot-measure starter set
+  (KS + KY + OH abortion, OH cannabis). Two analysis notebooks: the cross-state
+  starter found the False Bastion is a broad, near-uniform offset, NOT a sharp
+  county gradient (weak within-issue localization — the same wall swing hit). But
+  the Ohio two-issue test (abortion vs cannabis, same 88 counties, same ballot)
+  found issue resistance is a stable CROSS-issue county trait — partial corr
+  ≈ 0.62 controlling for partisanship. That is the first county-level structure
+  the module has surfaced; it is modellable where swing was not. Caveat: one
+  state, and the two issues share a "personal-liberty" flavor (could be
+  libertarian-cluster, not fully general — needs an off-cluster measure). Next:
+  test the generality more widely, then promote issue-resistance from a notebook
+  residual to a tested library trait + map it. Other refined paths in BACKLOG
+  (population/metro-aware or directed graph).
 - **Module 5 (Systemic Phase Transition)**: not started. See `BACKLOG.md` for
   sequenced next work and open design questions.
 

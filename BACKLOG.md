@@ -92,6 +92,31 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
   issue-resistance route via the dissonance metric. `lead_lag` stays a tested
   primitive for whichever we take next.
 
+- **Module 2 path (b) issue-resistance — FIRST POSITIVE RESULT (2026-06-24).**
+  `panel/measures.build_measures_panel` (tidy `fips × measure_id` panel +
+  orientation-corrected `progressive_share`) feeds two analysis notebooks
+  (TDD-exempt) over the KS/KY/OH abortion + OH cannabis measures:
+    - `notebooks/issue_resistance_starter.{py,ipynb}` — across the three (disjoint)
+      states, the False Bastion is a near-UNIFORM offset (every county ~13–19 pts
+      ahead of its Dem share on abortion; slope 0.90–0.96, big positive intercept),
+      NOT a sharp county gradient (resistance-vs-partisanship corr only −0.10 to
+      −0.23). Issue resistance separates measure-from-party cleanly but not
+      counties-from-each-other — the same weak-localization wall swing hit.
+    - `notebooks/issue_generality_ohio.{py,ipynb}` — the disjoint-geography limit
+      pointed to OH's two same-ballot issues (abortion + cannabis, same 88
+      counties, identical turnout). Partial correlation (residualize each issue's
+      share on partisanship, then correlate residuals — the rigorous test; naive
+      shared-partisanship differencing is confounded): **r ≈ 0.62**. Resistance is
+      a stable CROSS-issue county trait — the first county-level structure the
+      module has found, and modellable where swing was not.
+  CAVEATS: one state, one ballot, N=88; abortion + cannabis share a "personal-
+  liberty" flavor, so this may be libertarian-cluster generality, not fully
+  general. NEXT (JIT): (1) an OFF-cluster same-ballot pair (an economic measure
+  beside a social one) to test whether the generality is broad or libertarian-
+  specific; (2) more multi-issue states to see if r ≈ 0.62 holds; (3) IF it holds,
+  promote "issue resistance" from a notebook residual to a tested library trait
+  and map it — the real Module 2 path-(b) product.
+
 - **Hybrid W**: blend queen adjacency with connectivity (commuting flows,
   broadband, media markets) per the spec's W_hybrid. Trigger: when the lag
   model's residuals show non-contiguous structure.
