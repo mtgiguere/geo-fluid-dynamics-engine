@@ -329,21 +329,22 @@ _TEMPLATE = r"""<!doctype html>
   <a class="backlink" href="./">&larr; Back to the live map</a>
   <div class="eyebrow">Geo-Fluid Dynamics Engine · Prescriptive Layer</div>
   <h1>Don't show me the map.<br><span class="amber">Tell me where to drive.</span></h1>
-  <p class="lede">Most civic tools stop at a colored map. This one reads the same public
-  election data and hands a volunteer in Kansas City a weekend plan: which counties to
-  canvass, in what order, and which to skip — each with the reason in plain English.</p>
+  <p class="lede">We got curious about a question a map alone can't answer: if you're a
+  volunteer with one free Saturday, where do you actually go? So we tried to build it —
+  turning public election data into a weekend plan: which counties to canvass, in what
+  order, and which to skip, each with the reason in plain English.</p>
 </div></header>
 
 <section class="wrap">
-  <div class="act">Act 1 · What everyone already has</div>
+  <div class="act">Act 1 · The map we started from</div>
   <h2>A map tells you what happened.</h2>
   <div class="col2">
     <p>Here's how Kansas voted on abortion rights in August 2022 — every county, shaded by
-    the result. It's accurate. It's even pretty. And if you're an organizer with a tank of
-    gas and a free Saturday, it's a dead end. A map describes the past. It doesn't tell you
-    where to stand on Saturday morning.</p>
-    <p class="thesis">Descriptive analytics answer “what is.” An organizer needs to know
-    “what do I do.” That's the gap.</p>
+    the result. We love this view, and we kept coming back to it. But we kept hitting the
+    same wall: it tells you what happened, not where an organizer with a tank of gas should
+    stand on Saturday morning. That wall is the question we wanted to chase.</p>
+    <p class="thesis">A map answers “what is.” We wanted to see whether the same data could
+    answer “what do I do.”</p>
   </div>
 </section>
 

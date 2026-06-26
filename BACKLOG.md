@@ -117,6 +117,33 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
   promote "issue resistance" from a notebook residual to a tested library trait
   and map it — the real Module 2 path-(b) product.
 
+- **Prescriptive layer (spec Stage 4) — FIRST TOUCH SHIPPED (2026-06-26).**
+  `targeting.build_itinerary` (tested, seed-free, 100% branch coverage) +
+  `spatial/distance` turn a county issue signal + a home county into a ranked,
+  classified campaign itinerary (TARGET / BASE / HARD), shipped as a PUBLIC demo
+  page (`web/public/demo.html`, built by `scripts/build_targeting_demo.py`) linked
+  from the live app's "Where do I go?" button. Walkthrough in `docs/DEMO.md`.
+  Deliberately stage one — the pipeline and the signal are proven; the product is
+  not finished. ROADMAP (the sequenced next work):
+    1. **More issues/states** — each is a small loader into the existing pipeline;
+       the engine is already data-source-agnostic. Unlocks targeting beyond KS.
+    2. **A persuadability score that travels** — promote the issue-resistance
+       residual (r ≈ 0.62 finding) to a tested per-county trait the engine can
+       rank on directly, not just one measure's dissonance.
+    3. **Real drive-time routing** — replace straight-line miles with a road
+       network / isochrones; order the itinerary as an actual route, not a list.
+    4. **In-map prescriptive mode** — fold the itinerary into the live Mapbox app
+       (goal picker → highlighted targets + ranked panel), retiring the static
+       demo page. Frontend logic that grows here gets Vitest (contract rule 7).
+    5. **Tunable thresholds + goals** — base/target cutoffs are fixed constants
+       today; expose them, and add the other organizer intents (turnout, defense)
+       beyond persuasion.
+    6. **Similarity-network diffusion (research)** — test whether change diffuses
+       through demographic/urban-hierarchy similarity rather than geographic
+       adjacency (swap W in the tested Moran/lead-lag machinery); if real, it
+       reshapes both the influence model and the targeting network. See the
+       "how is the wave" discussion — the open, promising lead.
+
 - **Hybrid W**: blend queen adjacency with connectivity (commuting flows,
   broadband, media markets) per the spec's W_hybrid. Trigger: when the lag
   model's residuals show non-contiguous structure.
