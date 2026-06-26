@@ -5,21 +5,22 @@ what to click, what it shows, what to say, and why it matters. Written for a
 live demo (e.g. an interview), but it doubles as the "how to read this" guide.
 
 **The one-sentence pitch:**
-> Most civic-data tools stop at a colored map that tells you *what happened*.
-> This one reads the same public data and tells an organizer *what to do next* —
-> which counties to campaign in, in what order, and which to skip — with the
-> reason in plain English.
+> We got curious whether the same public election data behind a map could answer
+> a question the map can't: where should an organizer actually *go*? This is the
+> result — it turns the data into a plain-English plan: which counties to campaign
+> in, in what order, and which to skip.
 
-**The arc to keep in your head** (this is the whole story):
+**The arc to keep in your head** (this is the whole story — each stage is a
+question we wanted the data to answer, building on the one before):
 
-| Stage | Question it answers | Who has it |
-|-------|--------------------|------------|
-| **Descriptive** | *What happened?* | everyone |
-| **Diagnostic** | *Where is something surprising?* | a few |
-| **Predictive** | *Is that surprise a reliable signal?* | rare |
-| **Prescriptive** | *So what do I DO about it?* | almost no one |
+| Stage | The question it answers |
+|-------|-------------------------|
+| **Descriptive** | *What happened?* |
+| **Diagnostic** | *Where is something surprising?* |
+| **Predictive** | *Is that surprise a reliable signal?* |
+| **Prescriptive** | *So what do I do about it?* |
 
-The demo walks left to right and lands on the last column.
+The demo walks top to bottom and lands on the last row.
 
 ---
 
@@ -47,15 +48,17 @@ page** — it stands alone.
 Open the live map. While it paints:
 
 > "This is deployed, live, and interactive — every U.S. county, real election
-> data back to 1868. Let me show you the usual layer first, then where it goes."
+> data back to 1868. Let me start with the map view, then show you the question
+> we wanted to chase from there."
 
 - **Metric dropdown → "Two-party result"** (the default). Colored map.
 - **Click any county** → a popup with its result and demographics.
 - **Metric dropdown → "Swing since last election"**, then hit **▶ Play** for a
   second or two — the decades animate.
 
-> "That's the descriptive layer — what every tool in this space does. Pretty,
-> accurate, and a dead end if your job is to *decide where to go*."
+> "That's the map view — accurate, and genuinely useful. But if your job is to
+> *decide where to go*, it leaves you to work that out yourself. That's the part
+> we got curious about."
 
 ### 1 · The diagnostic view (≈45 sec) — the surprise
 
@@ -201,8 +204,8 @@ ground (of 105 counties; your home county is excluded).
 
 Open `…/demo.html`, scroll to **Act 3**, and say:
 
-> "Same public election data everyone has. But instead of a colored map, it hands
-> a Kansas City volunteer a weekend route — drive to Leavenworth first, 14 miles,
+> "Same public election data behind any map — but turned into a route. It hands
+> a Kansas City volunteer a weekend plan — drive to Leavenworth first, 14 miles,
 > these folks vote their conscience over their party; skip Johnson County, they're
 > already with you. Ranked, reasoned, and it's proven to generalize across issues.
 > That's the leap from *what happened* to *what to do* — and it's stage one."
