@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<title>Where do I go? — Geo-Fluid Dynamics Engine</title>
+<style>
+  :root {
+    --ink:#15202B; --ink-2:#1E2D3B; --paper:#F2F3EF; --graphite:#28313B;
+    --muted:#5C6770; --ember:#E8A33D; --ember-deep:#C8791F;
+    --slate:#5B7C99; --ash:#3A4654; --line:#D8DAD2;
+    --sans: ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --serif: ui-serif,Georgia,"Times New Roman",serif;
+    --mono: ui-monospace,"SFMono-Regular","Cascadia Code",Menlo,Consolas,monospace;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--graphite);
+    font-family:var(--sans); line-height:1.6; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:1080px; margin:0 auto; padding:0 28px; }
+  .eyebrow { font:600 12px/1 var(--mono); letter-spacing:.18em; text-transform:uppercase;
+    color:var(--ember-deep); }
+  h1,h2,h3 { text-wrap:balance; letter-spacing:-.02em; }
+
+  /* hero */
+  .hero { background:var(--ink); color:#EAF0F4; padding:72px 0 64px; }
+  .hero .eyebrow { color:var(--ember); }
+  .hero h1 { font-size:clamp(34px,5.4vw,60px); font-weight:800; margin:.35em 0 .2em;
+    line-height:1.02; }
+  .hero h1 .amber { color:var(--ember); }
+  .lede { font-size:clamp(17px,2vw,21px); color:#B7C4CE; max-width:60ch; }
+
+  /* sections */
+  section { padding:64px 0; border-bottom:1px solid var(--line); }
+  .act { font:600 12px/1 var(--mono); letter-spacing:.18em; text-transform:uppercase;
+    color:var(--muted); }
+  section h2 { font-size:clamp(26px,3.4vw,38px); font-weight:800; margin:.25em 0 .5em; }
+  .thesis { font-family:var(--serif); font-size:clamp(20px,2.5vw,27px); line-height:1.4;
+    color:var(--ink); max-width:30ch; }
+  p { max-width:64ch; }
+  .col2 { display:grid; grid-template-columns:1fr 1fr; gap:40px; align-items:start; }
+  @media (max-width:760px) { .col2 { grid-template-columns:1fr; gap:24px; } }
+
+  /* Ohio proof callout */
+  .proof { background:var(--ink-2); color:#E7EEF3; border-radius:4px; padding:28px 30px;
+    border-left:4px solid var(--ember); }
+  .proof .stat { font:800 42px/1 var(--mono); color:var(--ember); }
+  .proof p { color:#B7C4CE; margin:.5em 0 0; }
+
+  /* map + itinerary */
+  .ops { background:var(--ink); color:#EAF0F4; border-bottom:none; }
+  .ops .act { color:#7E8EA0; }
+  .ops h2 { color:#fff; }
+  .ops .lede { margin-bottom:34px; }
+  .opsgrid { display:grid; grid-template-columns:1.05fr .95fr; gap:36px; align-items:start; }
+  @media (max-width:860px) { .opsgrid { grid-template-columns:1fr; } }
+  .mapcard { background:#101A24; border:1px solid #233240; border-radius:6px; padding:14px; }
+  svg.map { width:100%; height:auto; display:block; }
+  .county { stroke:#101A24; stroke-width:.8; transition:fill .12s,opacity .12s; }
+  .county.dim { opacity:.32; }
+  .county.lit { stroke:#fff; stroke-width:2.2; }
+  .home-dot { fill:#fff; }
+  .home-ring { fill:none; stroke:var(--ember); stroke-width:3; transform-origin:center;
+    animation:pulse 2.4s ease-out infinite; }
+  @keyframes pulse { 0%{r:9;opacity:1} 70%{r:26;opacity:0} 100%{opacity:0} }
+  @media (prefers-reduced-motion:reduce) { .home-ring { animation:none; } }
+  .legend { display:flex; flex-wrap:wrap; gap:16px; margin-top:12px; font:500 13px var(--sans);
+    color:#B7C4CE; }
+  .legend i { display:inline-block; width:13px; height:13px; border-radius:3px;
+    margin-right:6px; vertical-align:-1px; }
+
+  ol.itin { list-style:none; margin:0; padding:0; counter-reset:none; }
+  .trow { display:grid; grid-template-columns:auto 1fr auto; gap:4px 12px; align-items:baseline;
+    padding:13px 14px; border-radius:6px; cursor:default; outline:none;
+    border:1px solid transparent; }
+  .trow + .trow { margin-top:6px; }
+  .trow:hover, .trow:focus, .trow.lit { background:var(--ink-2); border-color:#33485A; }
+  .rank { font:800 14px var(--mono); color:var(--ember); }
+  .tname { font-weight:700; color:#fff; }
+  .tmiles { font:600 13px var(--mono); color:#8FA0AE; text-align:right;
+    font-variant-numeric:tabular-nums; }
+  .twhy { grid-column:2 / 4; font-size:14px; color:#AEBDC8; }
+  .twhy b { color:#E7EEF3; }
+  .tgap { display:inline-block; margin-top:3px; font:600 12px var(--mono); color:var(--ember); }
+  .skip { margin-top:22px; padding:16px 18px; background:#101A24; border-radius:6px;
+    border:1px solid #233240; font-size:14px; color:#AEBDC8; }
+  .skip b { color:#cdd8e0; }
+
+  .wave { background:var(--paper); }
+  .wave .thesis { max-width:42ch; }
+  footer { background:var(--ink); color:#8FA0AE; padding:40px 0 56px; font-size:13.5px; }
+  footer b { color:#cdd8e0; }
+  .chips { display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
+  .chip { font:600 12px var(--mono); padding:5px 10px; border-radius:999px;
+    border:1px solid #2B3A47; }
+  .chip.t { color:var(--ember); border-color:#5a4524; }
+  .chip.b { color:#9DB6CB; } .chip.h { color:#7E8EA0; }
+  .backlink { font:600 13px var(--mono); color:#8FA0AE; text-decoration:none;
+    letter-spacing:.04em; }
+  .backlink:hover { color:var(--ember); }
+  .hero .backlink { display:inline-block; margin-bottom:24px; }
+  a { color:var(--ember-deep); }
+  :focus-visible { outline:2px solid var(--ember); outline-offset:3px; border-radius:2px; }
+</style>
+</head>
+<body>
+
+<header class="hero"><div class="wrap">
+  <a class="backlink" href="./">&larr; Back to the live map</a>
+  <div class="eyebrow">Geo-Fluid Dynamics Engine · Prescriptive Layer</div>
+  <h1>Don't show me the map.<br><span class="amber">Tell me where to drive.</span></h1>
+  <p class="lede">Most civic tools stop at a colored map. This one reads the same public
+  election data and hands a volunteer in Kansas City a weekend plan: which counties to
+  canvass, in what order, and which to skip — each with the reason in plain English.</p>
+</div></header>
+
+<section class="wrap">
+  <div class="act">Act 1 · What everyone already has</div>
+  <h2>A map tells you what happened.</h2>
+  <div class="col2">
+    <p>Here's how Kansas voted on abortion rights in August 2022 — every county, shaded by
+    the result. It's accurate. It's even pretty. And if you're an organizer with a tank of
+    gas and a free Saturday, it's a dead end. A map describes the past. It doesn't tell you
+    where to stand on Saturday morning.</p>
+    <p class="thesis">Descriptive analytics answer “what is.” An organizer needs to know
+    “what do I do.” That's the gap.</p>
+  </div>
+</section>
+
+<section class="wrap">
+  <div class="act">Act 2 · The tell</div>
+  <h2>Some red counties are persuadable. The data says which.</h2>
+  <div class="col2">
+    <div>
+      <p>Take Miami County, just south of the city. Only about <b>30%</b> of it voted
+      Democratic for president — solidly Republican turf. Yet a <b>majority</b> voted to
+      protect abortion rights. That gap, between how a place votes its <em>party</em> and how
+      it votes its <em>conscience</em>, is what we call <b>dissonance</b>. A high-dissonance
+      county is a <b>False Bastion</b>: red on the surface, movable underneath.</p>
+      <p>That's the signal worth driving toward — not the deepest-red county (unmovable) and
+      not your own backyard (already with you), but the places quietly voting ahead of their
+      party.</p>
+    </div>
+    <div class="proof">
+      <div class="eyebrow" style="color:var(--ember)">The proof it's predictive</div>
+      <div class="stat">r = 0.62</div>
+      <p>In Ohio, the same 88 counties voted on <b>two</b> different questions the same day —
+      abortion and cannabis. The counties that broke from their party on one broke on the
+      other too (correlation 0.62, holding partisanship constant). Persuadability is a
+      <b>stable trait of a place</b> — not a one-issue fluke. That makes this a prediction,
+      not a coincidence.</p>
+    </div>
+  </div>
+</section>
+
+<section class="ops"><div class="wrap">
+  <div class="act">Act 3 · The marching orders</div>
+  <h2>You live in Kansas City. Here's your Saturday.</h2>
+  <p class="lede">The engine ranks every county by how far it votes ahead of its party,
+  sets your base and your dead ends aside, and orders what's left by drive time. Hover a
+  county or a stop — they're linked.</p>
+  <div class="opsgrid">
+    <div>
+      <div class="mapcard">
+        <svg class="map" viewBox="0 0 1000 515.4" role="img"
+             aria-label="Kansas counties shaded by persuasion priority">
+          <path d="M656.6,358.0L656.5,328.0L698.4,328.4L741.0,328.2L740.6,410.3L740.6,432.7L656.5,432.8L656.6,358.0Z" fill="#e2b062" data-fips="20015" class="county c-target"><title>Butler County</title></path>
+<path d="M65.0,223.2L76.0,223.1L123.7,223.0L124.1,297.7L68.3,297.9L64.9,298.0L65.0,223.2Z" fill="#3A4654" data-fips="20203" class="county c-hard"><title>Wichita County</title></path>
+<path d="M70.3,388.2L128.9,388.2L128.9,447.9L70.5,447.7L70.3,388.2Z" fill="#3A4654" data-fips="20067" class="county c-hard"><title>Grant County</title></path>
+<path d="M66.4,447.7L70.5,447.7L128.9,447.9L131.8,447.9L132.0,514.6L132.0,514.6L112.6,514.7L112.4,514.8L93.0,514.9L92.7,514.9L90.3,514.9L85.5,514.9L85.3,514.9L75.9,515.0L71.4,515.0L66.5,515.0L66.5,515.0L66.4,447.7Z" fill="#3A4654" data-fips="20189" class="county c-hard"><title>Stevens County</title></path>
+<path d="M336.2,449.0L407.4,448.5L408.8,448.4L408.9,514.3L405.0,514.3L402.3,514.4L392.2,514.4L391.6,514.4L375.7,514.3L371.8,514.3L358.7,514.2L354.4,514.3L347.8,514.3L344.1,514.3L341.9,514.3L341.9,514.3L341.6,514.3L341.4,514.3L340.8,514.3L336.5,514.3L336.2,449.0Z" fill="#e0ac5c" data-fips="20033" class="county c-target"><title>Comanche County</title></path>
+<path d="M131.8,447.9L187.5,447.9L190.0,447.9L190.1,514.3L184.4,514.3L176.5,514.4L173.5,514.4L172.4,514.4L166.9,514.4L165.8,514.4L160.3,514.5L155.5,514.5L153.8,514.5L153.7,514.5L148.3,514.6L148.2,514.6L141.4,514.6L139.3,514.6L133.8,514.6L132.0,514.6L131.8,447.9Z" fill="#efcd85" data-fips="20175" class="county c-target"><title>Seward County</title></path>
+<path d="M334.0,388.4L407.2,388.7L407.3,433.7L407.4,448.5L336.2,449.0L334.5,449.0L334.5,434.2L334.0,388.4Z" fill="#e0ac5d" data-fips="20097" class="county c-target"><title>Kiowa County</title></path>
+<path d="M244.5,357.7L332.6,357.9L332.5,372.9L333.9,372.9L334.0,388.4L334.5,434.2L305.2,434.2L260.6,432.9L246.0,432.9L246.2,372.7L244.5,372.7L244.5,357.7Z" fill="#3A4654" data-fips="20057" class="county c-hard"><title>Ford County</title></path>
+<path d="M936.2,224.0L937.4,224.0L937.5,216.5L957.3,216.6L997.4,216.6L997.1,234.2L997.1,236.0L997.1,236.8L997.1,238.7L997.1,243.7L997.1,243.7L997.0,244.3L997.0,248.9L997.0,249.2L997.0,249.2L997.0,258.8L996.9,260.1L996.9,260.3L996.9,261.2L996.9,261.2L996.9,273.9L996.9,275.8L996.9,276.5L936.2,276.2L936.2,224.0Z" fill="#dda656" data-fips="20121" class="county c-target"><title>Miami County</title></path>
+<path d="M627.2,238.7L686.4,238.7L686.4,253.6L701.2,253.6L701.2,283.3L698.8,283.3L698.3,298.3L698.4,328.4L656.5,328.0L656.5,313.1L627.2,313.3L627.2,238.7Z" fill="#3A4654" data-fips="20115" class="county c-hard"><title>Marion County</title></path>
+<path d="M244.5,298.1L330.7,298.1L332.5,298.1L332.6,310.6L332.7,328.1L332.6,357.9L244.5,357.7L244.6,342.8L244.5,298.1Z" fill="#3A4654" data-fips="20083" class="county c-hard"><title>Hodgeman County</title></path>
+<path d="M681.9,149.1L682.2,149.1L682.1,134.1L697.1,134.3L697.2,147.9L699.7,147.9L699.5,151.3L696.9,154.5L696.9,156.7L711.4,156.8L712.4,158.1L713.4,156.6L716.4,156.2L716.4,159.3L743.9,159.3L743.9,164.3L743.8,194.1L691.7,194.0L686.8,194.0L686.9,175.4L681.9,177.8L681.9,149.1Z" fill="#e7bb6e" data-fips="20061" class="county c-target"><title>Geary County</title></path>
+<path d="M934.9,298.7L936.3,298.7L936.2,276.2L996.9,276.5L996.9,279.7L996.9,280.6L996.9,285.5L996.9,287.5L996.9,288.2L997.0,289.1L997.0,291.2L996.9,293.1L996.9,293.4L996.9,296.7L997.0,302.3L997.0,304.1L997.0,305.5L997.0,305.7L996.9,308.1L996.9,308.6L996.9,310.4L996.9,314.3L996.8,315.5L996.8,317.4L996.8,331.5L996.8,331.7L996.8,332.7L996.8,332.7L996.8,336.7L934.6,336.6L934.9,298.7Z" fill="#dca453" data-fips="20107" class="county c-target"><title>Linn County</title></path>
+<path d="M552.6,178.9L627.2,179.0L627.2,184.0L625.9,184.0L627.1,186.5L627.2,238.7L553.1,238.6L553.0,223.7L552.6,193.9L552.6,178.9Z" fill="#e1ae5f" data-fips="20169" class="county c-target"><title>Saline County</title></path>
+<path d="M241.8,223.5L254.4,223.6L328.8,223.7L330.6,223.7L330.6,283.2L330.7,298.1L244.5,298.1L242.2,298.1L241.8,223.5Z" fill="#e8be72" data-fips="20135" class="county c-target"><title>Ness County</title></path>
+<path d="M874.7,373.8L875.4,373.8L875.5,336.5L934.6,336.6L934.4,373.9L933.3,373.9L933.2,388.8L874.6,388.8L874.7,373.8Z" fill="#dda656" data-fips="20001" class="county c-target"><title>Allen County</title></path>
+<path d="M933.2,388.8L933.3,373.9L934.4,373.9L934.6,336.6L996.8,336.7L996.8,336.7L996.7,344.3L996.7,345.1L996.7,348.0L996.7,351.3L996.7,351.6L996.7,352.5L996.7,353.2L996.7,353.9L996.7,354.3L996.6,357.4L996.6,359.0L996.6,359.8L996.5,362.4L996.5,363.9L996.5,364.8L996.5,366.5L996.4,369.5L996.4,370.8L996.4,373.9L996.3,381.9L996.3,389.3L996.2,390.6L996.3,396.1L996.3,396.5L996.3,396.7L996.3,397.4L996.3,399.0L996.3,399.0L933.2,398.8L933.2,388.8Z" fill="#e8bd72" data-fips="20011" class="county c-target"><title>Bourbon County</title></path>
+<path d="M816.5,313.7L816.6,298.5L817.7,298.5L817.7,268.7L876.9,268.7L876.9,276.2L877.0,298.6L875.8,298.6L875.5,336.5L816.5,336.1L816.5,313.7Z" fill="#d69642" data-fips="20031" class="county c-target"><title>Coffey County</title></path>
+<path d="M583.0,313.3L627.2,313.3L656.5,313.1L656.5,328.0L656.6,358.0L585.0,358.0L582.9,358.2L583.0,313.3Z" fill="#3A4654" data-fips="20079" class="county c-hard"><title>Harvey County</title></path>
+<path d="M874.6,388.8L933.2,388.8L933.2,398.8L933.2,448.5L875.2,448.5L874.6,448.5L874.6,388.8Z" fill="#e7ba6e" data-fips="20133" class="county c-target"><title>Neosho County</title></path>
+<path d="M568.7,403.5L568.9,402.3L568.8,388.6L583.4,388.4L583.2,373.0L582.9,358.2L585.0,358.0L656.6,358.0L656.5,432.8L568.8,433.1L568.7,403.5Z" fill="#3A4654" data-fips="20173" class="county c-hard"><title>Sedgwick County</title></path>
+<path d="M685.9,230.8L686.7,223.8L686.8,203.9L691.7,203.9L691.7,194.0L743.8,194.1L743.8,201.5L758.7,201.6L758.8,216.5L763.8,216.5L763.6,253.7L701.2,253.6L686.4,253.6L686.4,238.7L686.4,231.6L685.9,230.8Z" fill="#d99e4b" data-fips="20127" class="county c-target"><title>Morris County</title></path>
+<path d="M740.7,462.4L815.8,463.0L815.8,514.4L810.9,514.5L792.1,514.4L791.8,514.4L791.3,514.4L791.0,514.4L790.6,514.4L790.4,514.4L786.3,514.4L784.2,514.4L781.9,514.4L774.0,514.4L773.6,514.4L758.2,514.4L755.4,514.4L744.0,514.5L740.6,514.5L740.7,462.4Z" fill="#e2b162" data-fips="20019" class="county c-target"><title>Chautauqua County</title></path>
+<path d="M478.6,253.7L553.1,253.5L553.4,299.1L553.4,313.3L523.9,313.2L523.9,315.7L514.1,315.8L514.0,313.3L479.6,313.4L479.7,298.4L478.7,298.4L478.6,253.7Z" fill="#e7bb6f" data-fips="20159" class="county c-target"><title>Rice County</title></path>
+<path d="M329.7,149.1L402.6,149.0L404.0,149.0L403.3,223.7L330.6,223.7L328.8,223.7L329.7,149.1Z" fill="#3A4654" data-fips="20051" class="county c-hard"><title>Ellis County</title></path>
+<path d="M403.0,74.5L475.3,74.6L477.7,74.6L477.3,134.1L477.3,149.1L404.0,149.0L402.6,149.0L403.0,74.5Z" fill="#e9c075" data-fips="20141" class="county c-target"><title>Osborne County</title></path>
+<path d="M806.2,74.8L839.3,74.9L839.3,60.0L869.4,60.0L868.6,74.9L868.6,100.0L866.1,100.0L866.0,134.8L806.3,134.7L806.2,74.8Z" fill="#dda554" data-fips="20085" class="county c-target"><title>Jackson County</title></path>
+<path d="M182.8,223.1L241.8,223.5L242.2,298.1L183.2,297.8L182.8,223.1Z" fill="#d28e38" data-fips="20101" class="county c-target"><title>Lane County</title></path>
+<path d="M703.0,30.1L703.0,0.3L727.6,0.3L729.2,0.4L730.0,0.4L733.2,0.4L734.5,0.4L736.3,0.4L738.8,0.4L740.4,0.4L748.0,0.4L748.4,0.4L748.9,0.4L748.9,0.4L770.2,0.4L770.7,0.4L779.0,0.4L778.9,15.2L779.0,74.8L733.2,74.8L702.9,74.8L703.0,30.1Z" fill="#ebc47a" data-fips="20117" class="county c-target"><title>Marshall County</title></path>
+<path d="M477.7,74.6L552.1,74.7L552.6,74.7L552.5,119.3L552.2,124.3L552.4,134.2L477.3,134.1L477.7,74.6Z" fill="#e8bd71" data-fips="20123" class="county c-target"><title>Mitchell County</title></path>
+<path d="M552.2,124.3L552.5,119.3L627.4,119.4L627.3,149.2L627.2,179.0L552.6,178.9L552.4,134.2L552.2,124.3Z" fill="#dea858" data-fips="20143" class="county c-target"><title>Ottawa County</title></path>
+<path d="M123.7,223.0L165.2,223.2L166.2,223.2L182.8,223.1L183.2,297.8L127.1,297.7L124.1,297.7L123.7,223.0Z" fill="#e3b264" data-fips="20171" class="county c-target"><title>Scott County</title></path>
+<path d="M255.1,149.1L327.9,149.1L329.7,149.1L328.8,223.7L254.4,223.6L255.1,149.1Z" fill="#e4b467" data-fips="20195" class="county c-target"><title>Trego County</title></path>
+<path d="M568.8,433.1L656.5,432.8L657.0,447.1L656.8,449.2L657.2,514.4L627.1,514.5L625.4,514.5L615.1,514.5L615.1,514.5L613.6,514.5L606.3,514.5L603.9,514.5L603.8,514.5L601.4,514.5L595.7,514.5L591.6,514.4L589.8,514.4L583.6,514.5L574.0,514.5L572.0,514.4L572.0,514.5L569.5,514.5L569.5,514.5L569.2,448.5L568.9,448.1L568.8,433.1Z" fill="#dca453" data-fips="20191" class="county c-target"><title>Sumner County</title></path>
+<path d="M477.3,134.1L552.4,134.2L552.6,178.9L552.6,193.9L478.0,193.9L478.2,149.2L477.3,149.1L477.3,134.1Z" fill="#ecc67d" data-fips="20105" class="county c-target"><title>Lincoln County</title></path>
+<path d="M627.4,119.4L627.6,74.7L682.5,74.8L682.1,134.1L682.2,149.1L681.9,149.1L627.3,149.2L627.4,119.4Z" fill="#e3b263" data-fips="20027" class="county c-target"><title>Clay County</title></path>
+<path d="M698.3,298.3L698.8,283.3L701.2,283.3L701.2,253.6L763.6,253.7L763.1,313.5L763.0,328.3L741.0,328.2L698.4,328.4L698.3,298.3Z" fill="#d99c4a" data-fips="20017" class="county c-target"><title>Chase County</title></path>
+<path d="M740.6,410.3L816.3,410.9L816.2,448.0L815.8,450.0L815.8,463.0L740.7,462.4L740.6,432.7L740.6,410.3Z" fill="#ce852e" data-fips="20049" class="county c-target"><title>Elk County</title></path>
+<path d="M815.8,450.0L816.2,448.0L874.6,448.5L875.2,448.5L875.6,471.1L875.2,481.0L875.0,514.4L873.4,514.4L868.2,514.4L863.0,514.4L862.5,514.4L861.4,514.4L860.6,514.4L856.0,514.4L853.0,514.4L851.7,514.4L849.8,514.4L849.2,514.4L848.8,514.4L845.6,514.4L843.2,514.4L842.0,514.4L839.6,514.4L836.8,514.4L828.9,514.4L827.9,514.4L827.7,514.4L827.5,514.4L823.1,514.4L820.7,514.4L819.5,514.4L815.8,514.4L815.8,463.0L815.8,450.0Z" fill="#e8be72" data-fips="20125" class="county c-target"><title>Montgomery County</title></path>
+<path d="M407.2,372.9L479.7,373.1L480.7,373.3L480.7,388.8L480.7,433.6L407.3,433.7L407.2,388.7L407.2,372.9Z" fill="#dea757" data-fips="20151" class="county c-target"><title>Pratt County</title></path>
+<path d="M128.9,388.2L187.6,388.2L187.5,432.9L187.5,447.9L131.8,447.9L128.9,447.9L128.9,388.2Z" fill="#3A4654" data-fips="20081" class="county c-hard"><title>Haskell County</title></path>
+<path d="M88.8,74.5L175.7,74.5L178.4,74.5L178.3,148.9L166.2,148.9L88.5,148.6L88.8,74.5Z" fill="#efcb82" data-fips="20193" class="county c-target"><title>Thomas County</title></path>
+<path d="M1.0,323.7L1.0,321.6L1.0,318.7L1.0,300.2L1.0,298.1L64.9,298.0L68.3,297.9L68.2,372.5L70.3,372.5L70.3,388.2L1.3,387.8L1.3,384.1L1.2,379.2L1.2,376.7L1.2,373.1L1.1,365.6L1.1,355.7L1.1,355.3L1.0,335.2L1.0,323.7Z" fill="#d18c36" data-fips="20075" class="county c-target"><title>Hamilton County</title></path>
+<path d="M404.6,223.7L477.9,223.7L478.7,223.7L478.6,253.7L478.7,298.4L420.7,298.3L404.7,298.3L404.6,283.4L404.6,223.7Z" fill="#dba150" data-fips="20009" class="county c-target"><title>Barton County</title></path>
+<path d="M330.6,223.7L403.3,223.7L404.6,223.7L404.6,283.4L330.6,283.2L330.6,223.7Z" fill="#d99c4a" data-fips="20165" class="county c-target"><title>Rush County</title></path>
+<path d="M176.0,0.2L176.7,0.2L177.1,0.2L178.3,0.2L183.4,0.2L186.5,0.2L188.5,0.2L194.4,0.2L195.3,0.2L198.9,0.2L201.0,0.2L206.5,0.2L209.7,0.2L211.0,0.2L211.2,0.2L212.1,0.2L215.1,0.2L216.1,0.2L222.7,0.2L243.9,0.3L244.2,0.3L246.1,0.3L248.6,0.3L249.0,0.3L249.5,0.3L249.7,0.3L251.1,0.3L251.1,0.3L250.8,74.7L178.4,74.5L175.7,74.5L176.0,0.2Z" fill="#d99e4c" data-fips="20039" class="county c-target"><title>Decatur County</title></path>
+<path d="M76.9,148.7L88.5,148.6L166.2,148.9L165.2,223.2L123.7,223.0L76.0,223.1L76.9,148.7Z" fill="#ebc379" data-fips="20109" class="county c-target"><title>Logan County</title></path>
+<path d="M260.6,432.9L305.2,434.2L334.5,434.2L334.5,449.0L336.2,449.0L336.5,514.3L334.2,514.3L325.2,514.3L322.1,514.3L320.8,514.2L305.2,514.1L305.1,514.1L303.6,514.1L291.7,514.0L275.6,514.0L274.8,514.0L274.6,514.0L274.2,514.0L263.0,513.9L262.7,448.0L260.6,448.0L260.6,432.9Z" fill="#e0ab5c" data-fips="20025" class="county c-target"><title>Clark County</title></path>
+<path d="M68.3,297.9L124.1,297.7L127.1,297.7L127.0,372.3L128.9,372.3L128.9,388.2L70.3,388.2L70.3,372.5L68.2,372.5L68.3,297.9Z" fill="#e8be72" data-fips="20093" class="county c-target"><title>Kearny County</title></path>
+<path d="M0.6,149.0L76.9,148.7L76.0,223.1L65.0,223.2L0.9,223.6L0.9,213.8L0.9,213.6L0.9,211.2L0.8,208.9L0.9,206.1L0.9,203.7L0.7,163.7L0.6,149.6L0.6,149.0Z" fill="#3A4654" data-fips="20199" class="county c-hard"><title>Wallace County</title></path>
+<path d="M552.2,59.8L627.6,59.8L627.6,74.7L627.4,119.4L552.5,119.3L552.6,74.7L552.1,74.7L552.2,59.8Z" fill="#e9be73" data-fips="20029" class="county c-target"><title>Cloud County</title></path>
+<path d="M328.3,74.6L400.1,74.5L403.0,74.5L402.6,149.0L329.7,149.1L327.9,149.1L328.3,74.6Z" fill="#e1ad5e" data-fips="20163" class="county c-target"><title>Rooks County</title></path>
+<path d="M478.0,193.9L552.6,193.9L553.0,223.7L553.1,238.6L553.1,253.5L478.6,253.7L478.7,223.7L477.9,223.7L478.0,193.9Z" fill="#e1ae60" data-fips="20053" class="county c-target"><title>Ellsworth County</title></path>
+<path d="M178.4,74.5L250.8,74.7L253.3,74.6L253.0,149.2L178.3,148.9L178.4,74.5Z" fill="#3A4654" data-fips="20179" class="county c-hard"><title>Sheridan County</title></path>
+<path d="M332.6,357.9L332.7,328.1L362.0,328.0L362.0,342.9L376.7,343.0L406.0,343.0L405.9,372.9L407.2,372.9L407.2,388.7L334.0,388.4L333.9,372.9L332.5,372.9L332.6,357.9Z" fill="#e3b264" data-fips="20047" class="county c-target"><title>Edwards County</title></path>
+<path d="M877.9,194.1L878.0,162.1L880.4,162.0L883.8,160.1L888.8,160.3L896.9,165.7L899.4,166.3L902.8,165.8L905.1,164.5L906.8,166.3L906.9,163.8L908.2,164.2L920.0,164.2L920.1,177.9L922.3,177.5L923.0,174.9L926.3,177.0L930.2,177.0L931.5,179.3L933.6,179.7L935.1,177.9L933.4,175.2L935.8,174.0L937.5,174.8L937.5,216.5L877.9,216.5L877.9,194.1Z" fill="#5B7C99" data-fips="20045" class="county c-base"><title>Douglas County</title></path>
+<path d="M166.2,148.9L178.3,148.9L253.0,149.2L255.1,149.1L254.4,223.6L241.8,223.5L182.8,223.1L166.2,223.2L165.2,223.2L166.2,148.9Z" fill="#3A4654" data-fips="20063" class="county c-hard"><title>Gove County</title></path>
+<path d="M817.8,223.9L818.3,216.5L818.2,194.0L877.9,194.1L877.9,216.5L877.0,224.0L876.9,268.7L817.7,268.7L817.8,223.9Z" fill="#ce852e" data-fips="20139" class="county c-target"><title>Osage County</title></path>
+<path d="M404.0,149.0L477.3,149.1L478.2,149.2L478.0,193.9L477.9,223.7L404.6,223.7L403.3,223.7L404.0,149.0Z" fill="#d18c36" data-fips="20167" class="county c-target"><title>Russell County</title></path>
+<path d="M480.7,433.6L480.7,388.8L568.8,388.6L568.9,402.3L568.7,403.5L568.8,433.1L568.9,448.1L496.1,448.5L480.7,448.5L480.7,433.6Z" fill="#ebc47a" data-fips="20095" class="county c-target"><title>Kingman County</title></path>
+<path d="M553.1,238.6L627.2,238.7L627.2,313.3L583.0,313.3L553.4,313.3L553.4,299.1L553.1,253.5L553.1,238.6Z" fill="#e9bf74" data-fips="20113" class="county c-target"><title>McPherson County</title></path>
+<path d="M763.6,253.7L763.8,216.5L818.3,216.5L817.8,223.9L817.7,268.7L817.7,298.5L816.6,298.5L816.5,313.7L763.1,313.5L763.6,253.7Z" fill="#e7ba6e" data-fips="20111" class="county c-target"><title>Lyon County</title></path>
+<path d="M253.3,74.6L324.8,74.6L328.3,74.6L327.9,149.1L255.1,149.1L253.0,149.2L253.3,74.6Z" fill="#e3b263" data-fips="20065" class="county c-target"><title>Graham County</title></path>
+<path d="M779.0,0.4L779.0,0.4L781.0,0.4L781.5,0.4L790.3,0.5L790.4,0.5L791.3,0.5L794.2,0.5L794.2,0.5L799.0,0.5L800.1,0.4L804.1,0.4L807.8,0.4L809.6,0.4L816.6,0.5L826.8,0.5L839.4,0.5L839.3,60.0L839.3,74.9L806.2,74.8L779.0,74.8L778.9,15.2L779.0,0.4Z" fill="#3A4654" data-fips="20131" class="county c-hard"><title>Nemaha County</title></path>
+<path d="M400.0,0.2L406.3,0.2L406.5,0.1L410.0,0.2L412.7,0.2L412.8,0.2L414.2,0.1L414.2,0.2L417.7,0.2L431.2,0.1L433.0,0.1L438.8,0.1L439.1,0.1L445.7,0.2L445.7,0.2L447.8,0.2L450.1,0.1L450.3,0.1L450.5,0.1L452.8,0.1L453.2,0.1L455.4,0.2L455.6,0.2L457.1,0.1L460.7,0.1L463.5,0.1L465.9,0.1L467.9,0.2L470.2,0.1L472.9,0.1L475.4,0.1L475.3,74.6L403.0,74.5L400.1,74.5L400.0,0.2Z" fill="#f0ce86" data-fips="20183" class="county c-target"><title>Smith County</title></path>
+<path d="M325.2,0.2L341.7,0.2L342.1,0.2L342.3,0.2L342.8,0.2L344.6,0.2L352.2,0.2L353.7,0.2L354.9,0.2L370.0,0.2L370.6,0.2L371.1,0.2L374.9,0.2L375.4,0.2L380.0,0.2L382.5,0.2L383.7,0.2L383.9,0.2L385.0,0.2L385.0,0.2L386.2,0.2L392.5,0.2L393.8,0.2L397.5,0.2L400.0,0.2L400.1,74.5L328.3,74.6L324.8,74.6L325.2,0.2Z" fill="#e4b467" data-fips="20147" class="county c-target"><title>Phillips County</title></path>
+<path d="M937.5,174.8L941.3,175.4L942.2,171.8L952.0,174.5L955.3,171.3L957.3,173.3L960.0,169.0L959.6,166.5L961.8,161.8L965.8,161.3L971.4,164.3L997.6,164.2L997.5,174.9L997.6,181.7L997.6,182.1L997.6,182.5L997.6,182.6L997.6,191.7L997.6,194.2L997.6,194.4L997.6,194.5L997.6,195.5L997.6,196.6L997.6,197.9L997.6,201.3L997.6,204.1L997.4,215.9L997.4,216.2L997.4,216.6L957.3,216.6L937.5,216.5L937.5,174.8Z" fill="#5B7C99" data-fips="20091" class="county c-base"><title>Johnson County</title></path>
+<path d="M876.9,268.7L877.0,224.0L877.9,216.5L937.5,216.5L937.4,224.0L936.2,224.0L936.2,276.2L884.1,276.3L876.9,276.2L876.9,268.7Z" fill="#d69743" data-fips="20059" class="county c-target"><title>Franklin County</title></path>
+<path d="M1.3,510.0L1.3,509.0L1.3,508.7L1.3,508.4L1.3,508.2L1.3,496.0L1.3,495.1L1.3,492.8L1.3,492.8L1.3,490.0L1.3,470.0L1.4,463.3L1.3,461.3L1.3,453.9L1.3,453.8L1.4,450.0L1.4,447.6L66.4,447.7L66.5,515.0L60.5,515.1L60.3,515.1L20.0,515.3L6.9,515.4L6.9,515.4L3.2,515.4L1.3,515.4L1.3,510.0Z" fill="#e5b76a" data-fips="20129" class="county c-target"><title>Morton County</title></path>
+<path d="M899.5,0.5L903.7,0.5L903.7,1.6L903.8,2.1L903.9,2.4L904.5,3.2L906.2,4.4L908.2,5.3L908.9,5.8L910.0,7.3L910.5,8.3L911.5,9.3L912.7,10.0L913.3,10.1L914.1,10.2L915.5,10.1L916.0,10.1L916.4,10.3L917.6,11.0L918.1,11.8L918.1,12.8L918.0,13.8L917.5,15.1L917.4,15.6L917.4,16.0L917.5,16.2L918.0,17.0L918.3,17.2L919.1,17.5L919.6,17.7L921.0,17.7L922.0,17.3L923.6,16.5L924.1,16.4L925.0,16.6L925.5,16.9L925.8,17.3L925.9,18.0L926.0,18.4L925.8,19.5L925.9,20.1L926.2,20.8L926.7,21.4L927.0,21.6L927.9,22.1L930.9,22.9L933.0,24.0L933.7,24.2L934.1,24.2L938.0,23.8L939.4,23.7L940.0,23.6L940.7,23.1L941.3,22.5L941.6,21.7L941.7,21.3L941.6,19.9L941.7,19.4L941.8,19.2L942.5,18.1L943.3,17.7L943.9,17.6L944.5,17.6L945.9,18.0L946.3,18.2L946.8,18.2L948.0,18.1L950.0,17.5L950.5,17.4L951.5,17.6L952.6,18.0L953.8,18.8L954.5,19.6L954.7,20.0L954.8,20.4L954.8,21.0L954.6,21.7L954.2,22.4L953.2,23.3L953.0,23.8L952.8,24.3L952.7,25.1L953.1,25.9L953.4,26.3L954.9,27.7L956.2,28.6L957.1,28.9L958.0,29.0L959.4,28.9L959.9,29.0L960.2,29.1L961.0,29.8L961.3,30.2L961.5,30.7L961.6,31.2L961.6,31.3L961.7,32.5L961.6,33.6L961.0,35.2L960.6,35.8L959.7,36.2L959.4,36.3L955.0,36.5L954.5,36.8L954.1,37.1L953.7,37.7L953.7,38.4L953.7,39.0L953.9,39.3L954.5,40.1L954.9,40.5L956.2,41.5L956.8,41.8L957.6,41.7L958.6,41.4L959.1,41.1L959.1,41.1L959.2,41.0L959.3,40.9L959.3,40.9L959.3,40.9L960.6,39.9L960.9,39.7L960.9,39.7L962.3,39.4L962.5,39.4L962.8,39.6L963.1,39.9L963.4,40.4L963.7,41.1L963.9,42.7L963.8,43.4L963.4,44.6L962.4,46.0L961.7,46.7L960.6,47.3L959.6,47.7L958.5,47.8L958.1,47.8L957.1,47.5L956.0,47.0L954.4,45.9L953.2,44.8L952.4,44.3L951.9,44.1L951.4,44.0L951.0,44.1L950.4,44.5L949.7,45.2L949.0,46.4L948.9,46.9L948.9,47.9L949.3,50.6L949.2,53.1L949.1,53.8L948.9,54.2L948.2,55.1L947.5,55.6L947.2,55.7L945.9,55.9L944.9,55.9L943.8,56.1L943.0,56.3L942.6,56.6L941.7,57.3L941.3,57.8L940.0,60.0L939.8,60.5L939.1,61.4L938.4,62.5L937.9,63.8L937.7,64.8L937.7,65.3L937.9,66.4L933.6,66.5L931.9,65.5L929.6,60.0L899.5,60.0L899.5,0.5Z" fill="#e9bf74" data-fips="20043" class="county c-target"><title>Doniphan County</title></path>
+<path d="M496.1,448.5L568.9,448.1L569.2,448.5L569.5,514.5L538.4,514.5L537.7,514.5L536.9,514.5L528.0,514.6L523.2,514.6L519.2,514.6L515.1,514.6L513.6,514.6L511.1,514.6L496.6,514.6L496.5,514.6L496.1,448.5Z" fill="#d69743" data-fips="20077" class="county c-target"><title>Harper County</title></path>
+<path d="M933.2,398.8L996.3,399.0L996.3,402.3L996.3,402.3L996.3,405.1L996.3,409.7L996.3,409.9L996.3,416.3L996.3,416.4L996.4,417.2L996.4,418.8L996.3,419.5L996.4,423.9L996.4,425.0L996.4,431.4L996.3,433.8L996.3,434.6L996.3,435.4L996.3,435.4L996.3,436.4L996.4,438.9L996.3,441.4L996.3,443.9L996.3,446.4L996.3,451.3L996.3,451.3L996.3,451.9L996.3,451.9L996.3,456.3L935.0,456.0L935.0,448.5L933.2,448.5L933.2,398.8Z" fill="#eac176" data-fips="20037" class="county c-target"><title>Crawford County</title></path>
+<path d="M0.3,74.5L85.5,74.5L88.8,74.5L88.5,148.6L76.9,148.7L0.6,149.0L0.6,148.3L0.4,119.9L0.4,107.8L0.3,102.7L0.3,100.2L0.3,99.3L0.3,85.1L0.3,79.9L0.3,79.5L0.3,74.5Z" fill="#dba150" data-fips="20181" class="county c-target"><title>Sherman County</title></path>
+<path d="M741.0,328.2L763.0,328.3L763.1,313.5L816.5,313.7L816.5,336.1L816.2,373.5L816.3,388.5L816.3,410.9L740.6,410.3L741.0,328.2Z" fill="#c8791f" data-fips="20073" class="county c-target"><title>Greenwood County</title></path>
+<path d="M656.5,432.8L740.6,432.7L740.7,462.4L740.6,514.5L716.5,514.4L715.8,514.4L712.3,514.4L711.7,514.4L710.5,514.4L704.9,514.4L704.5,514.5L700.8,514.4L694.8,514.4L693.6,514.4L690.1,514.4L689.9,514.4L688.1,514.4L687.5,514.4L685.8,514.4L681.4,514.4L680.3,514.4L673.0,514.4L671.7,514.4L663.5,514.4L663.0,514.4L660.9,514.4L660.6,514.4L657.2,514.4L656.8,449.2L657.0,447.1L656.5,432.8Z" fill="#e0ab5c" data-fips="20035" class="county c-target"><title>Cowley County</title></path>
+<path d="M0.0,0.0L18.1,0.0L19.8,0.0L28.2,0.1L29.4,0.0L32.7,0.1L33.1,0.1L56.9,0.1L57.1,0.1L68.3,0.1L85.0,0.1L85.9,0.1L85.5,74.5L0.3,74.5L0.3,73.5L0.2,70.3L0.2,61.2L0.2,59.8L0.2,56.1L0.1,31.5L0.1,29.1L0.1,27.3L0.0,26.3L0.0,0.0Z" fill="#edc77d" data-fips="20023" class="county c-target"><title>Cheyenne County</title></path>
+<path d="M839.4,0.5L839.4,0.5L839.9,0.5L894.8,0.5L899.5,0.5L899.5,60.0L869.4,60.0L839.3,60.0L839.4,0.5Z" fill="#e6b96d" data-fips="20013" class="county c-target"><title>Brown County</title></path>
+<path d="M479.6,313.4L514.0,313.3L514.1,315.8L523.9,315.7L523.9,313.2L553.4,313.3L583.0,313.3L582.9,358.2L583.2,373.0L583.4,388.4L568.8,388.6L480.7,388.8L480.7,373.3L479.7,373.1L479.6,313.4Z" fill="#ebc379" data-fips="20155" class="county c-target"><title>Reno County</title></path>
+<path d="M475.4,0.1L477.3,0.1L506.3,0.1L507.1,0.1L509.5,0.1L517.1,0.1L519.0,0.1L519.9,0.1L524.0,0.1L529.6,0.2L532.8,0.1L533.8,0.1L536.3,0.2L536.6,0.2L541.1,0.2L541.6,0.2L546.7,0.2L552.1,0.2L552.2,59.8L552.1,74.7L477.7,74.6L475.3,74.6L475.4,0.1Z" fill="#e4b568" data-fips="20089" class="county c-target"><title>Jewell County</title></path>
+<path d="M714.5,102.5L715.2,100.9L714.1,99.6L715.1,97.8L714.7,96.6L715.2,94.4L717.8,93.3L719.3,89.9L719.5,89.5L719.8,89.7L719.7,90.0L721.1,90.7L721.8,89.9L723.0,86.3L723.7,85.3L724.4,85.0L725.3,84.4L725.4,82.1L725.8,81.6L726.0,81.5L726.1,81.3L726.2,81.2L726.3,81.1L726.4,80.9L726.6,80.8L726.7,80.7L726.8,80.5L726.9,80.4L727.0,80.2L727.2,80.1L727.4,79.9L727.7,79.7L728.0,79.8L727.8,80.0L727.9,80.3L728.2,80.6L728.5,80.7L728.7,80.7L729.0,80.5L729.4,80.0L729.8,79.8L730.1,79.6L730.3,79.5L730.4,79.4L730.6,79.2L730.9,79.1L731.1,79.0L731.3,78.9L731.5,78.8L731.7,78.6L731.8,78.5L732.0,78.4L732.1,78.3L732.1,78.2L732.1,78.0L732.0,77.8L731.8,77.6L731.8,77.3L731.8,77.1L731.9,76.9L732.0,76.8L732.1,76.6L732.1,76.5L732.2,76.3L732.3,76.2L732.4,76.0L732.5,75.8L732.7,75.6L732.8,75.4L732.9,75.3L733.0,75.2L733.1,75.0L733.2,74.9L733.2,74.8L779.0,74.8L806.2,74.8L806.3,134.7L806.2,149.6L805.8,150.1L805.1,147.6L803.4,147.6L798.8,145.3L799.8,143.8L803.3,144.7L801.8,141.1L799.8,138.6L798.1,138.9L796.2,137.4L794.1,139.7L790.5,138.8L787.1,139.3L787.1,137.0L784.7,136.4L781.6,137.4L779.7,135.4L776.9,139.0L774.4,141.1L771.6,138.3L769.3,138.2L767.5,139.9L766.6,144.6L763.0,145.0L763.3,142.7L761.1,143.7L758.9,142.2L758.8,142.0L758.6,141.9L758.4,141.7L758.0,141.4L757.6,141.0L757.4,140.9L757.2,140.8L757.0,140.7L756.8,140.6L756.6,140.5L756.4,140.4L756.2,140.3L756.0,140.3L755.8,140.1L755.6,140.1L755.4,140.0L755.2,140.0L754.9,139.9L754.5,139.9L754.2,139.9L753.9,139.8L753.6,139.8L753.3,139.8L753.1,139.7L752.9,139.6L752.5,139.5L752.2,139.4L751.8,139.3L751.4,139.2L751.1,139.1L750.7,139.1L750.1,139.0L749.7,139.1L749.4,139.9L749.3,140.7L748.9,141.2L748.9,141.3L748.8,141.5L749.0,142.0L749.3,142.6L749.3,143.0L748.9,143.2L748.4,143.3L748.1,143.4L747.6,143.6L747.3,143.6L747.0,142.8L746.7,141.5L745.9,141.1L745.2,141.6L745.2,142.1L744.9,142.9L744.2,143.1L743.3,143.0L742.5,142.7L741.9,142.5L741.5,141.8L741.8,141.1L742.1,140.3L741.9,139.8L741.3,139.6L740.7,139.9L740.2,139.9L739.8,140.1L738.8,140.3L738.0,140.5L737.1,140.9L737.0,141.1L736.7,141.1L736.5,141.0L736.2,140.5L736.2,140.1L736.2,139.7L736.1,139.1L736.0,138.4L736.2,137.8L736.8,137.9L737.4,138.1L738.7,137.9L740.2,138.1L740.8,137.9L741.5,137.4L741.6,136.7L741.3,136.4L741.1,136.3L741.0,136.2L740.7,136.0L740.5,135.8L740.3,135.7L740.2,135.6L740.1,135.5L740.0,135.5L739.8,135.4L739.4,135.4L738.4,135.5L738.4,135.7L738.2,136.1L737.7,136.0L737.5,135.6L737.3,134.4L737.2,133.8L737.0,133.3L736.8,132.9L736.6,132.4L736.4,131.8L736.2,131.4L736.1,131.1L736.0,130.8L735.4,130.6L735.0,130.9L734.5,131.1L733.9,131.1L733.6,131.3L733.4,131.6L733.0,131.7L732.8,131.4L732.7,131.1L732.3,130.9L732.2,130.5L732.2,130.3L732.3,130.1L732.5,130.0L732.9,129.9L733.1,129.8L733.3,129.7L733.5,129.8L734.0,130.0L734.2,129.9L734.4,129.8L734.6,129.3L734.4,128.7L733.9,128.3L733.6,128.0L733.4,127.9L733.2,128.0L733.2,128.2L733.3,128.4L733.5,128.4L733.8,128.5L733.9,128.7L733.7,129.1L733.4,129.2L733.1,129.1L732.8,129.1L732.6,129.1L732.4,129.0L731.8,129.0L731.5,128.7L731.2,128.5L731.3,128.3L731.3,128.1L731.3,127.3L730.6,126.5L729.5,126.2L727.8,124.4L726.5,123.0L725.8,122.3L725.9,121.5L726.4,121.1L725.7,120.2L724.9,119.4L723.5,118.3L723.2,117.8L723.4,117.2L724.0,117.0L724.3,116.4L723.7,116.1L722.9,116.2L721.7,115.6L721.2,114.2L721.5,113.9L722.2,113.5L722.0,113.0L721.6,113.1L720.5,112.1L718.8,110.6L718.9,109.6L719.3,108.8L718.9,108.0L718.3,108.2L716.2,106.1L714.6,104.3L714.0,102.6L714.5,102.5Z" fill="#eac277" data-fips="20149" class="county c-target"><title>Pottawatomie County</title></path>
+<path d="M816.2,373.5L816.5,336.1L875.5,336.5L875.4,373.8L874.7,373.8L874.6,388.8L816.3,388.5L816.2,373.5Z" fill="#e0ad5e" data-fips="20207" class="county c-target"><title>Woodson County</title></path>
+<path d="M251.1,0.3L276.2,0.3L276.8,0.3L281.9,0.2L282.4,0.3L284.3,0.3L287.5,0.3L300.0,0.3L305.0,0.3L305.5,0.2L306.6,0.3L307.6,0.3L308.9,0.2L310.9,0.2L312.5,0.2L324.8,0.2L324.8,0.2L325.1,0.2L325.2,0.2L324.8,74.6L253.3,74.6L250.8,74.7L251.1,0.3Z" fill="#e0ad5d" data-fips="20137" class="county c-target"><title>Norton County</title></path>
+<path d="M407.3,433.7L480.7,433.6L480.7,448.5L496.1,448.5L496.5,514.6L495.5,514.6L488.2,514.5L486.9,514.5L486.7,514.5L470.0,514.4L470.0,514.4L447.2,514.4L446.7,514.4L440.9,514.4L436.9,514.4L436.6,514.4L436.1,514.4L426.5,514.4L425.1,514.4L425.0,514.4L409.7,514.3L408.9,514.3L408.8,448.4L407.4,448.5L407.3,433.7Z" fill="#e6b96d" data-fips="20007" class="county c-target"><title>Barber County</title></path>
+<path d="M743.8,194.1L743.9,164.3L758.7,164.4L758.9,142.2L761.1,143.7L763.3,142.7L763.0,145.0L766.6,144.6L767.5,139.9L769.3,138.2L771.6,138.3L774.4,141.1L776.9,139.0L779.7,135.4L781.6,137.4L784.7,136.4L787.1,137.0L787.1,139.3L790.5,138.8L794.1,139.7L796.2,137.4L798.1,138.9L799.8,138.6L801.8,141.1L803.3,144.7L799.8,143.8L798.8,145.3L803.4,147.6L805.1,147.6L805.8,150.1L808.8,151.2L811.9,148.9L812.0,150.4L809.8,151.9L811.4,153.0L814.7,152.7L818.2,154.9L818.2,194.0L818.3,216.5L763.8,216.5L758.8,216.5L758.7,201.6L743.8,201.5L743.8,194.1Z" fill="#e1ad5e" data-fips="20197" class="county c-target"><title>Wabaunsee County</title></path>
+<path d="M127.1,297.7L183.2,297.8L242.2,298.1L244.5,298.1L244.6,342.8L186.0,342.6L185.8,372.3L187.6,372.3L187.6,388.2L128.9,388.2L128.9,372.3L127.0,372.3L127.1,297.7Z" fill="#3A4654" data-fips="20055" class="county c-hard"><title>Finney County</title></path>
+<path d="M187.5,432.9L246.0,432.9L260.6,432.9L260.6,448.0L262.7,448.0L263.0,513.9L259.5,513.9L249.8,513.9L249.2,513.9L249.0,513.9L247.9,513.9L201.0,514.1L200.9,514.1L195.7,514.2L195.7,514.2L190.6,514.2L190.1,514.3L190.0,447.9L187.5,447.9L187.5,432.9Z" fill="#ebc379" data-fips="20119" class="county c-target"><title>Meade County</title></path>
+<path d="M816.3,410.9L816.3,388.5L874.6,388.8L874.6,448.5L816.2,448.0L816.3,410.9Z" fill="#d79a47" data-fips="20205" class="county c-target"><title>Wilson County</title></path>
+<path d="M919.9,149.7L920.9,149.7L920.9,102.5L920.8,100.0L949.2,100.0L949.6,100.3L951.1,100.9L951.6,101.3L952.0,101.8L952.2,102.3L952.2,103.3L952.3,104.0L952.3,104.3L952.8,105.1L953.1,105.3L953.5,105.6L953.9,105.8L955.3,105.9L955.9,105.8L956.3,105.6L957.2,105.2L958.2,104.5L959.1,104.4L959.5,104.4L959.9,104.6L960.5,105.0L961.0,106.0L961.2,106.7L961.2,107.4L960.9,108.4L960.4,109.0L959.7,109.4L958.9,109.6L958.6,109.7L958.1,110.1L957.5,110.7L957.2,111.1L957.1,111.4L957.0,112.1L957.4,116.4L957.7,118.4L958.0,119.3L958.4,120.4L959.1,121.4L960.2,122.7L960.8,123.3L961.4,123.6L962.8,124.2L964.2,124.9L965.6,125.8L966.8,126.8L967.6,127.9L968.2,129.0L968.4,130.4L968.3,131.0L968.1,131.7L967.2,133.4L967.1,134.0L967.4,134.5L967.6,134.8L968.7,135.8L969.1,136.1L970.3,136.4L971.9,136.5L973.5,136.2L974.0,136.3L974.3,136.5L974.8,136.9L975.1,137.4L958.4,137.0L958.3,149.7L957.3,149.7L957.3,173.3L955.3,171.3L952.0,174.5L942.2,171.8L941.3,175.4L937.5,174.8L935.8,174.0L933.4,175.2L935.1,177.9L933.6,179.7L931.5,179.3L930.2,177.0L926.3,177.0L923.0,174.9L922.3,177.5L920.1,177.9L920.0,164.2L919.9,149.7Z" fill="#e3b365" data-fips="20103" class="county c-target"><title>Leavenworth County</title></path>
+<path d="M552.1,0.2L559.6,0.2L562.1,0.2L564.7,0.2L566.9,0.2L566.9,0.2L567.2,0.2L572.9,0.2L573.7,0.2L573.9,0.2L574.1,0.2L608.0,0.2L608.5,0.2L608.6,0.2L614.9,0.2L617.4,0.2L620.0,0.2L621.0,0.2L621.3,0.2L627.5,0.2L627.6,59.8L552.2,59.8L552.1,0.2L552.1,0.2Z" fill="#e2b162" data-fips="20157" class="county c-target"><title>Republic County</title></path>
+<path d="M627.5,0.2L627.5,0.2L630.0,0.2L630.1,0.2L644.2,0.3L644.2,0.3L649.9,0.3L650.2,0.3L652.7,0.3L657.9,0.3L658.5,0.2L670.4,0.3L672.9,0.3L675.8,0.3L688.2,0.3L688.3,0.3L693.0,0.3L693.3,0.3L693.8,0.3L693.9,0.3L703.0,0.3L703.0,30.1L702.9,74.8L682.5,74.8L627.6,74.7L627.6,59.8L627.5,0.2L627.5,0.2Z" fill="#3A4654" data-fips="20201" class="county c-hard"><title>Washington County</title></path>
+<path d="M868.6,74.9L869.4,60.0L899.5,60.0L929.6,60.0L931.9,65.5L933.6,66.5L937.9,66.4L937.9,66.6L938.6,68.0L938.8,68.8L938.8,69.1L938.7,69.9L938.4,70.8L937.7,72.0L937.4,72.4L937.1,72.6L936.4,73.0L935.8,73.1L935.4,73.1L934.8,73.0L933.0,72.3L932.2,72.4L931.8,72.5L931.2,72.8L930.8,73.3L930.6,73.5L929.9,76.0L929.8,76.9L930.4,78.9L930.8,79.7L931.3,80.4L932.6,82.0L934.0,83.3L934.7,83.8L937.1,85.1L937.5,85.5L938.1,86.2L938.3,86.6L938.4,87.1L938.6,89.5L938.7,90.4L938.9,90.9L939.6,91.9L940.0,92.4L940.6,92.9L941.2,93.3L942.9,94.2L945.6,95.0L946.4,95.4L947.4,96.3L947.9,97.1L948.2,98.7L948.7,99.6L949.2,100.0L920.8,100.0L868.6,100.0L868.6,74.9Z" fill="#eac278" data-fips="20005" class="county c-target"><title>Atchison County</title></path>
+<path d="M935.0,456.0L996.3,456.3L996.3,456.6L996.3,458.8L996.2,473.1L996.2,473.6L996.2,475.0L996.2,475.2L996.2,478.7L996.2,478.8L996.2,481.9L996.2,483.2L996.2,484.3L996.2,486.8L996.2,491.6L996.2,492.0L996.2,494.9L996.2,496.5L996.2,497.7L996.2,498.2L996.2,498.2L996.2,499.5L996.2,499.5L996.2,501.4L996.3,504.5L996.2,507.3L996.2,512.7L996.2,514.4L995.3,514.5L985.3,514.5L985.0,514.5L983.5,514.5L980.3,514.5L980.0,514.5L974.9,514.5L967.7,514.5L966.4,514.5L965.2,514.4L964.7,514.4L945.7,514.3L944.0,514.3L943.5,514.3L941.0,514.3L940.0,514.3L938.4,514.3L935.2,514.3L935.0,456.0Z" fill="#3A4654" data-fips="20021" class="county c-hard"><title>Cherokee County</title></path>
+<path d="M806.2,149.6L806.3,134.7L866.0,134.8L865.3,149.6L865.1,160.7L867.0,162.5L871.5,160.1L876.2,160.3L878.0,162.1L877.9,194.1L818.2,194.0L818.2,154.9L814.7,152.7L811.4,153.0L809.8,151.9L812.0,150.4L811.9,148.9L808.8,151.2L805.8,150.1L806.2,149.6Z" fill="#5B7C99" data-fips="20177" class="county c-base"><title>Shawnee County</title></path>
+<path d="M330.6,283.2L404.6,283.4L404.7,298.3L420.7,298.3L420.6,342.9L406.0,343.0L376.7,343.0L362.0,342.9L362.0,328.0L332.7,328.1L332.6,310.6L332.5,298.1L330.7,298.1L330.6,283.2Z" fill="#e3b163" data-fips="20145" class="county c-target"><title>Pawnee County</title></path>
+<path d="M406.0,343.0L420.6,342.9L420.7,298.3L478.7,298.4L479.7,298.4L479.6,313.4L479.7,373.1L407.2,372.9L405.9,372.9L406.0,343.0Z" fill="#d89c49" data-fips="20185" class="county c-target"><title>Stafford County</title></path>
+<path d="M0.9,256.5L0.9,256.5L0.9,253.3L0.9,249.9L0.9,247.3L0.9,243.4L0.9,237.7L0.9,237.7L0.9,228.4L0.9,227.4L0.9,227.4L0.9,225.4L0.9,225.1L0.9,223.6L65.0,223.2L64.9,298.0L1.0,298.1L1.0,297.0L1.0,297.0L1.0,289.5L0.9,277.2L1.0,271.8L0.9,271.2L0.9,265.3L0.9,256.5Z" fill="#d3913c" data-fips="20071" class="county c-target"><title>Greeley County</title></path>
+<path d="M85.9,0.1L86.0,0.1L90.8,0.1L95.0,0.1L97.5,0.1L101.6,0.1L102.5,0.1L107.6,0.1L112.1,0.1L115.2,0.1L117.0,0.1L118.3,0.1L123.4,0.1L132.9,0.1L137.2,0.2L149.3,0.2L173.3,0.1L174.2,0.2L176.0,0.2L175.7,74.5L88.8,74.5L85.5,74.5L85.9,0.1Z" fill="#3A4654" data-fips="20153" class="county c-hard"><title>Rawlins County</title></path>
+<path d="M186.0,342.6L244.6,342.8L244.5,357.7L244.5,372.7L246.2,372.7L246.0,432.9L187.5,432.9L187.6,388.2L187.6,372.3L185.8,372.3L186.0,342.6Z" fill="#ecc67d" data-fips="20069" class="county c-target"><title>Gray County</title></path>
+<path d="M865.3,149.6L866.0,134.8L866.1,100.0L868.6,100.0L920.8,100.0L920.9,102.5L920.9,149.7L919.9,149.7L920.0,164.2L908.2,164.2L906.9,163.8L906.8,166.3L905.1,164.5L902.8,165.8L899.4,166.3L896.9,165.7L888.8,160.3L883.8,160.1L880.4,162.0L878.0,162.1L876.2,160.3L871.5,160.1L867.0,162.5L865.1,160.7L865.3,149.6Z" fill="#dfaa5b" data-fips="20087" class="county c-target"><title>Jefferson County</title></path>
+<path d="M682.5,74.8L702.9,74.8L733.2,74.8L733.2,74.9L733.1,75.0L733.0,75.2L732.9,75.3L732.8,75.4L732.7,75.6L732.5,75.8L732.4,76.0L732.3,76.2L732.2,76.3L732.1,76.5L732.1,76.6L732.0,76.8L731.9,76.9L731.8,77.1L731.8,77.3L731.8,77.6L732.0,77.8L732.1,78.0L732.1,78.2L732.1,78.3L732.0,78.4L731.8,78.5L731.7,78.6L731.5,78.8L731.3,78.9L731.1,79.0L730.9,79.1L730.6,79.2L730.4,79.4L730.3,79.5L730.1,79.6L729.8,79.8L729.4,80.0L729.0,80.5L728.7,80.7L728.5,80.7L728.2,80.6L727.9,80.3L727.8,80.0L728.0,79.8L727.7,79.7L727.4,79.9L727.2,80.1L727.0,80.2L726.9,80.4L726.8,80.5L726.7,80.7L726.6,80.8L726.4,80.9L726.3,81.1L726.2,81.2L726.1,81.3L726.0,81.5L725.8,81.6L725.4,82.1L725.3,84.4L724.4,85.0L723.7,85.3L723.0,86.3L721.8,89.9L721.1,90.7L719.7,90.0L719.8,89.7L719.5,89.5L719.3,89.9L717.8,93.3L715.2,94.4L714.7,96.6L715.1,97.8L714.1,99.6L715.2,100.9L714.5,102.5L714.0,102.6L714.6,104.3L716.2,106.1L718.3,108.2L718.9,108.0L719.3,108.8L718.9,109.6L718.8,110.6L720.5,112.1L721.6,113.1L722.0,113.0L722.2,113.5L721.5,113.9L721.2,114.2L721.7,115.6L722.9,116.2L723.7,116.1L724.3,116.4L724.0,117.0L723.4,117.2L723.2,117.8L723.5,118.3L724.9,119.4L725.7,120.2L726.4,121.1L725.9,121.5L725.8,122.3L726.5,123.0L727.8,124.4L729.5,126.2L730.6,126.5L731.3,127.3L731.3,128.1L731.3,128.3L731.2,128.5L731.5,128.7L731.8,129.0L732.4,129.0L732.6,129.1L732.8,129.1L733.1,129.1L733.4,129.2L733.7,129.1L733.9,128.7L733.8,128.5L733.5,128.4L733.3,128.4L733.2,128.2L733.2,128.0L733.4,127.9L733.6,128.0L733.9,128.3L734.4,128.7L734.6,129.3L734.4,129.8L734.2,129.9L734.0,130.0L733.5,129.8L733.3,129.7L733.1,129.8L732.9,129.9L732.5,130.0L732.3,130.1L732.2,130.3L732.2,130.5L732.3,130.9L732.7,131.1L732.8,131.4L733.0,131.7L733.4,131.6L733.6,131.3L733.9,131.1L734.5,131.1L735.0,130.9L735.4,130.6L736.0,130.8L736.1,131.1L736.2,131.4L736.4,131.8L736.6,132.4L736.8,132.9L737.0,133.3L737.2,133.8L737.3,134.4L737.5,135.6L737.7,136.0L738.2,136.1L738.4,135.7L738.4,135.5L739.4,135.4L739.8,135.4L740.0,135.5L740.1,135.5L740.2,135.6L740.3,135.7L740.5,135.8L740.7,136.0L741.0,136.2L741.1,136.3L741.3,136.4L741.6,136.7L741.5,137.4L740.8,137.9L740.2,138.1L738.7,137.9L737.4,138.1L736.8,137.9L736.2,137.8L736.0,138.4L736.1,139.1L736.2,139.7L736.2,140.1L736.2,140.5L736.5,141.0L736.7,141.1L737.0,141.1L737.1,140.9L738.0,140.5L738.8,140.3L739.8,140.1L740.2,139.9L740.7,139.9L741.3,139.6L741.9,139.8L742.1,140.3L741.8,141.1L741.5,141.8L741.9,142.5L742.5,142.7L743.3,143.0L744.2,143.1L744.9,142.9L745.2,142.1L745.2,141.6L745.9,141.1L746.7,141.5L747.0,142.8L747.3,143.6L747.6,143.6L748.1,143.4L748.4,143.3L748.9,143.2L749.3,143.0L749.3,142.6L749.0,142.0L748.8,141.5L748.9,141.3L748.9,141.2L749.3,140.7L749.4,139.9L749.7,139.1L750.1,139.0L750.7,139.1L751.1,139.1L751.4,139.2L751.8,139.3L752.2,139.4L752.5,139.5L752.9,139.6L753.1,139.7L753.3,139.8L753.6,139.8L753.9,139.8L754.2,139.9L754.5,139.9L754.9,139.9L755.2,140.0L755.4,140.0L755.6,140.1L755.8,140.1L756.0,140.3L756.2,140.3L756.4,140.4L756.6,140.5L756.8,140.6L757.0,140.7L757.2,140.8L757.4,140.9L757.6,141.0L758.0,141.4L758.4,141.7L758.6,141.9L758.8,142.0L758.9,142.2L758.7,164.4L743.9,164.3L743.9,159.3L716.4,159.3L716.4,156.2L713.4,156.6L712.4,158.1L711.4,156.8L696.9,156.7L696.9,154.5L699.5,151.3L699.7,147.9L697.2,147.9L697.1,134.3L682.1,134.1L682.5,74.8Z" fill="#5B7C99" data-fips="20161" class="county c-base"><title>Riley County</title></path>
+<path d="M957.3,149.7L958.3,149.7L958.4,137.0L975.1,137.4L975.8,139.2L976.8,141.0L978.2,142.1L979.6,142.6L980.4,142.8L982.1,142.8L983.4,142.6L985.7,141.2L987.0,140.4L987.9,140.2L989.4,140.6L990.1,141.1L990.6,143.0L990.3,144.8L991.9,145.4L993.3,145.6L995.4,145.0L996.5,144.4L997.5,144.3L998.4,144.4L999.2,144.8L999.7,145.2L1000.0,147.7L999.7,148.5L998.6,149.8L997.9,150.9L997.7,151.3L997.7,152.4L997.7,156.4L997.7,157.8L997.7,160.5L997.6,164.2L971.4,164.3L965.8,161.3L961.8,161.8L959.6,166.5L960.0,169.0L957.3,173.3L957.3,149.7Z" fill="#3A4654" data-fips="20209" class="county c-hard"><title>Wyandotte County</title></path>
+<path d="M875.8,298.6L877.0,298.6L876.9,276.2L884.1,276.3L936.2,276.2L936.3,298.7L934.9,298.7L934.6,336.6L875.5,336.5L875.8,298.6Z" fill="#e6b96d" data-fips="20003" class="county c-target"><title>Anderson County</title></path>
+<path d="M875.2,481.0L875.6,471.1L875.2,448.5L933.2,448.5L935.0,448.5L935.0,456.0L935.2,514.3L924.2,514.3L924.2,514.3L921.3,514.3L918.9,514.3L901.8,514.4L901.1,514.4L901.0,514.4L900.7,514.4L890.4,514.4L890.4,514.4L876.5,514.4L875.0,514.4L875.2,481.0Z" fill="#ebc378" data-fips="20099" class="county c-target"><title>Labette County</title></path>
+<path d="M625.9,184.0L627.2,184.0L627.2,179.0L627.3,149.2L681.9,149.1L681.9,177.8L686.9,175.4L686.8,194.0L691.7,194.0L691.7,203.9L686.8,203.9L686.7,223.8L685.9,230.8L686.4,231.6L686.4,238.7L627.2,238.7L627.1,186.5L625.9,184.0Z" fill="#dba251" data-fips="20041" class="county c-target"><title>Dickinson County</title></path>
+<path d="M1.3,421.6L1.3,418.7L1.4,410.2L1.4,403.9L1.4,402.2L1.3,400.3L1.4,397.7L1.3,390.3L1.3,387.8L70.3,388.2L70.5,447.7L66.4,447.7L1.4,447.6L1.3,444.1L1.3,439.8L1.3,439.8L1.3,433.9L1.3,427.6L1.3,422.6L1.3,421.6Z" fill="#3A4654" data-fips="20187" class="county c-hard"><title>Stanton County</title></path>
+          <circle cx="978.6" cy="155.2" r="9" class="home-dot"/><circle cx="978.6" cy="155.2" r="9" class="home-ring"/>
+        </svg>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--ember)"></i>Persuadable target (drive here)</span>
+        <span><i style="background:var(--slate)"></i>Your base (turn out, don't persuade)</span>
+        <span><i style="background:#46535F"></i>Hard ground (skip for now)</span>
+        <span><i style="background:#fff;border-radius:50%"></i>You are here</span>
+      </div>
+    </div>
+    <div>
+      <ol class="itin">
+        <li class="trow" data-fips="20139" tabindex="0">
+          <span class="rank">1</span>
+          <span class="tname">Osage County</span>
+          <span class="tmiles">61 mi</span>
+          <span class="twhy">voted <b>56%</b> to protect rights —
+            a county only <b>27%</b> voted Democratic.
+            <span class="tgap">+29 pts conscience over party</span></span>
+        </li>
+<li class="trow" data-fips="20059" tabindex="0">
+          <span class="rank">2</span>
+          <span class="tname">Franklin County</span>
+          <span class="tmiles">47 mi</span>
+          <span class="twhy">voted <b>56%</b> to protect rights —
+            a county only <b>30%</b> voted Democratic.
+            <span class="tgap">+26 pts conscience over party</span></span>
+        </li>
+<li class="trow" data-fips="20085" tabindex="0">
+          <span class="rank">3</span>
+          <span class="tname">Jackson County</span>
+          <span class="tmiles">61 mi</span>
+          <span class="twhy">voted <b>52%</b> to protect rights —
+            a county only <b>29%</b> voted Democratic.
+            <span class="tgap">+23 pts conscience over party</span></span>
+        </li>
+<li class="trow" data-fips="20121" tabindex="0">
+          <span class="rank">4</span>
+          <span class="tname">Miami County</span>
+          <span class="tmiles">37 mi</span>
+          <span class="twhy">voted <b>53%</b> to protect rights —
+            a county only <b>30%</b> voted Democratic.
+            <span class="tgap">+23 pts conscience over party</span></span>
+        </li>
+<li class="trow" data-fips="20087" tabindex="0">
+          <span class="rank">5</span>
+          <span class="tname">Jefferson County</span>
+          <span class="tmiles">35 mi</span>
+          <span class="twhy">voted <b>55%</b> to protect rights —
+            a county only <b>34%</b> voted Democratic.
+            <span class="tgap">+22 pts conscience over party</span></span>
+        </li>
+<li class="trow" data-fips="20103" tabindex="0">
+          <span class="rank">6</span>
+          <span class="tname">Leavenworth County</span>
+          <span class="tmiles">14 mi</span>
+          <span class="twhy">voted <b>59%</b> to protect rights —
+            a county only <b>39%</b> voted Democratic.
+            <span class="tgap">+20 pts conscience over party</span></span>
+        </li>
+<li class="trow" data-fips="20043" tabindex="0">
+          <span class="rank">7</span>
+          <span class="tname">Doniphan County</span>
+          <span class="tmiles">53 mi</span>
+          <span class="twhy">voted <b>37%</b> to protect rights —
+            a county only <b>19%</b> voted Democratic.
+            <span class="tgap">+18 pts conscience over party</span></span>
+        </li>
+<li class="trow" data-fips="20005" tabindex="0">
+          <span class="rank">8</span>
+          <span class="tname">Atchison County</span>
+          <span class="tmiles">41 mi</span>
+          <span class="twhy">voted <b>50%</b> to protect rights —
+            a county only <b>32%</b> voted Democratic.
+            <span class="tgap">+17 pts conscience over party</span></span>
+        </li>
+      </ol>
+      <div class="skip">↩ <b>Skip your base</b> — already with you, don't spend gas
+      persuading: <b>Johnson</b> (69% with you), <b>Douglas</b> (82% with you), <b>Shawnee</b> (66% with you). Turn them out instead.</div>
+    </div>
+  </div>
+</div></section>
+
+<section class="wave"><div class="wrap">
+  <div class="act">A word on “riding the wave”</div>
+  <div class="col2">
+    <p class="thesis">We tested whether political change ripples county-to-county like a
+    stone dropped in a pond.</p>
+    <p>In presidential voting, it mostly doesn't — it's one national tide hitting everywhere
+    at once, not a wavefront you can stand in front of. We have the analysis that shows it.
+    Knowing that is <em>why</em> this tool targets persuadable places instead of phantom
+    waves. Good prediction starts with refusing to predict what you can't.</p>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  Every number here is computed by <b>tested code</b> from public records — the Kansas
+  Secretary of State's certified canvass and county presidential returns. The classifications,
+  the distances, the ranking: all under test, no hand-tuning.
+  <div class="chips">
+    <span class="chip t">81 persuadable targets</span>
+    <span class="chip b">4 base counties</span>
+    <span class="chip h">19 hard ground</span>
+    <span class="chip">104 counties ranked</span>
+  </div>
+  <p style="margin-top:22px"><a class="backlink" href="./">&larr; Back to the live map</a></p>
+</div></footer>
+
+<script>
+  const sel = f => document.querySelectorAll('[data-fips="'+f+'"]');
+  function link(on) {
+    return e => {
+      const f = e.currentTarget.getAttribute('data-fips');
+      sel(f).forEach(el => el.classList.toggle('lit', on));
+      if (on) document.querySelectorAll('.county').forEach(c =>
+        c.getAttribute('data-fips') === f || c.classList.add('dim'));
+      else document.querySelectorAll('.county.dim').forEach(c => c.classList.remove('dim'));
+    };
+  }
+  document.querySelectorAll('.county, .trow').forEach(el => {
+    el.addEventListener('mouseenter', link(true));
+    el.addEventListener('mouseleave', link(false));
+    el.addEventListener('focus', link(true));
+    el.addEventListener('blur', link(false));
+  });
+</script>
+
+</body>
+</html>

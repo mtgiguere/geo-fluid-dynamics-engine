@@ -41,6 +41,24 @@ body {
   background: #1557b0;
 }
 
+/* The prescriptive demo lives on its own page; this is the way in. Amber to
+   stand apart from the blue Play control and to match the demo's identity. */
+#demo-link {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  padding: 4px 12px;
+  border-radius: 6px;
+  background: #e8a33d;
+  color: #1f2a36;
+  white-space: nowrap;
+}
+
+#demo-link:hover {
+  background: #d8932c;
+}
+
 #storyline {
   flex-basis: 100%;
   font-size: 13px;

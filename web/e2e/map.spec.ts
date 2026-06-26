@@ -153,3 +153,38 @@ test("year slider scrubs to another election", async ({ page }) => {
   await expect(page.locator("#year-label")).toHaveText("2000");
   await expect(page.locator("#status")).toContainText("2000", { timeout: 15_000 });
 });
+
+test("the Demo button opens the public prescriptive demo page", async ({ page }) => {
+  // The demo is a self-contained static page in the deployed site — PUBLIC
+  // (no login, unlike a private artifact) and dependency-free (inline SVG/CSS/
+  // JS, zero runtime fetches). This verifies the button links into it and the
+  // page renders its real content at the deployment base path, console clean.
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(String(e)));
+  page.on("console", (m) => {
+    if (m.type() === "error") errors.push(m.text());
+  });
+  page.on("response", (r) => {
+    if (r.status() >= 400) errors.push(`HTTP ${r.status()} ${r.url()}`);
+  });
+
+  await page.goto("./");
+  // The button resolves to demo.html under the real sub-path, not the domain
+  // root (the Bug #8 lesson) — assert the resolved href, then follow it.
+  const demo = page.locator("#demo-link");
+  await expect(demo).toHaveText(/Where do I go/);
+  await expect(demo).toHaveAttribute("href", /(^|\/)demo\.html$/);
+  await demo.click();
+
+  await expect(page).toHaveURL(/\/geo-fluid-dynamics-engine\/demo\.html$/);
+  await expect(page.getByRole("heading", { name: /Tell me where to drive/ })).toBeVisible();
+  // The prescriptive payoff is real data through the tested engine: the ranked
+  // itinerary names actual nearby Kansas targets and the inline map renders.
+  // (Scope to the itinerary list — the county name also appears in an invisible
+  // SVG <title> tooltip earlier in the DOM.)
+  await expect(page.locator("ol.itin")).toContainText("Leavenworth County");
+  await expect(page.locator("svg.map path.county").first()).toBeVisible();
+  // The back-link returns to the live map.
+  await expect(page.locator("a.backlink").first()).toHaveAttribute("href", "./");
+  expect(errors).toEqual([]);
+});
