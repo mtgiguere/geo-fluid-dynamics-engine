@@ -20,7 +20,8 @@ Built in four stages:
 
 ### Status
 
-Stages 1–2 are **live on the deployed map**, along with the first predictive layers:
+Stages 1–2 are **live on the deployed map**, the first predictive layers are in,
+and there is now a **first prescriptive demo** (Stage 4) — see below.
 
 - Map views: election result, swing since last election, **wave anchors** (local
   spatial clustering of swing, permutation-significant), six demographic layers, and
@@ -32,6 +33,12 @@ Stages 1–2 are **live on the deployed map**, along with the first predictive l
 - **Play** the seven presidential elections (2000–2024) as a time-lapse.
 - **Every view explains itself**: an always-visible plain-language caption says what
   the colors mean and what gray means — written for organizers, not statisticians.
+- **"Where do I go?" — a prescriptive demo** (the 🧭 button in the app header):
+  the leap from *what happened* to *what to do*. For a chosen issue and home
+  county it produces a ranked, plain-language campaign itinerary — which counties
+  to canvass (persuadable "False Bastions"), in what order, with drive distances,
+  and which to skip (your base, your dead ends). A guided three-act walkthrough is
+  in [`docs/DEMO.md`](docs/DEMO.md).
 
 Under the hood, the analytical core includes Moran's I and LISA (with permutation
 significance), a maximum-likelihood spatial-lag (SAR) model — with a Spatial Durbin
@@ -45,8 +52,11 @@ an almost-purely-regional break, 2016 added a new education cleavage. Network in
 (Module 2) saw two approaches falsified on real data (contemporaneous conformity, then
 a lead-lag timing signal); the current route reframes influence as *issue resistance* —
 a county's persuadability on single-issue ballot measures versus its partisan identity —
-built on a growing multi-state measure set and a cross-measure contest panel. The
-phase-transition detector (Module 5) is not yet built — see `BACKLOG.md`.
+built on a growing multi-state measure set and a cross-measure contest panel, and it
+found its first positive result (issue resistance is a stable cross-issue county trait,
+partial correlation ≈ 0.62 in Ohio). That trait is what the prescriptive demo turns into
+a targeting recommendation. The phase-transition detector (Module 5) is not yet built —
+see `BACKLOG.md`.
 
 ## Development
 
