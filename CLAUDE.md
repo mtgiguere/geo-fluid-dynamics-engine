@@ -73,6 +73,19 @@ The descriptive map and the first analytical layers are live and deployed
   test the generality more widely, then promote issue-resistance from a notebook
   residual to a tested library trait + map it. Other refined paths in BACKLOG
   (population/metro-aware or directed graph).
+- **Prescriptive layer (spec Stage 4), first touch**: `targeting.build_itinerary`
+  turns a county issue signal + a home county into a ranked, classified campaign
+  itinerary — TARGET (red but high-dissonance: persuadable False Bastion), BASE
+  (already aligned: turn out, don't persuade), HARD (red, low dissonance: skip),
+  targets-first by dissonance, home excluded, no-baseline counties dropped.
+  Politics-agnostic like the loaders; `spatial/distance` (haversine + bbox
+  centre) supplies drive miles. Tested seed-free, 100% branch coverage. Shipped
+  as a PUBLIC demo page (`web/public/demo.html`, built by
+  `scripts/build_targeting_demo.py` from real KS data through the tested engine):
+  a three-act story (descriptive map → False-Bastion tell + Ohio r≈0.62 proof →
+  the itinerary) with an inline Kansas choropleth + linked hover, linked from the
+  live app's "Where do I go?" button. Still descriptive-vs-prescriptive groundwork:
+  one issue/state wired, thresholds fixed, no in-map prescriptive mode yet.
 - **Module 5 (Systemic Phase Transition)**: not started. See `BACKLOG.md` for
   sequenced next work and open design questions.
 
@@ -163,17 +176,23 @@ watchdog for hollow tests. (mutmut only runs on Linux CI — it refuses on Windo
   permutation significance), `lag` (SAR model), `influence` (`county_influence` +
   `classify_nodes`: Module 2 node primitives — tested, contemporaneous-conformity
   classification falsified on real data; see BACKLOG.md), `leadlag` (`lead_lag`:
-  Module 2 temporal retry — tested, also falsified on real data; see BACKLOG.md)
+  Module 2 temporal retry — tested, also falsified on real data; see BACKLOG.md),
+  `distance` (`haversine_miles` + `bounding_box_center`: drive-distance for targeting)
 - `src/geofluid/dissonance` — issue-vs-party gap + ballot-measure overlay
+- `src/geofluid/targeting` — `build_itinerary` (Stage-4 prescriptive: rank/classify
+  counties into a campaign itinerary; politics-agnostic)
 - `src/geofluid/realignment` — `trend_surprise` (Module 4 seed: per-county residual
   from its own trend)
 - `src/geofluid/scope` — geographic scope catalog + cross-border neighborhood expansion
 - `src/geofluid/map/layers` — GeoJSON layer + per-year metrics export shaping
-- `scripts/export_web_data.py` — thin orchestration → `web/public/data/*.json`
+- `scripts/export_web_data.py` — thin orchestration → `web/public/data/*.json`;
+  `scripts/build_targeting_demo.py` — renders the public prescriptive demo
+  (`web/public/demo.html`) from real data through the tested targeting engine
 - `notebooks/` — exploratory analysis (jupytext py:percent + paired executed .ipynb);
   EDA that leans on the tested `geofluid` library, **TDD-exempt** (see TDD_CONTRACT.md)
 - `web/` — Vite + TS + Mapbox frontend (`src/metrics.ts`, `src/scope.ts`,
-  `src/measure.ts`; `e2e/` Playwright)
+  `src/measure.ts`; `e2e/` Playwright); `public/demo.html` — the static, public
+  Stage-4 prescriptive demo, linked from the app's "Where do I go?" button
 - `tests/unit/` — Python unit tests (one file per module)
 - `TDD_CONTRACT.md` — the development contract; binding for every session
 - `BACKLOG.md` — agreed-but-deferred work, each item with its JIT trigger
