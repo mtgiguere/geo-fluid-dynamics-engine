@@ -33,7 +33,7 @@ and there is now a **first prescriptive demo** (Stage 4) — see below.
 - **Play** the seven presidential elections (2000–2024) as a time-lapse.
 - **Every view explains itself**: an always-visible plain-language caption says what
   the colors mean and what gray means — written for organizers, not statisticians.
-- **"Where do I go?" — a prescriptive demo** (the 🧭 button in the app header):
+- **"The art of the possible" — a prescriptive demo** (the 🧭 button in the app header):
   the leap from *what happened* to *what to do*. For a chosen issue and home
   county it produces a ranked, plain-language campaign itinerary — which counties
   to canvass (persuadable "False Bastions"), in what order, with drive distances,

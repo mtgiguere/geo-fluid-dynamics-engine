@@ -27,7 +27,7 @@ The demo walks top to bottom and lands on the last row.
 ## Links
 
 - **Live map:** https://mtgiguere.github.io/geo-fluid-dynamics-engine/
-- **The prescriptive demo:** the **🧭 "Where do I go?"** button in the app header
+- **The prescriptive demo:** the **🧭 "The art of the possible"** button in the app header
   (or directly: `…/demo.html`). It is a public page — no login — so you can send
   the link or screen-share it.
 
@@ -73,12 +73,12 @@ Open the live map. While it paints:
 
 That's the diagnostic. Now the turn.
 
-### 2 · The knockout — click 🧭 "Where do I go?" (≈3 min)
+### 2 · The knockout — click 🧭 "The art of the possible" (≈3 min)
 
 > "But this is *still a map*. Watch what happens when we make it tell you what
 > to do."
 
-Click the **🧭 "Where do I go?"** button. The demo page opens. Scroll through
+Click the **🧭 "The art of the possible"** button. The demo page opens. Scroll through
 its three acts — you've just previewed Acts 1–2 on the live map, so move quickly
 to **Act 3**, where the payoff is.
 
