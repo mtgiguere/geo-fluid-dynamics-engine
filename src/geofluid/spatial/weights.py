@@ -13,6 +13,7 @@ from typing import Any
 
 import numpy as np
 import numpy.typing as npt
+import pandas as pd
 
 
 def _vertices(geometry: dict[str, Any]) -> list[tuple[float, float]]:
@@ -44,6 +45,37 @@ def county_adjacency(county_geojson: dict[str, Any]) -> dict[str, frozenset[str]
         for fips in sharing:
             neighbors[fips].update(sharing - {fips})
     return {fips: frozenset(found) for fips, found in neighbors.items()}
+
+
+def attribute_knn_adjacency(features: pd.DataFrame, k: int) -> dict[str, frozenset[str]]:
+    """A NON-geographic adjacency: each county's k nearest neighbours in
+    standardized demographic feature space.
+
+    `features` is fips-indexed (index = fips, columns = demographic variables,
+    e.g. density, college share, median age). Each column is z-scored so no
+    variable dominates the distance by its raw scale, then neighbours are the k
+    counties closest in Euclidean distance over the standardized features.
+
+    Returns the same `{fips: frozenset(neighbour fips)}` shape as
+    `county_adjacency`, so it drops straight into the Moran's I / spatial-lag
+    machinery — the point being to ask whether political change co-moves along
+    *similarity* rather than geography. Unlike queen adjacency this relation is
+    intentionally ASYMMETRIC (my k nearest peers need not count me among theirs);
+    Moran's I is well defined for asymmetric weights, so that is fine and
+    documented rather than forced into symmetry.
+    """
+    fips = [str(f) for f in features.index]
+    values = features.to_numpy(dtype=np.float64)
+    std = values.std(axis=0)
+    std[std == 0] = 1.0  # a constant feature carries no information; don't divide by zero
+    z = (values - values.mean(axis=0)) / std
+
+    diff = z[:, None, :] - z[None, :, :]
+    dist2 = (diff**2).sum(axis=2)
+    np.fill_diagonal(dist2, np.inf)  # a county is never its own neighbour
+
+    nearest = np.argsort(dist2, axis=1)[:, :k]
+    return {fips[i]: frozenset(fips[j] for j in nearest[i]) for i in range(len(fips))}
 
 
 def spatial_weights(
