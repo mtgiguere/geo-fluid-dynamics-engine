@@ -122,7 +122,7 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
   `spatial/distance` turn a county issue signal + a home county into a ranked,
   classified campaign itinerary (TARGET / BASE / HARD), shipped as a PUBLIC demo
   page (`web/public/demo.html`, built by `scripts/build_targeting_demo.py`) linked
-  from the live app's "Where do I go?" button. Walkthrough in `docs/DEMO.md`.
+  from the live app's "The art of the possible" button. Walkthrough in `docs/DEMO.md`.
   Deliberately stage one — the pipeline and the signal are proven; the product is
   not finished. ROADMAP (the sequenced next work):
     1. **More issues/states** — each is a small loader into the existing pipeline;

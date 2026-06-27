@@ -172,7 +172,7 @@ test("the Demo button opens the public prescriptive demo page", async ({ page })
   // The button resolves to demo.html under the real sub-path, not the domain
   // root (the Bug #8 lesson) — assert the resolved href, then follow it.
   const demo = page.locator("#demo-link");
-  await expect(demo).toHaveText(/Where do I go/);
+  await expect(demo).toHaveText(/art of the possible/i);
   await expect(demo).toHaveAttribute("href", /(^|\/)demo\.html$/);
   await demo.click();
 

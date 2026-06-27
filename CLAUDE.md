@@ -84,7 +84,7 @@ The descriptive map and the first analytical layers are live and deployed
   `scripts/build_targeting_demo.py` from real KS data through the tested engine):
   a three-act story (descriptive map → False-Bastion tell + Ohio r≈0.62 proof →
   the itinerary) with an inline Kansas choropleth + linked hover, linked from the
-  live app's "Where do I go?" button. Still descriptive-vs-prescriptive groundwork:
+  live app's "The art of the possible" button. Still descriptive-vs-prescriptive groundwork:
   one issue/state wired, thresholds fixed, no in-map prescriptive mode yet.
 - **Module 5 (Systemic Phase Transition)**: not started. See `BACKLOG.md` for
   sequenced next work and open design questions.
@@ -192,7 +192,7 @@ watchdog for hollow tests. (mutmut only runs on Linux CI — it refuses on Windo
   EDA that leans on the tested `geofluid` library, **TDD-exempt** (see TDD_CONTRACT.md)
 - `web/` — Vite + TS + Mapbox frontend (`src/metrics.ts`, `src/scope.ts`,
   `src/measure.ts`; `e2e/` Playwright); `public/demo.html` — the static, public
-  Stage-4 prescriptive demo, linked from the app's "Where do I go?" button
+  Stage-4 prescriptive demo, linked from the app's "The art of the possible" button
 - `tests/unit/` — Python unit tests (one file per module)
 - `TDD_CONTRACT.md` — the development contract; binding for every session
 - `BACKLOG.md` — agreed-but-deferred work, each item with its JIT trigger
