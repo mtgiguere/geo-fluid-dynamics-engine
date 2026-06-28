@@ -34,6 +34,23 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
 
 ## Science (Module 1+)
 
+- **Economic-axis False Bastions — STATE-LEVEL CUT DONE (2026-06-28).**
+  `notebooks/minimum_wage_economic_bastions.{py,ipynb}` (TDD-exempt EDA): 10
+  verified statewide minimum-wage measures (2006–2020) vs each state's presidential
+  partisan lean (from our county returns). Economic dissonance = Yes share − Dem
+  two-party share. Finding: every measure passed ABOVE its partisan lean (mean
+  +15pts); corr(lean, dissonance) = −0.82 — poorest, reddest states (MO, AR, NE)
+  crossed party hardest for a raise (+20–31pts), blue states sit on their line.
+  Inverts "What's the Matter with Kansas": the ballot reveals an economic
+  disposition party vote masks — the abortion False-Bastion pattern on the
+  economic axis, pointing the other direction. CAVEATS: N=10 verified subset,
+  state-level/ecological, selection bias (min wage is on the ballot mostly where
+  it can win), static income. NEXT (JIT): the within-state COUNTY cut — ingest
+  Florida 2020 (Amendment 2) and/or Missouri 2018 (Prop B) via the `referendum`
+  loader pattern (Matt grabs the SoS file) to show the county-level income/partisan
+  gradient and add an economic measure to `panel/measures` alongside the social
+  ones (a genuinely off-cluster measure for the issue-generality test).
+
 - **Module 4 (Chaos Sensor) — SEED DONE (2026-06-15).** `realignment.trend_surprise`:
   per-county residual from its own linear trend over the trailing window of
   presidential elections, extrapolated one ahead (actual − predicted). Tested
