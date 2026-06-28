@@ -116,6 +116,15 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
   specific; (2) more multi-issue states to see if r ≈ 0.62 holds; (3) IF it holds,
   promote "issue resistance" from a notebook residual to a tested library trait
   and map it — the real Module 2 path-(b) product.
+  - PARTIALLY DONE (2026-06-28): step (3)'s building block shipped —
+    `dissonance.issue_resistance` is the tested per-measure trait (OLS residual of
+    progressive on partisan share; the rigorous "defies its partisan peers", vs
+    the raw dissonance gap the map/targeting engine still use). The generality
+    notebook now calls it. STILL OPEN: aggregate it ACROSS measures into a single
+    per-county persuadability score (only Ohio has overlapping measures today, so
+    this waits on more same-geography measures — steps 1/2), then optionally rank
+    the targeting engine on the aggregate trait instead of single-measure raw
+    dissonance (a deliberate deploy change, not yet warranted).
 
 - **Prescriptive layer (spec Stage 4) — FIRST TOUCH SHIPPED (2026-06-26).**
   `targeting.build_itinerary` (tested, seed-free, 100% branch coverage) +
