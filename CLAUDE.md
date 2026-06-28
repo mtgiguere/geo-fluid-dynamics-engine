@@ -177,7 +177,10 @@ watchdog for hollow tests. (mutmut only runs on Linux CI — it refuses on Windo
   `classify_nodes`: Module 2 node primitives — tested, contemporaneous-conformity
   classification falsified on real data; see BACKLOG.md), `leadlag` (`lead_lag`:
   Module 2 temporal retry — tested, also falsified on real data; see BACKLOG.md),
-  `distance` (`haversine_miles` + `bounding_box_center`: drive-distance for targeting)
+  `distance` (`haversine_miles` + `bounding_box_center`: drive-distance for targeting);
+  `weights.attribute_knn_adjacency` (a non-geographic similarity network — drop-in
+  to Moran/lag; horse-race found geography still wins but education > urbanicity,
+  see BACKLOG)
 - `src/geofluid/dissonance` — issue-vs-party gap + ballot-measure overlay
 - `src/geofluid/targeting` — `build_itinerary` (Stage-4 prescriptive: rank/classify
   counties into a campaign itinerary; politics-agnostic)

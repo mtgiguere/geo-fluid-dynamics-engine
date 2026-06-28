@@ -138,15 +138,27 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
     5. **Tunable thresholds + goals** — base/target cutoffs are fixed constants
        today; expose them, and add the other organizer intents (turnout, defense)
        beyond persuasion.
-    6. **Similarity-network diffusion (research)** — test whether change diffuses
-       through demographic/urban-hierarchy similarity rather than geographic
-       adjacency (swap W in the tested Moran/lead-lag machinery); if real, it
-       reshapes both the influence model and the targeting network. See the
-       "how is the wave" discussion — the open, promising lead.
+    6. **Similarity-network diffusion (research) — FIRST CUT DONE (2026-06-28).**
+       `spatial/weights.attribute_knn_adjacency` (tested) builds a non-geographic
+       network from demographic similarity, drop-in to the Moran/lead-lag
+       machinery. Horse-race EDA (`notebooks/diffusion_network_horse_race.{py,
+       ipynb}`) over residual swing (county swing − national mean), 2004–2024:
+       **geography decisively wins** (Moran's I 0.62 vs best demographic net 0.28,
+       education 0.17) — similarity does NOT beat borders for presidential swing,
+       so "ideas hop metro-to-metro" is not the story and swapping networks does
+       not rescue the falsified lead-lag. BUT among demographic axes **education
+       leads and survives the collinearity control** (Layer-2 unique variation:
+       education 0.08 > income/urbanicity/age); urbanicity was partly education in
+       disguise (corr 0.48). NEXT: permutation significance; per-year (1964/2016
+       likely differ); k-sensitivity; and feed the result into Hybrid W below.
 
-- **Hybrid W**: blend queen adjacency with connectivity (commuting flows,
-  broadband, media markets) per the spec's W_hybrid. Trigger: when the lag
-  model's residuals show non-contiguous structure.
+- **Hybrid W**: blend queen adjacency with connectivity per the spec's W_hybrid.
+  Trigger: when the lag model's residuals show non-contiguous structure. NOW
+  EVIDENCE-BACKED (2026-06-28): the diffusion horse-race says keep geography as
+  the backbone and add ONE non-geographic edge — **education similarity** (it
+  carried the most co-movement beyond geography and survived controlling for
+  income/urbanicity/age). `attribute_knn_adjacency` is the constructor; a hybrid
+  would blend it with `county_adjacency` (e.g. row-normalized convex combination).
 
 ## NLP / text (future phase)
 
