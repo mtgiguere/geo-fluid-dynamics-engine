@@ -6,7 +6,14 @@ diffusion), Gravity Engine (network influence), Friction & Dissonance Mapper, Ch
 Anomaly Sensor, Systemic Phase Transition detector.
 Full spec: `docs/geo-fluid-dynamics-engine.docx`. Deployed: https://mtgiguere.github.io/geo-fluid-dynamics-engine/
 
-## What's built (as of 2026-06-24)
+## What's built (as of 2026-06-28)
+
+**Research findings to date are consolidated in [`docs/FINDINGS.md`](docs/FINDINGS.md)** —
+the plain-language narrative (prediction is hard; party is a label and disposition is
+the signal; False Bastions on the social AND economic axes; geography beats similarity
+but education is the secondary edge; realignments flicker rather than ratchet). Read it
+for the "what have we actually learned" picture; the per-module status is below.
+
 
 The descriptive map and the first analytical layers are live and deployed
 (https://mtgiguere.github.io/geo-fluid-dynamics-engine/):
@@ -71,8 +78,12 @@ The descriptive map and the first analytical layers are live and deployed
   state, and the two issues share a "personal-liberty" flavor (could be
   libertarian-cluster, not fully general — needs an off-cluster measure). Next:
   test the generality more widely, then promote issue-resistance from a notebook
-  residual to a tested library trait + map it. Other refined paths in BACKLOG
-  (population/metro-aware or directed graph).
+  residual to a tested library trait + map it. **The trait is now promoted**:
+  `dissonance.issue_resistance` (tested) is the rigorous partisanship-controlled
+  residual (vs the raw dissonance gap). And the False-Bastion pattern was
+  confirmed on the ECONOMIC axis too — minimum wage crosses party hardest in poor
+  red states (corr lean↔dissonance −0.82; see FINDINGS.md). Other refined paths in
+  BACKLOG (population/metro-aware or directed graph).
 - **Prescriptive layer (spec Stage 4), first touch**: `targeting.build_itinerary`
   turns a county issue signal + a home county into a ranked, classified campaign
   itinerary — TARGET (red but high-dissonance: persuadable False Bastion), BASE
@@ -181,7 +192,9 @@ watchdog for hollow tests. (mutmut only runs on Linux CI — it refuses on Windo
   `weights.attribute_knn_adjacency` (a non-geographic similarity network — drop-in
   to Moran/lag; horse-race found geography still wins but education > urbanicity,
   see BACKLOG)
-- `src/geofluid/dissonance` — issue-vs-party gap + ballot-measure overlay
+- `src/geofluid/dissonance` — issue-vs-party gap + ballot-measure overlay;
+  `issue_resistance` (the partisanship-controlled version: OLS residual of
+  progressive on partisan share — the rigorous "defies its partisan peers" trait)
 - `src/geofluid/targeting` — `build_itinerary` (Stage-4 prescriptive: rank/classify
   counties into a campaign itinerary; politics-agnostic)
 - `src/geofluid/realignment` — `trend_surprise` (Module 4 seed: per-county residual
@@ -192,7 +205,12 @@ watchdog for hollow tests. (mutmut only runs on Linux CI — it refuses on Windo
   `scripts/build_targeting_demo.py` — renders the public prescriptive demo
   (`web/public/demo.html`) from real data through the tested targeting engine
 - `notebooks/` — exploratory analysis (jupytext py:percent + paired executed .ipynb);
-  EDA that leans on the tested `geofluid` library, **TDD-exempt** (see TDD_CONTRACT.md)
+  EDA that leans on the tested `geofluid` library, **TDD-exempt** (see TDD_CONTRACT.md).
+  The research arc: `realignment_1964_vs_2016` (Module 4 seed), `leadlag_node_roles`
+  (Module 2 falsification), `issue_resistance_starter` + `issue_generality_ohio`
+  (path-b, the r≈0.62 trait), `minimum_wage_economic_bastions` (economic-axis False
+  Bastions), `diffusion_network_horse_race` + `education_channel_over_time` (how/when
+  change organizes). Each finding is summarized in `docs/FINDINGS.md`.
 - `web/` — Vite + TS + Mapbox frontend (`src/metrics.ts`, `src/scope.ts`,
   `src/measure.ts`; `e2e/` Playwright); `public/demo.html` — the static, public
   Stage-4 prescriptive demo, linked from the app's "The art of the possible" button

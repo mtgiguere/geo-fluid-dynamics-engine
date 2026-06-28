@@ -58,6 +58,13 @@ partial correlation ≈ 0.62 in Ohio). That trait is what the prescriptive demo 
 a targeting recommendation. The phase-transition detector (Module 5) is not yet built —
 see `BACKLOG.md`.
 
+The research the engine has produced — including that the False-Bastion pattern holds on
+the *economic* axis too (minimum wage crosses party hardest in poor red states), that
+change co-moves more by geography than by demographic similarity (with education the
+secondary edge), and that the education realignment *flickers* rather than ratchets
+(it organized swing sharply in 2016–2020, then faded in 2024) — is written up in
+**[`docs/FINDINGS.md`](docs/FINDINGS.md)**.
+
 ## Development
 
 This project is built with strict test-driven development. **`TDD_CONTRACT.md` is
