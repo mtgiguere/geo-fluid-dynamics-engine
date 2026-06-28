@@ -34,6 +34,19 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
 
 ## Science (Module 1+)
 
+- **Education channel is EPISODIC — TEMPORAL CUT DONE (2026-06-28).**
+  `notebooks/education_channel_over_time.{py,ipynb}` (TDD-exempt; uses
+  `attribute_knn_adjacency` + `morans_i`): global Moran's I of residual swing per
+  election under geographic vs demographic-similarity networks. Education's
+  organizing power of swing: 0.13 (2004/08) → 0.02 (2012) → 0.34 (2016) →
+  0.32 (2020) → 0.05 (2024); geography steady 0.50–0.74 throughout. The
+  diploma-divide was the defining axis of the 2016/2020 SWINGS, not a permanent
+  remap — it flickered off in 2024 (a broad, non-education-patterned shift). This
+  strengthens the Module 5 (phase transition) case: realignments are episodic
+  regime events to detect, not a monotonic trend. Caveat: static modern
+  demographics applied to all years; time-resolved NHGIS demographics would
+  sharpen it.
+
 - **Module 4 (Chaos Sensor) — SEED DONE (2026-06-15).** `realignment.trend_surprise`:
   per-county residual from its own linear trend over the trailing window of
   presidential elections, extrapolated one ahead (actual − predicted). Tested
