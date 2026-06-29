@@ -181,7 +181,9 @@ watchdog for hollow tests. (mutmut only runs on Linux CI — it refuses on Windo
   `weights.attribute_knn_adjacency` (a non-geographic similarity network — drop-in
   to Moran/lag; horse-race found geography still wins but education > urbanicity,
   see BACKLOG)
-- `src/geofluid/dissonance` — issue-vs-party gap + ballot-measure overlay
+- `src/geofluid/dissonance` — issue-vs-party gap + ballot-measure overlay;
+  `issue_resistance` (the partisanship-controlled version: OLS residual of
+  progressive on partisan share — the rigorous "defies its partisan peers" trait)
 - `src/geofluid/targeting` — `build_itinerary` (Stage-4 prescriptive: rank/classify
   counties into a campaign itinerary; politics-agnostic)
 - `src/geofluid/realignment` — `trend_surprise` (Module 4 seed: per-county residual
