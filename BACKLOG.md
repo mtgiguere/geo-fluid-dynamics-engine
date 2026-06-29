@@ -34,6 +34,33 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
 
 ## Science (Module 1+)
 
+> The narrative across these findings is consolidated in `docs/FINDINGS.md`.
+
+- **Issue-resistance trait PROMOTED to tested library (2026-06-28).**
+  `dissonance.issue_resistance` is the partisanship-controlled residual (OLS of
+  progressive on partisan share — the rigorous "defies its partisan peers", vs the
+  raw dissonance gap the map/targeting engine still use); the Ohio generality
+  notebook now calls it. STILL OPEN (path-b step toward the product): aggregate it
+  ACROSS measures into one per-county persuadability score (only Ohio has
+  overlapping measures today — waits on more same-geography measures), then
+  optionally rank the targeting engine on the aggregate trait instead of
+  single-measure raw dissonance (a deliberate deploy change, not yet warranted).
+
+- **Economic-axis False Bastions — STATE-LEVEL CUT DONE (2026-06-28).**
+  `notebooks/minimum_wage_economic_bastions.{py,ipynb}` (TDD-exempt): 10 verified
+  statewide minimum-wage measures (2006–2020) vs each state's presidential partisan
+  lean (our county returns). Economic dissonance = Yes share − Dem two-party share.
+  Finding: every measure passed ABOVE its partisan lean (mean +15pts); corr(lean,
+  dissonance) = −0.82 — poorest, reddest states (MO, AR, NE) crossed party hardest
+  for a raise (+20–31pts), blue states sit on their line. Inverts "What's the
+  Matter with Kansas": the abortion False-Bastion pattern on the economic axis,
+  pointing the other ideological direction. CAVEATS: N=10 verified subset,
+  state-level/ecological, selection bias, static income. NEXT (JIT): the
+  within-state COUNTY cut — ingest Florida 2020 (Amendment 2) and/or Missouri 2018
+  (Prop B) via the `referendum` loader pattern (Matt grabs the SoS file) to show
+  the county-level gradient AND add a genuinely off-cluster economic measure to the
+  issue-generality test.
+
 - **Education channel is EPISODIC — TEMPORAL CUT DONE (2026-06-28).**
   `notebooks/education_channel_over_time.{py,ipynb}` (TDD-exempt; uses
   `attribute_knn_adjacency` + `morans_i`): global Moran's I of residual swing per
