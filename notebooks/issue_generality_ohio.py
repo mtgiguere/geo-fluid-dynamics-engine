@@ -60,6 +60,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from geofluid.dissonance import issue_resistance
 from geofluid.ingest.county_geometry import county_shapefile_to_geojson
 from geofluid.ingest.county_returns import load_county_returns
 from geofluid.ingest.referendum import load_oh_referendum
@@ -118,15 +119,12 @@ raw.round(3)
 
 
 # %%
-def residualize(y: "pd.Series[float]", x: "pd.Series[float]") -> "pd.Series[float]":
-    """Residuals of y after its least-squares linear fit on x — the part of y
-    that x does not explain."""
-    slope, intercept = np.polyfit(x, y, 1)
-    return y - (slope * x + intercept)
-
-
-resid_abortion = residualize(A, P)
-resid_cannabis = residualize(C, P)
+# `issue_resistance` is the tested library function (geofluid.dissonance): the
+# residual of an issue's progressive share regressed on partisanship — each
+# county's vote with party projected out. (This notebook originally rolled the
+# residual by hand; that capability now lives, tested, in the library.)
+resid_abortion = issue_resistance(A, P)
+resid_cannabis = issue_resistance(C, P)
 partial_corr = float(np.corrcoef(resid_abortion, resid_cannabis)[0, 1])
 
 # The naive (confounded) version, for contrast — subtract the SAME partisanship

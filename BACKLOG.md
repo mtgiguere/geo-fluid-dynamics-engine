@@ -34,22 +34,18 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
 
 ## Science (Module 1+)
 
-- **Economic-axis False Bastions — STATE-LEVEL CUT DONE (2026-06-28).**
-  `notebooks/minimum_wage_economic_bastions.{py,ipynb}` (TDD-exempt EDA): 10
-  verified statewide minimum-wage measures (2006–2020) vs each state's presidential
-  partisan lean (from our county returns). Economic dissonance = Yes share − Dem
-  two-party share. Finding: every measure passed ABOVE its partisan lean (mean
-  +15pts); corr(lean, dissonance) = −0.82 — poorest, reddest states (MO, AR, NE)
-  crossed party hardest for a raise (+20–31pts), blue states sit on their line.
-  Inverts "What's the Matter with Kansas": the ballot reveals an economic
-  disposition party vote masks — the abortion False-Bastion pattern on the
-  economic axis, pointing the other direction. CAVEATS: N=10 verified subset,
-  state-level/ecological, selection bias (min wage is on the ballot mostly where
-  it can win), static income. NEXT (JIT): the within-state COUNTY cut — ingest
-  Florida 2020 (Amendment 2) and/or Missouri 2018 (Prop B) via the `referendum`
-  loader pattern (Matt grabs the SoS file) to show the county-level income/partisan
-  gradient and add an economic measure to `panel/measures` alongside the social
-  ones (a genuinely off-cluster measure for the issue-generality test).
+- **Education channel is EPISODIC — TEMPORAL CUT DONE (2026-06-28).**
+  `notebooks/education_channel_over_time.{py,ipynb}` (TDD-exempt; uses
+  `attribute_knn_adjacency` + `morans_i`): global Moran's I of residual swing per
+  election under geographic vs demographic-similarity networks. Education's
+  organizing power of swing: 0.13 (2004/08) → 0.02 (2012) → 0.34 (2016) →
+  0.32 (2020) → 0.05 (2024); geography steady 0.50–0.74 throughout. The
+  diploma-divide was the defining axis of the 2016/2020 SWINGS, not a permanent
+  remap — it flickered off in 2024 (a broad, non-education-patterned shift). This
+  strengthens the Module 5 (phase transition) case: realignments are episodic
+  regime events to detect, not a monotonic trend. Caveat: static modern
+  demographics applied to all years; time-resolved NHGIS demographics would
+  sharpen it.
 
 - **Module 4 (Chaos Sensor) — SEED DONE (2026-06-15).** `realignment.trend_surprise`:
   per-county residual from its own linear trend over the trailing window of
@@ -133,6 +129,15 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
   specific; (2) more multi-issue states to see if r ≈ 0.62 holds; (3) IF it holds,
   promote "issue resistance" from a notebook residual to a tested library trait
   and map it — the real Module 2 path-(b) product.
+  - PARTIALLY DONE (2026-06-28): step (3)'s building block shipped —
+    `dissonance.issue_resistance` is the tested per-measure trait (OLS residual of
+    progressive on partisan share; the rigorous "defies its partisan peers", vs
+    the raw dissonance gap the map/targeting engine still use). The generality
+    notebook now calls it. STILL OPEN: aggregate it ACROSS measures into a single
+    per-county persuadability score (only Ohio has overlapping measures today, so
+    this waits on more same-geography measures — steps 1/2), then optionally rank
+    the targeting engine on the aggregate trait instead of single-measure raw
+    dissonance (a deliberate deploy change, not yet warranted).
 
 - **Prescriptive layer (spec Stage 4) — FIRST TOUCH SHIPPED (2026-06-26).**
   `targeting.build_itinerary` (tested, seed-free, 100% branch coverage) +

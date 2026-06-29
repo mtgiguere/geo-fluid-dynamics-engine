@@ -13,9 +13,43 @@ two input shares the same direction is the caller's responsibility, exactly
 as the referendum loader leaves politics to the analysis layer.
 """
 
-from typing import Any
+from typing import Any, cast
 
+import numpy as np
 import pandas as pd
+
+
+def issue_resistance(
+    progressive_share: "pd.Series[float]",
+    partisan_share: "pd.Series[float]",
+) -> "pd.Series[float]":
+    """How much each county defies the partisan expectation set by its peers.
+
+    Raw dissonance (progressive - partisan) assumes a county "should" vote
+    progressive exactly as much as it votes Democratic -- a 1:1 line. Empirically
+    that line is flatter, so the raw gap is biased. issue_resistance is the
+    rigorous version: fit progressive_share = a + b * partisan_share by ordinary
+    least squares across the measure's counties, and return the RESIDUAL --
+    progressive minus what the fitted line predicts from partisanship. Positive
+    means a county ran ahead of its similarly-partisan peers on the issue (a
+    True False Bastion); the residuals are orthogonal to partisanship by
+    construction, which is exactly what "controlling for partisanship" means.
+
+    Both inputs are fips-indexed and oriented the same political direction. The
+    fit uses only counties with both shares present; a county missing either
+    gets NaN resistance and stays in the result -- absence is explicit, and it
+    never enters the fit. Returns a fips-indexed series aligned to the union of
+    the inputs.
+    """
+    progressive = progressive_share.rename("progressive")
+    partisan = partisan_share.reindex(progressive.index).rename("partisan")
+    frame = pd.concat([progressive, partisan], axis=1)
+
+    complete = frame.dropna()
+    slope, intercept = np.polyfit(complete["partisan"], complete["progressive"], 1)
+    predicted = intercept + slope * frame["partisan"]
+    resistance = (frame["progressive"] - predicted).rename("resistance")
+    return cast("pd.Series[float]", resistance)
 
 
 def compute_dissonance(
