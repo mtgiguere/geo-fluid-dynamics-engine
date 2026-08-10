@@ -13,6 +13,11 @@ the plain-language narrative (prediction is hard; party is a label and dispositi
 the signal; False Bastions on the social AND economic axes; geography beats similarity
 but education is the secondary edge; realignments flicker rather than ratchet). Read it
 for the "what have we actually learned" picture; the per-module status is below.
+**The forward research design is [`docs/MEASUREMENT_DESIGN.md`](docs/MEASUREMENT_DESIGN.md)**
+(2026-08-10) — county ideal points × measure severity cutpoints, identification via
+overlap structure, ex-ante prediction, topic dimensionality as hypothesis — with the
+build order (catalog → metadata → targeted ingests → estimator → diffusion test → NLP)
+and the Geo Week 2027 presentation ambition that shapes the year.
 
 
 The descriptive map and the first analytical layers are live and deployed

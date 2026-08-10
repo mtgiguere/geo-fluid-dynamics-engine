@@ -3,6 +3,11 @@
 Work items agreed but deliberately not started (JIT: each begins when its
 trigger arrives, with its own tests). Newest decisions at top of each section.
 
+> **North star for the coming year (2026-08-10):** an exhaustive, honest check
+> of the founding question — how ideas move across the map — built on the
+> ballot-measure measurement design (`docs/MEASUREMENT_DESIGN.md`), with an eye
+> to presenting at **Geo Week 2027** or another geospatial/political-data venue.
+
 ## Product / UX
 
 - **DONE (2026-06-13): Scoped views.** `geofluid/scope.py` (neighborhood
@@ -35,6 +40,25 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
 ## Science (Module 1+)
 
 > The narrative across these findings is consolidated in `docs/FINDINGS.md`.
+
+- **Ballot-measure measurement design — DOCUMENTED, NOT BUILT (2026-08-10).**
+  `docs/MEASUREMENT_DESIGN.md` is the full design: county ideal points ×
+  measure cutpoints (IRT — severity *estimated*, not hand-coded;
+  `progressive_side` is its one-bit degenerate case), identification via
+  overlap structure (same-ballot pairs → severity; repeated measures → drift;
+  demographics controlled from ACS; diffusion = spatially structured residual,
+  tested with Moran's I on estimator residuals), ex-ante prediction via
+  content→cutpoint placement (brackets + severity-slider product shape), and
+  topic dimensionality as a *tested hypothesis* (our False Bastions already
+  imply ≥2 axes; is r≈0.62 within-cluster or general?). Build order with JIT
+  triggers is in the doc: (1) statewide catalog + design matrix ← **arrived,
+  next up**; (2) measure metadata table (its consumer finally exists);
+  (3) targeted county ingests by identification value (priority corpora:
+  marriage amendments 2004–2012, Medicaid-expansion initiatives, cannabis
+  wave, FL/MO minimum-wage county cuts); (4) the estimator — gated on matrix
+  connectivity, seed-free per contract; (5) residual-diffusion test; (6) NLP
+  content→cutpoint. Supersedes nothing — it *sequences* the open Module 2
+  path-b and economic-bastion items below.
 
 - **Issue-resistance trait PROMOTED to tested library (2026-06-28).**
   `dissonance.issue_resistance` is the partisanship-controlled residual (OLS of
@@ -232,8 +256,22 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
     (like `scripts/export_web_data.py`), not inside the coverage-gated unit path.
   - Trigger: a defined text-analysis need (most likely real ballot-measure / platform
     text to deepen Module 3), plus the text data to ingest.
+  - TRIGGER NOW HAS A SHAPE (2026-08-10): content→cutpoint prediction — embed
+    ballot-measure text, learn the mapping to estimated severity cutpoints from
+    past measures, place NEW measures ex ante (`docs/MEASUREMENT_DESIGN.md` §3).
+    Still JIT: fires only after the estimator produces ex-post cutpoints to
+    train on (build-order step 6).
 
 ## Data
+
+- **Ballot-measure CATALOG (statewide, exhaustive) — NEXT (2026-08-10).** Step 1
+  of `docs/MEASUREMENT_DESIGN.md`: catalog every statewide measure (NCSL
+  database + Ballotpedia; state, date, topic tag, direction, result, text
+  link, election type) and mark the OVERLAP STRUCTURE (same-ballot pairs,
+  repeats, severity ladders, repeat geographies). The design matrix it yields
+  *is* the county-ingest priority list — overlap, not volume, buys
+  identification. Statewide-level only; no per-state loaders needed for this
+  step. Trigger: arrived.
 
 - **Ballot measures ingest — STARTER SET SCOPED + IN PROGRESS (2026-06-18).**
   County-level, per-state SoS sources; Kansas Aug 2022 done. The two Module 2
