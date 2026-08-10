@@ -104,7 +104,7 @@ Watch it fail. Then write the guard. The bug never ships.
 In `test_spatial_weights.py`, the test comment read:
 ```python
 fips_order = sorted(panel["fips"].unique())
-sup_vec = np.array(support)   # ordered: 29169, 29183, 29189 alphabetically
+sup_vec = np.array(support)  # ordered: 29169, 29183, 29189 alphabetically
 ```
 
 The comment said alphabetically. The code used `support` which was in **insertion order**
@@ -160,7 +160,7 @@ assertion before the implementation.
 
 The correct pattern — never use `is True` or `is False` with pandas/numpy values:
 ```python
-assert result["is_false_bastion"]        # truthiness check — works with np.bool_
+assert result["is_false_bastion"]  # truthiness check — works with np.bool_
 assert not result["is_false_bastion"]
 assert result["is_false_bastion"] == True  # value equality — not identity
 ```
@@ -180,7 +180,7 @@ Example:
 def test_wombling_value_equals_support_difference():
     """With support [0.8, 0.3], wombling_value should be 0.5."""
     ...
-    if len(result) > 0:           # ← hollow guard
+    if len(result) > 0:  # ← hollow guard
         assert abs(result.iloc[0]["wombling_value"] - 0.5) < 1e-6
 ```
 
@@ -341,12 +341,14 @@ A good test is written **before the implementation** and specifies:
 def test_adoption_year_is_first_crossing():
     """Specifies: the adoption year is the FIRST year support crosses the threshold.
     Not the last. Not any year. The first."""
-    support = pd.DataFrame({
-        "fips": ["29169"] * 4,
-        "topic_id": [1] * 4,
-        "year": [2012, 2016, 2020, 2024],
-        "support_pct": [0.40, 0.48, 0.52, 0.58],
-    })
+    support = pd.DataFrame(
+        {
+            "fips": ["29169"] * 4,
+            "topic_id": [1] * 4,
+            "year": [2012, 2016, 2020, 2024],
+            "support_pct": [0.40, 0.48, 0.52, 0.58],
+        }
+    )
     events = compute_adoption_events(support, topic_id=1, threshold_pct=0.50)
     row = events[events["fips"] == "29169"].iloc[0]
     assert row["first_adoption_year"] == 2020  # not 2024; not 2016
@@ -362,6 +364,7 @@ seed-based testing is always wrong. Use Hypothesis:
 
 ```python
 from hypothesis import given, strategies as st
+
 
 @given(
     cci=st.floats(0.0, 1.0, allow_nan=False),
@@ -505,7 +508,7 @@ Claude Code sessions need concrete examples from this codebase, not just the pri
 to `PluginMetadata`. But when constructing `SuitabilityModifier`, the implementation was:
 
 ```python
-metadata={}
+metadata = {}
 ```
 
 The `threat_tier` from `PluginMetadata` was never copied into `SuitabilityModifier.metadata`.
@@ -901,10 +904,11 @@ This sounds obvious. It is not practiced. Here is what violating it looks like:
 
 ```python
 # VIOLATION: writing a helper "because it might be useful later"
-def filter_variables(df, variables):   # no test demands this as a public function
-    ...                                # it exists because I imagined a future caller
+def filter_variables(df, variables):  # no test demands this as a public function
+    ...  # it exists because I imagined a future caller
 
-def validate_schema(df):               # same — planned upfront, not test-driven
+
+def validate_schema(df):  # same — planned upfront, not test-driven
     ...
 ```
 
@@ -944,12 +948,13 @@ The "minimum code" step is JIT: not one line more than the failing test requires
 
 ```python
 # RED FLAG 7: Function with no failing test demanding it
-def _compute_auxiliary_stats(df):   # who called this? what test failed without it?
+def _compute_auxiliary_stats(df):  # who called this? what test failed without it?
     ...
 
+
 # RED FLAG 8: Public function that is only called by one private function
-def parse_raw_csv(path):            # if only load_aquastat() calls this, it should
-    ...                             # be private or inlined — no external test demands it
+def parse_raw_csv(path):  # if only load_aquastat() calls this, it should
+    ...  # be private or inlined — no external test demands it
 ```
 
 ---
