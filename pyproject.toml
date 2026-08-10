@@ -5,25 +5,25 @@ description = "Strategic civic simulator: descriptive, predictive, and prescript
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "numpy>=2.4.6",
+    "numpy>=2.5.1",
     "openpyxl>=3.1.5",
-    "pandas>=2.2",
-    "pyshp>=3.0.12",
+    "pandas>=3.0.5",
+    "pyshp>=3.1.6",
 ]
 
 [dependency-groups]
 dev = [
-    "pytest>=8",
+    "pytest>=9.1.1",
     "pytest-cov>=6",
-    "ruff>=0.8",
-    "mypy>=1.14",
-    "pandas-stubs>=2.2",
+    "ruff>=0.16.2",
+    "mypy>=2.3.0",
+    "pandas-stubs>=3.0.5.260730",
     "pip-audit>=2.7",
-    "hypothesis>=6.155.2",
-    "mutmut>=3.6.0",
+    "hypothesis>=6.165.2",
+    "mutmut>=3.7.0",
     "pyreadr>=0.5.6",
-    "jupytext>=1.19.3",
-    "matplotlib>=3.11.0",
+    "jupytext>=1.19.5",
+    "matplotlib>=3.11.1",
     "ipykernel>=7.3.0",
     "nbconvert>=7.17.1",
 ]
