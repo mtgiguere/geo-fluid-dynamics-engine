@@ -1,0 +1,39 @@
+name: QA
+
+# Delegates to central reusable workflows in mtgiguere/qa_pipeline.
+# gitleaks stays in this repo's existing ci.yml; here we add CodeQL, which it
+# lacks. Mutation testing stays in the repo's existing mutation.yml for now.
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+  security-events: write   # CodeQL
+
+jobs:
+  python:
+    uses: mtgiguere/qa_pipeline/.github/workflows/python-qa.yml@main
+    with:
+      package-manager: uv
+      coverage-package: src/geofluid
+      coverage-min: 90          # keep the higher bar this repo already meets
+      enforce-coverage: true
+      run-format-check: true
+      run-mypy: true
+      test-args: '--cov-branch'
+
+  web:
+    uses: mtgiguere/qa_pipeline/.github/workflows/node-qa.yml@main
+    with:
+      working-directory: web
+      build-env: |
+        VITE_MAPBOX_TOKEN=pk.ci-typecheck-placeholder
+
+  security:
+    uses: mtgiguere/qa_pipeline/.github/workflows/security-qa.yml@main
+    with:
+      run-gitleaks: false       # already in this repo's ci.yml
+      codeql-languages: '["python","javascript"]'
