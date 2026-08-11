@@ -18,6 +18,10 @@ jobs:
     uses: mtgiguere/qa_pipeline/.github/workflows/python-qa.yml@main
     with:
       package-manager: uv
+      # Pinned tools from the lockfile, not latest-from-PyPI: a new ruff
+      # release must arrive via a reviewed lockfile bump (the ruff 0.15->0.16
+      # markdown-formatting change demonstrated why), never mid-CI.
+      install-command: "uv sync --frozen"
       coverage-package: src/geofluid
       coverage-min: 90          # keep the higher bar this repo already meets
       enforce-coverage: true
