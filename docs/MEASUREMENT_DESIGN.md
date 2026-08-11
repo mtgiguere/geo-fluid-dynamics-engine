@@ -182,6 +182,63 @@ certified-total acceptance run — Bugs #10–12). So:
   measures we have one same-ballot pair and zero repeats — this is a design
   for what to ingest, not something estimable yet.
 
+## 7. The 2026 pre-registration experiment (added 2026-08-10)
+
+Section 3's falsification loop, made concrete and dated: predict
+county-level results for a slate of November 3, 2026 measures, **commit
+the predictions to main before the election** (git history is the
+notary), then score them against certified results and publish the
+postmortem in `FINDINGS.md` — win or lose. Researched 2026 landscape:
+`data/catalog/upcoming_2026.json`.
+
+**The slate:**
+
+1. **Missouri Amendment 3 (marquee).** The legislature's repeal of
+   2024's reproductive-rights amendment: same counties, known 51.6%
+   baseline, a *harsher* cutpoint asked in the opposite direction, on a
+   midterm electorate — the severity-shift-vs-drift machinery, live.
+   Full per-county predicted progressive share with intervals.
+2. **Nevada Question 6 (calibration control).** Identical text to
+   2024's 64.4% first passage — the cutpoint held fixed by
+   construction, so error isolates drift + turnout.
+3. **Massachusetts Question 8.** First-ever attempt to repeal an
+   operating recreational-cannabis market; direct reversal of 2016
+   Question 4 (53.7% yes) — repeat geography, known baseline.
+4. Stretch: SD Amendment I (Medicaid rollback; third straight SD
+   healthcare vote), and state-level-only calls on VA/ID (first-ever
+   abortion votes there; no county baseline of our own yet).
+
+**Calibration assets no forecaster usually gets:** Missouri's Aug 4,
+2026 primary already produced county-level results on an actual 2026
+electorate (parks tax ~82% yes; initiative-restriction Amendment 4
+rejected ~80-20; income-tax phaseout rejected ~83-17), and Oklahoma's
+June 2026 standalone special (minimum wage REJECTED ~56-44 after a
+decade of red-state wins) is the sharpest election-type/turnout data
+point in the catalog.
+
+**Protocol (the honesty rules):**
+
+- Predictions ship as a committed CSV (county, predicted progressive
+  share, interval) plus a methods statement: explicit turnout
+  assumption with reported sensitivity, severity placement as a stated
+  bracket (the estimator will not be trained across enough measures by
+  October), and the partisanship-only baseline we claim to beat.
+- **Registered means frozen.** After the registration commit, the file
+  is never edited; new information yields a new dated file and the old
+  one stands and gets scored.
+- Grading: per-county error, interval calibration, and skill vs the
+  partisanship-only baseline. Results go in `FINDINGS.md` regardless of
+  outcome — a public miss with a good postmortem is still the method
+  working.
+- Known risks, stated now: midterm turnout composition is the dominant
+  error source; the MO ballot may still gain measures via pending
+  litigation (redistricting referendum, initiative-protection
+  amendment); one cycle is evidence, not proof.
+
+**Deadlines:** registration commit on main by **2026-10-15**; election
+**2026-11-03**; postmortem after certification (Dec 2026) — feeding the
+Geo Week 2027 story: *pre-registered, out-of-sample, scored in public.*
+
 ## Build order (JIT triggers)
 
 1. **Statewide catalog + design matrix** — trigger: arrived (this document).
