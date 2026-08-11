@@ -10,7 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "mapbox-gl": "^3.8.0"
+    "mapbox-gl": "^3.28.1"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
