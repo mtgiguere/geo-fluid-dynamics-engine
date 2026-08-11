@@ -41,6 +41,35 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
 
 > The narrative across these findings is consolidated in `docs/FINDINGS.md`.
 
+- **2026 PRE-REGISTERED PREDICTION EXPERIMENT — COMMITTED, CLOCK RUNNING
+  (2026-08-10).** Full protocol in `docs/MEASUREMENT_DESIGN.md` §7; researched
+  ballot landscape in `data/catalog/upcoming_2026.json`. Predict county-level
+  results for Nov 3 2026 measures and commit the predictions to main BEFORE the
+  election (git = notary): **MO Amendment 3** (repeal of 2024's abortion
+  amendment — same counties, 51.6% baseline, harsher cutpoint, midterm
+  electorate; the marquee), **NV Question 6** (identical text to 2024's 64.4% —
+  fixed cutpoint, isolates drift+turnout; calibration control), **MA Question 8**
+  (repeal of the operating rec-cannabis market; 2016 baseline 53.7%); stretch:
+  SD Amendment I + state-level VA/ID calls. Sequenced work with hard deadlines:
+    1. **Matt grabs MO SoS county-level files** (the gating step): Nov 2024
+       general (Amdt 3 + Prop A), Nov 2018 general (Prop B + cannabis trio),
+       Aug 2018 primary (right-to-work), Aug 2020 primary (Medicaid Amdt 2),
+       **Aug 2026 primary** (a real 2026-electorate calibration set). NV/MA
+       past files if we pursue those at county level.
+    2. Loaders test-first, one at a time, each with certified-total acceptance
+       (Bugs #10–12) — September work.
+    3. Prediction notebook (TDD-exempt EDA on tested library parts): county
+       positions from past measures + partisanship, explicit turnout
+       assumption + sensitivity, severity as a stated bracket.
+    4. **Registration commit by 2026-10-15** — frozen thereafter (amendments =
+       new dated file; the old one still gets scored).
+    5. November/December: ingest certified results, score (per-county error,
+       interval calibration, skill vs partisanship-only baseline), postmortem
+       into FINDINGS.md win or lose → the Geo Week 2027 centerpiece.
+  WATCH: MO ballot litigation (redistricting referendum + initiative-protection
+  amendment, both rejected by the SoS on 2026-08-04 and in court) could add
+  November measures; recheck the ballot in September.
+
 - **Ballot-measure measurement design — DOCUMENTED, NOT BUILT (2026-08-10).**
   `docs/MEASUREMENT_DESIGN.md` is the full design: county ideal points ×
   measure cutpoints (IRT — severity *estimated*, not hand-coded;
