@@ -51,8 +51,11 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
   content→cutpoint placement (brackets + severity-slider product shape), and
   topic dimensionality as a *tested hypothesis* (our False Bastions already
   imply ≥2 axes; is r≈0.62 within-cluster or general?). Build order with JIT
-  triggers is in the doc: (1) statewide catalog + design matrix ← **arrived,
-  next up**; (2) measure metadata table (its consumer finally exists);
+  triggers is in the doc: (1) statewide catalog + design matrix — DONE
+  (2026-08-10, see Data section); (2) measure metadata table — DONE
+  (2026-08-10): `geofluid.catalog.load_measure_catalog`, tested (schema,
+  dtypes, unique-id + closed-vocabulary validation, 100% branch) with a
+  real-data acceptance test against certified KS/OH landmarks;
   (3) targeted county ingests by identification value (priority corpora:
   marriage amendments 2004–2012, Medicaid-expansion initiatives, cannabis
   wave, FL/MO minimum-wage county cuts); (4) the estimator — gated on matrix
