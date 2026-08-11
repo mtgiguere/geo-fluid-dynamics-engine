@@ -171,9 +171,12 @@ the contract's "ruff format is not optional" rule, demonstrated live.)
 - Frontend (in `web/`): `npm test` (Vitest), `npx playwright test` (E2E against the
   production build), `npm run dev` (local at :5173)
 
-CI gates (`.github/workflows/ci.yml`): gitleaks → ruff check → ruff format --check →
-mypy → pytest with branch coverage ≥ 90% → pip-audit → uv lock --check, plus a web
-job (npm ci + typecheck/build). Deployment (`deploy.yml`): Playwright E2E against the
+CI gates: the quality gates live in `qa.yml`, which delegates to the central
+reusable workflows in `mtgiguere/qa_pipeline` — python-qa (ruff check + format
+--check → mypy → pytest with branch coverage ≥ 90% → pip-audit, tools installed
+from the lockfile via `uv sync --frozen`), node-qa (npm ci → Vitest →
+typecheck/build in `web/`), and CodeQL. `ci.yml` keeps only what qa.yml
+deliberately doesn't cover here: gitleaks and `uv lock --check`. Deployment (`deploy.yml`): Playwright E2E against the
 production build at the real Pages base path gates every deploy. Mutation testing
 (`mutation.yml`): runs on every push to main touching code (+ weekly backstop +
 dispatch), report-only — emits survivor diffs to the job summary/artifact; the

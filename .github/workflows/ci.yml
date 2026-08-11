@@ -1,13 +1,23 @@
 name: CI
 
+# The Python and web quality gates moved to qa.yml (central reusable
+# workflows in mtgiguere/qa_pipeline), validated in lockstep with the old
+# in-repo jobs across the 2026-08-10 dependabot wave before the duplicates
+# were retired. What remains here is only what qa.yml deliberately does
+# not cover for this repo:
+#   - gitleaks (qa.yml's security job runs with run-gitleaks: false)
+#   - uv lock --check (python-qa installs with `uv sync --frozen`, which
+#     tolerates a lockfile that drifted from pyproject; this gate does not)
+# Deploy-time E2E lives in deploy.yml; mutation testing in mutation.yml.
+
 on:
   push:
     branches: [main]
   pull_request:
 
 jobs:
-  # Gate 1: no secrets in the history. With a Mapbox account on this project,
-  # a leaked token is the single most likely security incident — this runs first.
+  # No secrets in the history. With a Mapbox account on this project,
+  # a leaked token is the single most likely security incident.
   gitleaks:
     runs-on: ubuntu-latest
     steps:
@@ -18,70 +28,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  quality:
+  # Lockfile in sync with pyproject — prevents "works on my machine" drift.
+  lockfile:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-
       - name: Install uv
         uses: astral-sh/setup-uv@v7
-
-      # Gate 2: lockfile in sync with pyproject — prevents "works on my machine" drift.
       - name: Check lockfile
         run: uv lock --check
-
-      - name: Install dependencies
-        run: uv sync --frozen
-
-      # Gate 3: lint (includes bandit security rules via ruff's S ruleset).
-      - name: Ruff check
-        run: uv run ruff check .
-
-      # Gate 4: formatting drift fails the build rather than accumulating.
-      - name: Ruff format
-        run: uv run ruff format --check .
-
-      # Gate 5: strict static types — catches interface contract drift
-      # (the adoption_prob vs adoption_probability class of bug) at the type level.
-      - name: Mypy (strict)
-        run: uv run mypy
-
-      # Gate 6: the test suite, with BRANCH coverage gated at 90%.
-      # Aim for 100; the gate is the floor, not the target (see TDD_CONTRACT.md —
-      # coverage measures execution, not verification; strict TDD is the real gate).
-      - name: Tests + coverage
-        run: uv run pytest --cov=src/geofluid --cov-branch --cov-fail-under=90
-
-      # Gate 7: known CVEs in the dependency tree.
-      - name: Vulnerability audit
-        run: uv run pip-audit
-
-  # Gate 8: the frontend builds and typechecks at PR time. Before this job
-  # existed, web/ changes had ZERO verification until the deploy gate — a gap
-  # found in the second retrospective. Full E2E stays at deploy (it needs a
-  # real token and browsers); tsc strict catches the contract drift cheaply.
-  web-quality:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: web
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: web/package-lock.json
-
-      - run: npm ci
-
-      - name: Unit tests (Vitest)
-        run: npm test
-
-      - name: Typecheck and build
-        run: npm run build
-        env:
-          # The token is a runtime value baked into the bundle; any string
-          # satisfies the build. E2E at deploy time uses the real one.
-          VITE_MAPBOX_TOKEN: pk.ci-typecheck-placeholder
