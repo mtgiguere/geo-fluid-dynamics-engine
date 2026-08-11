@@ -10,10 +10,11 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "mapbox-gl": "^3.8.0"
+    "mapbox-gl": "^3.28.1"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
+    "@types/geojson": "^7946.0.16",
     "typescript": "~7.0.2",
     "vite": "^8.2.1",
     "vitest": "^4.1.10"
