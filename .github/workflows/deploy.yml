@@ -32,7 +32,7 @@ jobs:
       run:
         working-directory: web
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Fail in one second with a clear message rather than a 30-second
       # Playwright timeout: without the token the map style never loads and
