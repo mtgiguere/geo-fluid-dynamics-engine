@@ -22,6 +22,94 @@
   "source_url": "https://ballotpedia.org/Massachusetts_Question_5,_Healthcare_Council_Initiative_(2000)"
  },
  {
+  "state": "WA",
+  "election_date": "2001-11-06",
+  "election_type": "odd-year general",
+  "measure_name": "Initiative 773",
+  "topic": "healthcare",
+  "description_short": "Imposes an additional 60-cents-per-pack cigarette tax plus new taxes on other tobacco products, with proceeds dedicated primarily to expanding the Basic Health Plan, Washington's subsidized health coverage for low-income residents.",
+  "progressive_side": "yes",
+  "yes_pct": 66.1,
+  "outcome": "pass",
+  "severity_note": "tobacco tax funding low-income health coverage (Basic Health Plan)",
+  "same_ballot_companions": [
+   "Initiative 747 \u2014 property tax increase limits",
+   "Initiative 775 \u2014 home care workers authority",
+   "SJR 8208 \u2014 temporary superior court judges",
+   "HJR 4202 \u2014 state fund investment"
+  ],
+  "source_url": "https://ballotpedia.org/Washington_Initiative_773,_Increase_Tobacco_Tax_for_Health_Programs_Measure_(2001)"
+ },
+ {
+  "state": "AZ",
+  "election_date": "2002-11-05",
+  "election_type": "general",
+  "measure_name": "Proposition 303",
+  "topic": "healthcare",
+  "description_short": "Raises the cigarette tax by 60 cents to $1.18 per pack (with increases on cigars and other tobacco products), depositing revenue in an AHCCCS-administered Tobacco Products Tax Fund for Medicaid coverage of the Proposition 204 expansion population, the medically needy, and other healthcare programs.",
+  "progressive_side": "yes",
+  "yes_pct": 67.0,
+  "outcome": "pass",
+  "severity_note": "tobacco tax funding Medicaid/AHCCCS healthcare programs",
+  "same_ballot_companions": [
+   "Proposition 100 \u2014 municipal infrastructure debt limit",
+   "Proposition 101 \u2014 state land exchanges",
+   "Proposition 102 \u2014 senior property valuation protection",
+   "Proposition 103 \u2014 non-bailable offenses",
+   "Proposition 104 \u2014 school expenditure limit exemption",
+   "Proposition 200 \u2014 tribal gaming compacts",
+   "Proposition 201 \u2014 racetrack slot machines",
+   "Proposition 202 \u2014 tribal gaming compacts",
+   "Proposition 203 \u2014 marijuana decriminalization",
+   "Proposition 300 \u2014 classroom site fund",
+   "Proposition 301 \u2014 state lottery extension",
+   "Proposition 302 \u2014 drug possession sentencing",
+   "Proposition 304 \u2014 legislative salaries"
+  ],
+  "source_url": "https://ballotpedia.org/Arizona_Proposition_303_(2002)"
+ },
+ {
+  "state": "MO",
+  "election_date": "2002-11-05",
+  "election_type": "general",
+  "measure_name": "Proposition A",
+  "topic": "healthcare",
+  "description_short": "Raises the cigarette tax by 55 cents per pack (2.75 cents per cigarette) plus 20% on other tobacco products, funding a Healthy Families Trust Fund for hospital trauma care, healthcare access for low-income residents, prescription drug assistance for seniors, life sciences research, smoking prevention, and early childhood education.",
+  "progressive_side": "yes",
+  "yes_pct": 49.1,
+  "outcome": "fail",
+  "severity_note": "tobacco tax funding healthcare and hospital trauma care",
+  "same_ballot_companions": [
+   "Amendment 1 \u2014 St. Louis charter reorganization",
+   "Amendment 2 \u2014 first responders collective bargaining",
+   "Amendment 3 \u2014 term limits calculation",
+   "Amendment 4 \u2014 joint municipal utility boards",
+   "Constitutional Convention Question \u2014 constitutional convention"
+  ],
+  "source_url": "https://ballotpedia.org/Missouri_Tobacco_Tax,_Proposition_A_(2002)"
+ },
+ {
+  "state": "MT",
+  "election_date": "2002-11-05",
+  "election_type": "general",
+  "measure_name": "I-146",
+  "topic": "healthcare",
+  "description_short": "Dedicates 49% of Montana's annual tobacco settlement receipts to a statewide tobacco disease prevention program and to programs providing health insurance benefits for Montanans who could not otherwise afford or acquire coverage.",
+  "progressive_side": "yes",
+  "yes_pct": 65.0,
+  "outcome": "pass",
+  "severity_note": "tobacco settlement allocation funding health insurance programs",
+  "same_ballot_companions": [
+   "C-36 \u2014 local government self-insurance investments",
+   "C-37 \u2014 initiative signature requirements (amendments)",
+   "C-38 \u2014 initiative signature requirements (statutes)",
+   "C-39 \u2014 pension fund stock investments",
+   "I-145 \u2014 public power commission for hydroelectric dams",
+   "IR-117 \u2014 electrical energy law referendum"
+  ],
+  "source_url": "https://ballotpedia.org/Montana_I-146_(2002)"
+ },
+ {
   "state": "OR",
   "election_date": "2002-11-05",
   "election_type": "general",
@@ -104,6 +192,70 @@
   "source_url": "https://ballotpedia.org/California_Proposition_63,_Tax_Increase_on_Income_Above_$1_Million_for_Mental_Health_Services_Initiative_(2004)"
  },
  {
+  "state": "CO",
+  "election_date": "2004-11-02",
+  "election_type": "general",
+  "measure_name": "Amendment 35",
+  "topic": "healthcare",
+  "description_short": "Constitutionally raises the cigarette tax by 3.2 cents per cigarette (64 cents per pack) and other tobacco taxes by 20%, generating about $175 million annually earmarked for health-related purposes including expanded health care coverage and tobacco education and cessation programs.",
+  "progressive_side": "yes",
+  "yes_pct": 61.4,
+  "outcome": "pass",
+  "severity_note": "tobacco tax funding healthcare and tobacco cessation",
+  "same_ballot_companions": [
+   "Amendment 34 \u2014 construction damages liability",
+   "Amendment 36 \u2014 electoral vote allocation",
+   "Amendment 37 \u2014 renewable energy standard",
+   "Referendum A \u2014 civil service exemptions",
+   "Referendum B \u2014 obsolete constitutional provisions"
+  ],
+  "source_url": "https://ballotpedia.org/Colorado_Amendment_35,_Cigarette_and_Tobacco_Tax_Initiative_(2004)"
+ },
+ {
+  "state": "MT",
+  "election_date": "2004-11-02",
+  "election_type": "general",
+  "measure_name": "I-149",
+  "topic": "healthcare",
+  "description_short": "Raises tobacco taxes to $1.70 per pack of cigarettes (a 140% increase), reserving 45% of revenue for children's health insurance enrollment, increased Medicaid services and provider rates, a need-based prescription drug program, and small-business employee health insurance programs.",
+  "progressive_side": "yes",
+  "yes_pct": 63.3,
+  "outcome": "pass",
+  "severity_note": "tobacco tax funding children's health insurance and Medicaid",
+  "same_ballot_companions": [
+   "C-40 \u2014 noxious weed trust fund",
+   "C-41 \u2014 hunting and fishing heritage",
+   "C-42 \u2014 legislative term limits extension",
+   "CI-96 \u2014 marriage definition",
+   "I-147 \u2014 cyanide leach mining",
+   "I-148 \u2014 medical marijuana"
+  ],
+  "source_url": "https://ballotpedia.org/Montana_I-149_(2004)"
+ },
+ {
+  "state": "OK",
+  "election_date": "2004-11-02",
+  "election_type": "general",
+  "measure_name": "State Question 713",
+  "topic": "healthcare",
+  "description_short": "Replaces the sales tax on tobacco with new excise taxes (4 cents per cigarette, i.e. 80 cents per pack) dedicated to health-related purposes including health care, building a cancer center, trauma care, aid to hospitals and ambulance services, while adjusting income taxes.",
+  "progressive_side": "yes",
+  "yes_pct": 53.3,
+  "outcome": "pass",
+  "severity_note": "tobacco tax funding healthcare including cancer center and trauma care",
+  "same_ballot_companions": [
+   "State Question 705 \u2014 state lottery",
+   "State Question 706 \u2014 lottery trust fund",
+   "State Question 707 \u2014 local government investment financing",
+   "State Question 708 \u2014 rainy day fund limits",
+   "State Question 711 \u2014 marriage definition",
+   "State Question 712 \u2014 tribal gaming act",
+   "State Question 714 \u2014 senior homestead exemption",
+   "State Question 715 \u2014 disabled veterans property tax exemption"
+  ],
+  "source_url": "https://ballotpedia.org/Oklahoma_State_Question_713,_Tobacco_Sales_Tax_Measure_(2004)"
+ },
+ {
   "state": "CA",
   "election_date": "2005-11-08",
   "election_type": "special",
@@ -146,6 +298,68 @@
    "Proposition 80 \u2014 electricity regulation"
   ],
   "source_url": "https://ballotpedia.org/California_Proposition_79,_Prescription_Drug_Discount_Program_Initiative_(2005)"
+ },
+ {
+  "state": "CA",
+  "election_date": "2006-11-07",
+  "election_type": "general",
+  "measure_name": "Proposition 86",
+  "topic": "healthcare",
+  "description_short": "Raises the cigarette tax by $2.60 per pack (with increases on other tobacco products) to fund hospital emergency services, health insurance for children, nursing education, tobacco prevention, and research and treatment of cancer, heart disease, and other illnesses.",
+  "progressive_side": "yes",
+  "yes_pct": 48.3,
+  "outcome": "fail",
+  "severity_note": "tobacco tax funding hospitals and children's health coverage",
+  "same_ballot_companions": [
+   "Proposition 1A \u2014 transportation funding protection",
+   "Proposition 1B \u2014 transportation bonds",
+   "Proposition 1C \u2014 housing bonds",
+   "Proposition 1D \u2014 school facility bonds",
+   "Proposition 1E \u2014 flood control bonds",
+   "Proposition 83 \u2014 sex offender restrictions",
+   "Proposition 84 \u2014 water and parks bonds",
+   "Proposition 85 \u2014 abortion parental notification",
+   "Proposition 87 \u2014 oil tax for alternative energy",
+   "Proposition 88 \u2014 education parcel tax",
+   "Proposition 89 \u2014 public campaign financing",
+   "Proposition 90 \u2014 eminent domain limits"
+  ],
+  "source_url": "https://ballotpedia.org/California_Proposition_86,_Cigarette_Tax_Increase_Initiative_(2006)"
+ },
+ {
+  "state": "MO",
+  "election_date": "2006-11-07",
+  "election_type": "general",
+  "measure_name": "Amendment 3",
+  "topic": "healthcare",
+  "description_short": "Raises the cigarette tax by 4 cents per cigarette (80 cents per pack) plus 20% on other tobacco products to create a Healthy Future Trust Fund for increasing healthcare access, treatment of low-income individuals and Medicaid recipients, and tobacco use prevention.",
+  "progressive_side": "yes",
+  "yes_pct": 48.5,
+  "outcome": "fail",
+  "severity_note": "tobacco tax funding healthcare access and Medicaid",
+  "same_ballot_companions": [
+   "Amendment 2 \u2014 stem cell research",
+   "Amendment 6 \u2014 veterans organization tax exemption",
+   "Amendment 7 \u2014 official pension forfeiture",
+   "Proposition B \u2014 minimum wage increase"
+  ],
+  "source_url": "https://ballotpedia.org/Missouri_Amendment_3,_Healthy_Future_Trust_Fund_Act_(2006)"
+ },
+ {
+  "state": "OR",
+  "election_date": "2007-11-06",
+  "election_type": "odd-year general",
+  "measure_name": "Measure 50",
+  "topic": "healthcare",
+  "description_short": "Amends the constitution to raise the cigarette tax by 84.5 cents per pack (from $1.18) to fund the Healthy Kids Program providing health coverage for uninsured Oregon children, plus anti-smoking programs.",
+  "progressive_side": "yes",
+  "yes_pct": 40.7,
+  "outcome": "fail",
+  "severity_note": "tobacco tax funding children's health coverage (Healthy Kids)",
+  "same_ballot_companions": [
+   "Measure 49 \u2014 land use and property rights"
+  ],
+  "source_url": "https://ballotpedia.org/Oregon_Ballot_Measure_50_(2007)"
  },
  {
   "state": "AZ",
@@ -271,6 +485,22 @@
    "Issue 2 \u2014 collective bargaining law referendum (SB 5)"
   ],
   "source_url": "https://ballotpedia.org/Ohio_Health_Care_Amendment,_Issue_3_(2011)"
+ },
+ {
+  "state": "CA",
+  "election_date": "2012-06-05",
+  "election_type": "primary",
+  "measure_name": "Proposition 29",
+  "topic": "healthcare",
+  "description_short": "Raises the cigarette tax by $1.00 per pack (from $0.87 to $1.87, with comparable increases on other tobacco products) to fund cancer and tobacco-related disease research through the California Cancer Research Life Sciences Innovation Trust Fund.",
+  "progressive_side": "yes",
+  "yes_pct": 49.8,
+  "outcome": "fail",
+  "severity_note": "tobacco tax funding cancer research",
+  "same_ballot_companions": [
+   "Proposition 28 \u2014 legislative term limits"
+  ],
+  "source_url": "https://ballotpedia.org/California_Proposition_29,_Tobacco_Tax_for_Cancer_Research_Fund_Initiative_(June_2012)"
  },
  {
   "state": "AL",
@@ -439,6 +669,37 @@
   "source_url": "https://ballotpedia.org/California_Proposition_61,_Drug_Price_Standards_(2016)"
  },
  {
+  "state": "CA",
+  "election_date": "2016-11-08",
+  "election_type": "general",
+  "measure_name": "Proposition 56",
+  "topic": "healthcare",
+  "description_short": "Raises the cigarette tax by $2.00 per pack, with equivalent increases on other tobacco products and e-cigarettes, allocating most new revenue to Medi-Cal (California's Medicaid program) plus physician training, dental disease prevention, and tobacco-related disease research.",
+  "progressive_side": "yes",
+  "yes_pct": 64.4,
+  "outcome": "pass",
+  "severity_note": "tobacco tax funding Medi-Cal (Medicaid)",
+  "same_ballot_companions": [
+   "Proposition 51 \u2014 school bonds",
+   "Proposition 52 \u2014 hospital fee program",
+   "Proposition 53 \u2014 revenue bond voter approval",
+   "Proposition 54 \u2014 legislative transparency",
+   "Proposition 55 \u2014 income tax extension",
+   "Proposition 57 \u2014 parole and juvenile trials",
+   "Proposition 58 \u2014 bilingual education",
+   "Proposition 59 \u2014 Citizens United advisory",
+   "Proposition 60 \u2014 condoms in adult films",
+   "Proposition 61 \u2014 prescription drug prices",
+   "Proposition 62 \u2014 death penalty repeal",
+   "Proposition 63 \u2014 ammunition background checks",
+   "Proposition 64 \u2014 marijuana legalization",
+   "Proposition 65 \u2014 carryout bag revenue",
+   "Proposition 66 \u2014 death penalty procedures",
+   "Proposition 67 \u2014 plastic bag ban referendum"
+  ],
+  "source_url": "https://ballotpedia.org/California_Proposition_56,_Tobacco_Tax_Increase_(2016)"
+ },
+ {
   "state": "CO",
   "election_date": "2016-11-08",
   "election_type": "general",
@@ -460,6 +721,68 @@
    "Proposition 108 \u2014 unaffiliated voters in primaries"
   ],
   "source_url": "https://ballotpedia.org/Colorado_Creation_of_ColoradoCare_System,_Amendment_69_(2016)"
+ },
+ {
+  "state": "CO",
+  "election_date": "2016-11-08",
+  "election_type": "general",
+  "measure_name": "Amendment 72",
+  "topic": "healthcare",
+  "description_short": "Constitutionally raises the cigarette tax by $1.75 per pack (and other tobacco taxes), dedicating roughly $300 million a year to tobacco-related health research, prevention, veterans' health and support grants, child mental health, community health centers, and rural healthcare workforce programs.",
+  "progressive_side": "yes",
+  "yes_pct": 46.9,
+  "outcome": "fail",
+  "severity_note": "tobacco tax funding health programs and medical research",
+  "same_ballot_companions": [
+   "Amendment T \u2014 slavery exception removal",
+   "Amendment U \u2014 possessory interest tax exemption",
+   "Amendment 69 \u2014 ColoradoCare universal healthcare",
+   "Amendment 70 \u2014 minimum wage increase",
+   "Amendment 71 \u2014 initiative requirements",
+   "Proposition 106 \u2014 medical aid in dying",
+   "Proposition 107 \u2014 open presidential primaries",
+   "Proposition 108 \u2014 unaffiliated voters in primaries"
+  ],
+  "source_url": "https://ballotpedia.org/Colorado_Tobacco_Tax_Increase,_Amendment_72_(2016)"
+ },
+ {
+  "state": "MO",
+  "election_date": "2016-11-08",
+  "election_type": "general",
+  "measure_name": "Constitutional Amendment 3",
+  "topic": "healthcare",
+  "description_short": "Raises the cigarette tax from 17 to 77 cents per pack by 2020 plus a 67-cent-per-pack fee on some wholesalers, funding an Early Childhood Health and Education Trust Fund devoted mostly to early childhood education with about 10% for healthcare facility grants and 5% for smoking prevention.",
+  "progressive_side": "yes",
+  "yes_pct": 40.4,
+  "outcome": "fail",
+  "severity_note": "tobacco tax funding early childhood health and education",
+  "same_ballot_companions": [
+   "Amendment 1 \u2014 parks and soil sales tax renewal",
+   "Amendment 2 \u2014 campaign contribution limits",
+   "Amendment 4 \u2014 prohibit new sales taxes on services",
+   "Amendment 6 \u2014 voter ID",
+   "Proposition A \u2014 23-cent cigarette tax for transportation"
+  ],
+  "source_url": "https://ballotpedia.org/Missouri_60_Cent_Cigarette_Tax,_Constitutional_Amendment_3_(2016)"
+ },
+ {
+  "state": "ND",
+  "election_date": "2016-11-08",
+  "election_type": "general",
+  "measure_name": "Initiated Statutory Measure 4",
+  "topic": "healthcare",
+  "description_short": "Raises the cigarette tax from 44 cents to $2.20 per pack and doubles the tax on other tobacco products (including e-cigarette liquids) to 56% of wholesale price, with revenue funding veterans' services and community health programs.",
+  "progressive_side": "yes",
+  "yes_pct": 38.3,
+  "outcome": "fail",
+  "severity_note": "tobacco tax funding veterans' and health services",
+  "same_ballot_companions": [
+   "Measure 1 \u2014 legislator residency requirement",
+   "Measure 2 \u2014 extraction tax revenue for schools",
+   "Measure 3 \u2014 crime victims' rights (Marsy's Law)",
+   "Measure 5 \u2014 medical marijuana"
+  ],
+  "source_url": "https://ballotpedia.org/North_Dakota_Tobacco_Tax_Increase,_Initiated_Statutory_Measure_4_(2016)"
  },
  {
   "state": "ME",
@@ -605,6 +928,24 @@
   "severity_note": "constitutional expansion (initiated amendment; only statewide measure on the Aug 4 primary ballot)",
   "same_ballot_companions": [],
   "source_url": "https://ballotpedia.org/Missouri_Amendment_2,_Medicaid_Expansion_Initiative_(August_2020)"
+ },
+ {
+  "state": "OR",
+  "election_date": "2020-11-03",
+  "election_type": "general",
+  "measure_name": "Measure 108",
+  "topic": "healthcare",
+  "description_short": "Raises the cigarette tax by $2.00 to $3.33 per pack and taxes e-cigarettes and other nicotine inhalants at 65% of wholesale price, dedicating revenue to the Oregon Health Authority for the state's Medical Assistance Program (Medicaid) and other health programs.",
+  "progressive_side": "yes",
+  "yes_pct": 66.3,
+  "outcome": "pass",
+  "severity_note": "tobacco tax funding Medicaid (Oregon Health Plan)",
+  "same_ballot_companions": [
+   "Measure 107 \u2014 campaign finance limits",
+   "Measure 109 \u2014 psilocybin program",
+   "Measure 110 \u2014 drug decriminalization"
+  ],
+  "source_url": "https://ballotpedia.org/Oregon_Measure_108,_Tobacco_and_E-Cigarette_Tax_Increase_for_Health_Programs_Measure_(2020)"
  },
  {
   "state": "OR",
