@@ -12,7 +12,8 @@ rights — which side is "liberal" is a per-measure fact that belongs to the
 analysis layer, never hardcoded here.
 """
 
-from collections.abc import Mapping
+import re
+from collections.abc import Iterable, Mapping
 from pathlib import Path
 
 import pandas as pd
@@ -225,3 +226,90 @@ def load_ks_referendum_workbook(path: str | Path, county_fips: Mapping[str, str]
             continue
         long_frames.append(_wide_county_sheet_to_long(sheet_name, sheet))
     return load_ks_referendum(pd.concat(long_frames, ignore_index=True), county_fips)
+
+
+def parse_mo_canvass(
+    pages: Iterable[str],
+    contest: str,
+    county_fips: Mapping[str, str],
+) -> pd.DataFrame:
+    """Parse Missouri SoS canvass text pages for one contest into the
+    canonical referendum panel.
+
+    The canvass repeats a "<contest> YES NO Total" header on every page of
+    a contest's section, followed by "<name> <yes> <no> <total>" rows and a
+    final statewide "Total" row. Jurisdictions are the 114 counties plus
+    St. Louis City and Kansas City — KC spans four counties, so which fips
+    (or pseudo-code) it maps to is the caller's explicit policy via
+    county_fips.
+    """
+    header = f"{contest} YES NO Total"
+    row_re = re.compile(r"^([A-Za-z .'\-]+?)\s+([\d,]+)\s+([\d,]+)\s+([\d,]+)$")
+
+    names: list[str] = []
+    yes_votes: list[int] = []
+    no_votes: list[int] = []
+    total_row: tuple[int, int] | None = None
+    for page in pages:
+        if header not in page:
+            continue
+        for line in page.splitlines():
+            match = row_re.match(line.strip())
+            if match is None:
+                continue
+            yes = int(match.group(2).replace(",", ""))
+            no = int(match.group(3).replace(",", ""))
+            if match.group(1) == "Total":
+                total_row = (yes, no)
+                continue
+            names.append(match.group(1))
+            yes_votes.append(yes)
+            no_votes.append(no)
+
+    # The canvass's own statewide Total row is the built-in integrity
+    # check: if our jurisdictions don't reproduce it, we mis-parsed
+    # (missed a page, split a row) — refuse rather than ship short counts.
+    if total_row is None:
+        raise ValueError(f"{contest}: no statewide Total row found — truncated section?")
+    parsed = (sum(yes_votes), sum(no_votes))
+    if parsed != total_row:
+        raise ValueError(
+            f"{contest}: parsed jurisdictions sum to {parsed} but the canvass "
+            f"Total row says {total_row}"
+        )
+
+    long = pd.DataFrame({"name": names, "yes_votes": yes_votes, "no_votes": no_votes})
+    long["fips"] = long["name"].map(dict(county_fips))
+    unmapped = long.loc[long["fips"].isna(), "name"]
+    if len(unmapped) > 0:
+        raise ValueError(
+            f"{contest}: jurisdiction(s) missing from county_fips: "
+            f"{sorted(unmapped)} — Kansas City and St. Louis City need an "
+            "explicit mapping decision, never a silent drop"
+        )
+    melted = long.melt(
+        id_vars=["fips"],
+        value_vars=["yes_votes", "no_votes"],
+        var_name="side",
+        value_name="votes",
+    )
+    return _assemble_referendum_panel(melted, "votes")
+
+
+def load_mo_referendum(
+    path: str | Path,
+    contest: str,
+    county_fips: Mapping[str, str],
+) -> pd.DataFrame:
+    """Load one contest from a Missouri SoS official canvass PDF.
+
+    Thin extraction shell: pdfplumber renders page text, parse_mo_canvass
+    (unit-tested) does all the work. Definition of done for each new
+    canvass is a real-data acceptance run against the certified statewide
+    totals (TDD_CONTRACT.md, Bugs #10-12).
+    """
+    import pdfplumber
+
+    with pdfplumber.open(path) as pdf:
+        pages = [page.extract_text() or "" for page in pdf.pages]
+    return parse_mo_canvass(pages, contest, county_fips)

@@ -57,7 +57,18 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
        **Aug 2026 primary** (a real 2026-electorate calibration set). NV/MA
        past files if we pursue those at county level.
     2. Loaders test-first, one at a time, each with certified-total acceptance
-       (Bugs #10–12) — September work.
+       (Bugs #10–12). **MO LOADER DONE (2026-08-14)**:
+       `ingest/referendum.parse_mo_canvass` + `load_mo_referendum` (pdfplumber),
+       tested RED-first (canonical panel, comma numbers, multi-page sections,
+       Total-row integrity check, loud unknown-jurisdiction guard). Acceptance:
+       ALL EIGHT contests across the four canvasses match certified statewide
+       values to the decimal (2024 Amdt 3 51.60 / Prop A 57.57; 2018 Prop B
+       62.34 / Amdt 2 65.59 / Amdt 3 31.50 / Prop C 43.57; Aug-2018 Prop A
+       32.53; Aug-2020 Amdt 2 53.27), 116 jurisdictions each. Mapping policy:
+       Kansas City carries MIT's place-code convention "2938000" (spans four
+       counties; MIT presidential returns report KC separately too, so a KC
+       partisan baseline exists); canvass name aliases: "St. Louis"→29189,
+       "McDonald"→29119.
     3. Prediction notebook (TDD-exempt EDA on tested library parts): county
        positions from past measures + partisanship, explicit turnout
        assumption + sensitivity, severity as a stated bracket.
