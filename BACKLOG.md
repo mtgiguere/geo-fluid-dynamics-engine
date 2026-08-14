@@ -89,12 +89,24 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
        "McDonald"→29119.
     3. Prediction notebook (TDD-exempt EDA on tested library parts): county
        positions from past measures + partisanship, explicit turnout
-       assumption + sensitivity, severity as a stated bracket.
+       assumption + sensitivity, severity as a stated bracket. SCOPE WIDENED
+       (2026-08-14): predict EVERY MO November measure incl. the low-salience
+       referrals (Amdt 7 prosperity fund, Amdt 8 sheriffs — roll-off and
+       status-quo-bias modeling, humbler intervals; the anti-cherry-picking
+       move) and any litigation additions.
     4. **Registration commit by 2026-10-15** — frozen thereafter (amendments =
-       new dated file; the old one still gets scored).
-    5. November/December: ingest certified results, score (per-county error,
-       interval calibration, skill vs partisanship-only baseline), postmortem
-       into FINDINGS.md win or lose → the Geo Week 2027 centerpiece.
+       new dated file; the old one still gets scored). PLUS (2026-08-14): the
+       parameterized PLAYBOOK generator — (measure, side) → org plan built on
+       build_itinerary + pooled resistance + the electorate-type turnout
+       split — drafted with the predictions, dated, committed SEALED;
+       protocol in MEASUREMENT_DESIGN.md §7.
+    5. November/December: ingest certified results, score BOTH products
+       (predictions: per-county error, interval calibration, skill vs
+       partisanship-only baseline; playbooks: did flagged TARGET counties
+       carry the claimed headroom?), postmortem into FINDINGS.md win or lose,
+       then UNSEAL playbooks and assemble the viability dossier (receipt →
+       scorecard → playbook) → the Geo Week 2027 centerpiece and the pitch
+       to real organizations.
   WATCH: MO ballot litigation (redistricting referendum + initiative-protection
   amendment, both rejected by the SoS on 2026-08-04 and in court) could add
   November measures; recheck the ballot in September.
