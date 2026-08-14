@@ -115,6 +115,98 @@ engine can pool them: Missouri showed that a county that defies its label on
 one issue tends to defy it on others (a wage measure predicts an abortion
 measure), so every past vote sharpens the picture for the next one.
 
+## How to read what you're looking at (a guided walk)
+
+The map is showing one thing: **the gap between how a county votes on the
+issue and how its party label says it "should" vote.** Not who won. The gap.
+
+Walk one real county with us. Clark County, Missouri — the state's
+northeastern tip — gave the Democratic presidential candidate **19%** in
+2024. The party map writes it off: one neighbor in five. On the same day, on
+the same ballots, **40% of Clark County voted pro-choice**. Two in five. The
+label said one-in-five; the direct question found two-in-five. That
+21-point gap is what the map colors. Nothing about Clark County's yard
+signs, church marquees, or bumper stickers would have told you — the *only*
+place that second number exists is the ballot measure, and now the map.
+
+Now the crucial correction, because almost everyone misreads this at first:
+
+> **Clark County still voted 60% against.** The map is NOT saying "you can
+> win Clark County." For a statewide ballot measure you don't need to win
+> counties — every vote counts the same statewide. The map is saying votes
+> are CHEAPER here than the label claims: thousands of quiet agreers, zero
+> attention paid to them by anyone, because everyone read the label. You're
+> not flipping a county; you're harvesting where the orchard is secretly
+> twice as full.
+
+Contrast Bollinger County: 12% Democratic, 21% pro-choice. Also "ahead of
+its label" — but by less than its equally-red peers moved, so the engine
+scores it *behind* expectations. Same red label as Clark; opposite verdict.
+That's the whole point: **the label can't tell these two counties apart.
+The ballot can.**
+
+## "So what do I actually DO?" — the three buckets, in action words
+
+The itinerary sorts every county into three buckets. Here's each one
+translated from map-language into Tuesday-afternoon language:
+
+- **TARGET (red label, big gap)** — *persuasion country.* Your scarce
+  door-knocking, town-halls, and visibility money go here. And know what
+  job you're doing: you are usually not converting anyone. Two in five
+  already agree — in a place where everyone assumes it's one in five,
+  *including the agreers*. Your job is to make agreement visible and
+  ordinary: a yard sign where "nobody like us" has one, a neighbor saying
+  it out loud first. You're building a permission structure, not winning
+  arguments.
+- **BASE (blue label, votes its label)** — *turnout country.* Don't spend
+  persuasion effort where people already agree; spend logistics. Rides,
+  registration, reminders, volunteers to export to TARGET counties. The
+  itinerary deliberately ranks these below targets for visits — they need
+  your operation, not your speech.
+- **HARD (red label, no gap — or behind its peers)** — *walk away, for
+  now, for this issue.* Bollinger County earned its color honestly. Effort
+  here costs the most per vote gained. "Skip" feels wrong to people who
+  believe every mind is reachable — the data doesn't say minds here are
+  unreachable, it says your hundred hours buy more votes almost anywhere
+  else.
+
+## So-what-now, by who you are
+
+- **A volunteer with free weekends:** open the itinerary, find the nearest
+  TARGET county to your home, and give your hours there instead of where
+  your side already congregates. That single substitution — working the
+  quiet county instead of the comfortable one — is most of what this tool
+  changes about your weekend.
+- **An organizer with a small budget:** the itinerary *is* your route,
+  ranked and distance-annotated. Book the church hall or diner in the top
+  three TARGETs. Measure success in contacts made where no one else is
+  making them.
+- **A campaign deciding what to put on a ballot:** two lessons from the
+  data, bluntly. *Ask for what the electorate can say yes to* — measures
+  written past the voters' comfort point lose twice (South Dakota asked for
+  a near-total ban twice; lost twice). And *the calendar is a weapon*:
+  Oklahoma's minimum wage measure — the kind that had won in every red
+  state for a decade — died in June 2026 because it was scheduled onto a
+  sleepy standalone ballot. WHO shows up decides close measures; our
+  Missouri data shows primary-day electorates behave like a different
+  state.
+- **A journalist or researcher:** the anomalies are your leads. "Why is
+  this 19%-Democratic county 21 points pro-choice?" is a story with a
+  dateline; the map hands you the dateline.
+
+## Five questions to ask standing in front of the map
+
+1. Which is the nearest TARGET county to me, and have I ever done anything
+   there?
+2. Is my mental map of "hopeless" counties contradicted anywhere? (That
+   contradiction is the tool's whole product.)
+3. Am I about to spend persuasion effort in a BASE county because it's
+   comfortable?
+4. Is the gap I'm looking at from an electorate like the one that votes
+   next time? (A primary-day gap may not survive a general-day crowd.)
+5. What's the *second* measure this county voted on? (Missouri showed
+   defiance travels across issues — two data points on a county beat one.)
+
 ## What it will never tell you
 
 - **Individuals.** Everything is county-level. "This county is reachable" is
@@ -134,3 +226,4 @@ measure), so every past vote sharpens the picture for the next one.
 | 4. The translator + its lie detector | A programmer | days |
 | 5. Which side is which | A human who understands the measure | one careful decision |
 | The map and the itinerary | The engine | automatic |
+| Reading it and deciding what to do | You, with the guided walk above | 30 minutes |
