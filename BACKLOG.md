@@ -87,6 +87,23 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
   amendment, both rejected by the SoS on 2026-08-04 and in court) could add
   November measures; recheck the ballot in September.
 
+- **DEEP-TIME ARC OPENED — Gilded Age rhyme test DONE (2026-08-14).**
+  `notebooks/gilded_age_rhyme.{py,ipynb}` (TDD-exempt, on the 1868–2024 spine):
+  1892 Populist share (third-party lens — `dem_share_2p` is blind to Weaver)
+  does NOT correlate with 1912 Progressivism (r ≈ −0.08) but predicts the 1932
+  New Deal break at r = +0.38 non-South (+0.28 with a 1928-free baseline: the
+  Al Smith anomaly explains part, not all). The reservoir discharged in 1932;
+  1936 re-target ≈ 0 for the mechanical re-baselining reason documented in the
+  notebook. 2016 echo +0.28 but silver-county-confounded. Summarized in
+  FINDINGS.md §8. NEXT in the arc (JIT, after the 2026 registration): (a)
+  county-level historical REFERENDA — prohibition (the only complete
+  rise-AND-fall idea wave, 1880s→1919→1933 repeal) and women's suffrage
+  (repeat-vote states) — scoping is a catalog-agent job; (b) NHGIS decennial
+  demographics (long-deferred, now doubly justified) to separate
+  persistence-of-people from replacement-of-people; (c) a public "rabbit hole"
+  explainer page telling the Populist→New Deal reservoir story for lay readers
+  (demo.html pattern; candidate second act for the Geo Week narrative).
+
 - **Ballot-measure measurement design — DOCUMENTED, NOT BUILT (2026-08-10).**
   `docs/MEASUREMENT_DESIGN.md` is the full design: county ideal points ×
   measure cutpoints (IRT — severity *estimated*, not hand-coded;
