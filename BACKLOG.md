@@ -111,6 +111,42 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
   amendment, both rejected by the SoS on 2026-08-04 and in court) could add
   November measures; recheck the ballot in September.
 
+- **INTERNATIONALIZATION — SCOPED, POST-REGISTRATION (2026-08-14).** The
+  engine's objects (geographic units × direct issue votes × partisan baseline
+  × time) are country-agnostic; two targets chosen, both JIT-gated on the
+  2026 registration shipping first:
+  (a) **Switzerland as the estimator's validation bench** — quarterly national
+  referenda since 1848, ~600+ votes at municipality level (swissvotes.ch /
+  BFS, machine-readable), same topics revisited for decades: the densest
+  county×measure×time matrix on Earth. Validate the ideal-point/cutpoint
+  estimator where identification is easy before trusting it on sparse US data.
+  (b) **Mexico as the first foreign loader** — INE municipal-level data,
+  morena's 2018 realignment as a trend_surprise showcase, consultas populares
+  (with their quorum/turnout quirks documented); doubles as Matt's Year-0
+  geography. KNOWN REWORK: the partisan baseline must generalize from
+  two-party share to party-bloc/left-right composites (multiparty systems) —
+  the biggest engineering lift; boundary crosswalks per country; and the
+  free-and-fair prerequisite is a documented data-quality gate (the same rule
+  that quarantined the post-1890 US South in the rhyme notebook).
+
+- **CAMPAIGN MONEY AS A MEASURE-LEVEL COVARIATE — SCOPED (2026-08-14).**
+  Today spending is an acknowledged confound absorbed into estimated cutpoints
+  (MEASUREMENT_DESIGN.md honest limits). Upgrade path:
+  (1) enrich the catalog with `support_spend` / `oppose_spend` columns — a
+  research-agent job; Ballotpedia summarizes committee spending on the very
+  pages our `source_url` column already cites (state ethics filings for
+  depth). (2) Then the decomposition becomes testable: does money shift
+  outcomes BEYOND what severity + county positions predict, and is it
+  asymmetric (the Gerber finding: one-sided NO money defeats measures far
+  more effectively than YES money passes them — PG&E's Prop 16 lost 400:1
+  outspent; Prop 22 won at $200M; both belong in the test)? Level shift vs
+  county-gradient shape change is also testable with our machinery.
+  (3) For the 2026 marquee: Missouri Ethics Commission quarterly + 8-day
+  filings let us watch Amendment 3 war chests build in real time — the
+  registered prediction states its spending assumption explicitly, and the
+  postmortem grades it. HONESTY GATE: spending is endogenous (money chases
+  close races); we measure and control, we do not claim clean causality.
+
 - **DEEP-TIME ARC OPENED — Gilded Age rhyme test DONE (2026-08-14).**
   `notebooks/gilded_age_rhyme.{py,ipynb}` (TDD-exempt, on the 1868–2024 spine):
   1892 Populist share (third-party lens — `dem_share_2p` is blind to Weaver)
