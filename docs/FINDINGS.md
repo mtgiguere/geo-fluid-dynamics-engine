@@ -177,13 +177,17 @@ The engine is a poor oracle and an excellent instrument. Its value is:
 
 ## Open questions (see `BACKLOG.md`)
 
-- **Off-cluster generality — preliminary YES (2026-08-14, formal notebook
-  pending):** with the Missouri canvasses ingested, the same-ballot 2024
-  abortion × minimum-wage resistance correlation is **r ≈ 0.52** across 116
-  jurisdictions, and the trait holds across six years within-issue (minimum
-  wage 2018×2024 r ≈ 0.68). Sharpest new caveat: resistance coheres by
-  ELECTORATE TYPE (general×general mean r ≈ 0.49 vs primary×general ≈ 0.09) —
-  the turnout adjustment is where the 2026 prediction will be won or lost.
+- **Off-cluster generality — ANSWERED YES (2026-08-14):** across Missouri's
+  eight-measure, 116-jurisdiction panel, the same-ballot 2024 abortion ×
+  minimum-wage resistance correlation is **r = +0.52** — a social measure and
+  an economic one, maximally off the personal-liberty cluster. The trait also
+  holds within-issue across six years (minimum wage 2018×2024 **r = +0.68**),
+  and is robust to baseline choice (era-matched vs 2024-only partisanship
+  changes the headline numbers by <0.005). Sharpest new caveat: resistance
+  coheres by ELECTORATE TYPE (general×general mean r ≈ +0.47 vs
+  primary×general ≈ +0.06, while the two primary measures correlate +0.44
+  with each other) — the turnout adjustment is where the 2026 prediction will
+  be won or lost. *(Notebook: `mo_issue_space`.)*
 - **Migration as the network:** people moving *is* the geospatial signal;
   county-to-county migration flows are a better-motivated diffusion network than
   borders or demographic similarity. Untested.
