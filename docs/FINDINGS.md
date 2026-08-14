@@ -128,6 +128,38 @@ structure. *(Notebook: `education_channel_over_time`.)*
 
 ---
 
+## 8. Deep time: the Populist reservoir discharged into the New Deal
+
+The 1868–2024 spine lets us test whether today's "Second Gilded Age" rhyme has
+county-level substance. Using the third-party lens (the 1892 People's Party ran
+outside the two-party system, so `dem_share_2p` is blind to it):
+
+- **1892 Populism did NOT become 1912 Progressivism** — the Bull Moose/Debs
+  county map is uncorrelated with the Populist one (r ≈ −0.08 non-South). The
+  *ideas* entered both parties while the *places* that first carried them sat
+  out a generation. Ideas and geography decoupled.
+- **1892 Populism DID become the New Deal's surprise reservoir** — Populist
+  share predicts the 1932 break from a county's own forty-year trend at
+  **r = +0.38 (non-South)**, still **+0.28** against a baseline that never sees
+  the 1928 Al Smith religious anomaly. Structure waited forty years for a macro
+  catalyst (the Depression) plus a party willing to bid — the same
+  episodic-realignment picture Module 5 sees in the education channel.
+- **The 2016 echo (+0.28 non-South) is real but treacherous to read**: it is
+  partly carried by silver-mining counties that became resort-economy blue
+  (Aspen was Free Silver country). The 1892 bundle — economically radical,
+  culturally traditional (Bryan prosecuted the Scopes trial) — maps onto
+  *neither* modern party; its modern address is the False Bastion combination
+  our ballot measures unbundle (minimum wage far above partisan lean, social
+  measures at or below it).
+
+*Caveats:* 1892 "other" includes small Prohibition-party totals; Southern
+returns after 1890 are disenfranchisement-contaminated (reported separately,
+weaker throughout, as they should be); counties are aggregates — persistence of
+*places* is consistent with, but cannot prove, family transmission.
+*(Notebook: `gilded_age_rhyme`.)*
+
+---
+
 ## What it means for the product
 
 The engine is a poor oracle and an excellent instrument. Its value is:
@@ -145,9 +177,13 @@ The engine is a poor oracle and an excellent instrument. Its value is:
 
 ## Open questions (see `BACKLOG.md`)
 
-- **Off-cluster generality:** does the r≈0.62 persuadability trait hold for an
-  *economic* measure beside a social one (county-level minimum wage — Florida
-  2020, Missouri 2018)? Gated on ingesting one more SoS file.
+- **Off-cluster generality — preliminary YES (2026-08-14, formal notebook
+  pending):** with the Missouri canvasses ingested, the same-ballot 2024
+  abortion × minimum-wage resistance correlation is **r ≈ 0.52** across 116
+  jurisdictions, and the trait holds across six years within-issue (minimum
+  wage 2018×2024 r ≈ 0.68). Sharpest new caveat: resistance coheres by
+  ELECTORATE TYPE (general×general mean r ≈ 0.49 vs primary×general ≈ 0.09) —
+  the turnout adjustment is where the 2026 prediction will be won or lost.
 - **Migration as the network:** people moving *is* the geospatial signal;
   county-to-county migration flows are a better-motivated diffusion network than
   borders or demographic similarity. Untested.
