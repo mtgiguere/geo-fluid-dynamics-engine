@@ -10,6 +10,18 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
 
 ## Product / UX
 
+- **DONE (2026-08-14): "Bring Your Own State" lay explainer.**
+  `docs/BRING_YOUR_OWN_STATE.md` — plain-language, zero-jargon walkthrough of
+  what it takes to use the engine for a new state/issue (five ingredients;
+  only the loader is technical; the certified-total acceptance run framed as
+  a "built-in lie detector"; the Nebraska repeal-the-repeal orientation trap;
+  the honest Georgia answer: no initiative process → no direct-vote signal →
+  the tool refuses to guess). Death penalty worked as the example (NE/CA/OK
+  2016 all have real county data — a natural future corpus, incl. the CA
+  same-ballot competing pair). DEFERRED: a public web version of this
+  explainer alongside demo.html (same audience as the planned deep-time
+  "rabbit hole" page; both are post-registration work).
+
 - **DONE (2026-06-13): Scoped views.** `geofluid/scope.py` (neighborhood
   expansion + catalog) ships scopes.json (nation + every state + STL/KC
   cross-border metro presets); frontend has a scope selector that filters,
