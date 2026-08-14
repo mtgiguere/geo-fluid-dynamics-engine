@@ -23,6 +23,7 @@ from geofluid.ingest.referendum import (
     load_ks_referendum_workbook,
     load_ky_referendum,
     load_oh_referendum,
+    parse_mo_canvass,
 )
 
 _NAME_TO_FIPS = {"ALLEN": "20001", "JOHNSON": "20091"}
@@ -486,3 +487,118 @@ def test_oh_issue_must_be_1_or_2(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="3"):
         load_oh_referendum(path, _OH_NAME_TO_FIPS, issue=3)
+
+
+# --- Missouri: SoS official canvass PDF (text pages -> canonical panel) ----
+#
+# The MO canvass reports each contest as repeated per-page sections:
+#   "<contest> YES NO Total" header, then one "<name> <yes> <no> <total>"
+# row per jurisdiction, ending in a statewide "Total" row. Jurisdictions
+# are the 114 counties PLUS St. Louis City and Kansas City (which spans
+# four counties) — so the name->fips mapping is the caller's explicit
+# policy decision, and unknown names must fail loudly, never drop.
+
+_MO_NAME_TO_FIPS = {
+    "Adair": "29001",
+    "Andrew": "29003",
+    "St. Louis City": "29510",
+}
+
+
+def _mo_page(contest: str, rows: list[str]) -> str:
+    return "\n".join(
+        [
+            "Missouri Office of Secretary of State",
+            "OFFICIAL RESULTS",
+            "General Election - November 5, 2024",
+            "Constitutional Amendment",
+            f"{contest} YES NO Total",
+            *rows,
+        ]
+    )
+
+
+def test_mo_parses_county_rows_into_canonical_panel() -> None:
+    """Two counties under an 'Amendment 3 YES NO Total' header become the
+    canonical panel. Derivation: Adair 4677 yes / 5509 no -> total 10186,
+    no_share 5509/10186; the page's own Total row (sum of both counties)
+    is consumed as an integrity check, not emitted as data."""
+    page = _mo_page(
+        "Amendment 3",
+        ["Adair 4677 5509 10186", "Andrew 4104 5693 9797", "Total 8781 11202 19983"],
+    )
+
+    panel = parse_mo_canvass([page], "Amendment 3", _MO_NAME_TO_FIPS)
+
+    assert list(panel["fips"]) == ["29001", "29003"]
+    assert list(panel["yes_votes"]) == [4677, 4104]
+    assert list(panel["no_votes"]) == [5509, 5693]
+    assert abs(panel["no_share"].iloc[0] - 5509 / 10186) < 1e-12
+
+
+def test_mo_total_row_mismatch_fails_loudly() -> None:
+    """The canvass ends each contest with a statewide Total row. If our
+    parsed jurisdictions don't sum to it, we mis-parsed (missed a page,
+    split a row) — refuse rather than ship a silently short count.
+    Derivation: rows sum to yes 8781 / no 11202 but the Total row claims
+    9999/11202, so the loader must raise naming the contest."""
+    page = _mo_page(
+        "Amendment 3",
+        ["Adair 4677 5509 10186", "Andrew 4104 5693 9797", "Total 9999 11202 21201"],
+    )
+
+    with pytest.raises(ValueError, match="Amendment 3"):
+        parse_mo_canvass([page], "Amendment 3", _MO_NAME_TO_FIPS)
+
+
+def test_mo_missing_total_row_fails_loudly() -> None:
+    """No Total row at all means the contest section was truncated (e.g.
+    a missing final page) — the same refuse-don't-guess rule applies."""
+    page = _mo_page("Amendment 3", ["Adair 4677 5509 10186"])
+
+    with pytest.raises(ValueError, match="Total"):
+        parse_mo_canvass([page], "Amendment 3", _MO_NAME_TO_FIPS)
+
+
+def test_mo_unknown_jurisdiction_fails_loudly() -> None:
+    """Kansas City reports as its own jurisdiction spanning four counties;
+    whether it maps to a pseudo-code or is handled otherwise is the
+    CALLER's documented policy. A name absent from county_fips must
+    therefore raise naming the jurisdiction — silently dropping it would
+    vanish ~100k of the most progressive votes in the state."""
+    page = _mo_page(
+        "Amendment 3",
+        ["Adair 4677 5509 10186", "Kansas City 99916 24166 124082", "Total 104593 29675 134268"],
+    )
+
+    with pytest.raises(ValueError, match="Kansas City"):
+        parse_mo_canvass([page], "Amendment 3", _MO_NAME_TO_FIPS)
+
+
+def test_mo_contest_absent_from_all_pages_fails_loudly() -> None:
+    """Asking for a contest the pages don't contain must raise naming it,
+    not return an empty panel that downstream code would treat as data."""
+    page = _mo_page("Amendment 3", ["Adair 1 2 3", "Total 1 2 3"])
+
+    with pytest.raises(ValueError, match="Proposition A"):
+        parse_mo_canvass([page], "Proposition A", _MO_NAME_TO_FIPS)
+
+
+def test_mo_contest_spanning_pages_with_comma_numbers() -> None:
+    """The real canvass repeats the contest header on every page of its
+    section and groups thousands with commas; unrelated pages (other
+    contests) must be ignored. Derivation: Adair 4,677/5,509 on page one,
+    St. Louis City 95,704/19,746 on page two; Total = column sums
+    (100,381 / 25,255)."""
+    other = _mo_page("Amendment 7", ["Adair 1 2 3", "Total 1 2 3"])
+    p1 = _mo_page("Amendment 3", ["Adair 4,677 5,509 10,186"])
+    p2 = _mo_page(
+        "Amendment 3",
+        ["St. Louis City 95,704 19,746 115,450", "Total 100,381 25,255 125,636"],
+    )
+
+    panel = parse_mo_canvass([other, p1, p2], "Amendment 3", _MO_NAME_TO_FIPS)
+
+    assert list(panel["fips"]) == ["29001", "29510"]
+    assert panel["yes_votes"].sum() == 100381
+    assert panel["no_votes"].sum() == 25255
