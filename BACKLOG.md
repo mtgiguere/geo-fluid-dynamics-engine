@@ -51,11 +51,17 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
   fixed cutpoint, isolates drift+turnout; calibration control), **MA Question 8**
   (repeal of the operating rec-cannabis market; 2016 baseline 53.7%); stretch:
   SD Amendment I + state-level VA/ID calls. Sequenced work with hard deadlines:
-    1. **Matt grabs MO SoS county-level files** (the gating step): Nov 2024
-       general (Amdt 3 + Prop A), Nov 2018 general (Prop B + cannabis trio),
-       Aug 2018 primary (right-to-work), Aug 2020 primary (Medicaid Amdt 2),
-       **Aug 2026 primary** (a real 2026-electorate calibration set). NV/MA
-       past files if we pursue those at county level.
+    1. MO SoS county-level files — **DONE for the four historical elections
+       (2026-08-12)**: official canvass PDFs in `data/raw/` (Nov 2024, Nov
+       2018, Aug 2018, Aug 2020); scoping parse of Nov 2024 Amendment 3
+       reproduced the certified 51.60% exactly (117 jurisdictions: 114
+       counties + St. Louis City + **Kansas City reported as its own
+       jurisdiction spanning four counties — an explicit loader design
+       decision, the AK-districts class of geography question**).
+       STILL OPEN (Matt's do-out): **Aug 2026 primary county-level results
+       once MO certifies (~Sept 2026)** — the 2026-electorate calibration
+       set; unofficial county data earlier if the researcher finds it.
+       NV/MA past files if we pursue those at county level.
     2. Loaders test-first, one at a time, each with certified-total acceptance
        (Bugs #10–12) — September work.
     3. Prediction notebook (TDD-exempt EDA on tested library parts): county
