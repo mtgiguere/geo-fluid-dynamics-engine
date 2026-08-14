@@ -235,9 +235,40 @@ point in the catalog.
   litigation (redistricting referendum, initiative-protection
   amendment); one cycle is evidence, not proof.
 
+**The prescriptive half: playbooks, sealed then revealed (added 2026-08-14).**
+The experiment covers the descriptive→predictive→prescriptive ladder end to
+end on one live cycle:
+
+- **Predict every measure on the ballot, not just the marquee.** The
+  low-salience legislative referrals (prosperity fund, sheriffs) test
+  generalization beyond hot-button issues — different failure modes
+  (status-quo bias, roll-off, weak partisan structure), humbler intervals,
+  and immunity to the cherry-picking critique.
+- **Playbooks are parameterized by goal, never partisan.** Like the loaders
+  and the targeting engine, the generator takes (measure, side) as input and
+  emits the plan for that side on demand: TARGET/BASE/HARD allocation with
+  vote-efficiency framing, the persuasion-vs-turnout budget split informed by
+  the electorate-type finding, pooled multi-measure county ranking (licensed
+  by the r=0.52 result), and the severity-frontier note for measure-drafting
+  clients. No message content, no individual-voter claims — outside the data,
+  outside the lane.
+- **Seal-then-reveal.** Playbooks are drafted WITH the predictions, dated,
+  and committed sealed (same freeze rules); they publish only AFTER the
+  November scorecard. This makes the contamination question structurally
+  unaskable: predictions frozen 10-15, playbooks derived from the same frozen
+  model, revealed with receipts.
+- **Score the playbook, not just the prediction.** Post-election: did the
+  flagged TARGET counties actually carry the claimed headroom (over-perform
+  partisanship in the predicted direction and rough magnitude)? Advice that
+  gets graded is a product; advice that doesn't is commentary.
+- **The viability dossier (Dec 2026):** frozen prediction → public scorecard
+  → unsealed playbook, in that order. The pitch to any real organization is
+  the receipt, not the method.
+
 **Deadlines:** registration commit on main by **2026-10-15**; election
-**2026-11-03**; postmortem after certification (Dec 2026) — feeding the
-Geo Week 2027 story: *pre-registered, out-of-sample, scored in public.*
+**2026-11-03**; postmortem + playbook unseal after certification (Dec 2026) —
+feeding the Geo Week 2027 story: *pre-registered, out-of-sample, scored in
+public, and prescriptive advice that was graded like a forecast.*
 
 ## Build order (JIT triggers)
 
