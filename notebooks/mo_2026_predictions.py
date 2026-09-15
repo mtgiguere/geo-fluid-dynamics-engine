@@ -51,6 +51,41 @@
 # "Progressive side" is the orientation convention shared with the loaders
 # and the catalog — a label for which answer the measure's own coalition
 # geography puts on the Democratic-leaning end, not an endorsement.
+#
+# ---
+#
+# ### For the field: how to read this notebook
+#
+# This document has two layers. The code and the technical notes are the
+# audit trail — they let a skeptic check every step. The blocks headed
+# **For the field** are for the people who will actually use the answers:
+# volunteers, organizers, the nurse or the mechanic or the teacher knocking
+# on doors on a Saturday. You do not need any statistics to follow those.
+#
+# Five words we use over and over, in plain English:
+#
+# * **Share.** Out of every 100 people who voted YES or NO on a measure,
+#   how many picked the side we're tracking. "A share of 55" means 55 out
+#   of 100. We report it as a decimal in the tables (0.55 = 55 out of 100).
+# * **Partisanship.** How a county voted for president in 2024, as the
+#   Democratic slice of the two-party vote. It is the single best clue to
+#   how a county votes on anything — and the yardstick we have to beat.
+# * **Bracket.** Our statewide prediction is not one number, it's a range:
+#   a low, a middle, and a high. The middle is our best guess; the low and
+#   high are where we'd stop being surprised. If the real result lands
+#   outside the bracket, we were wrong, and we'll say so.
+# * **Analog.** A past vote that looked like this one. We learn from how
+#   each county behaved on the analog — the way a coach studies last
+#   season's tape.
+# * **Backtest.** Before predicting the future, we pretend past elections
+#   haven't happened yet, predict them, and check the score. If a method
+#   can't predict the past, it has no business predicting the future.
+#
+# **The one idea behind everything here:** a county's vote on any issue is
+# mostly its partisanship, plus a personality. Some counties run ahead of
+# their politics on certain issues; some run behind. That personality shows
+# up election after election, and it is where a campaign can find voters
+# nobody else is looking for.
 
 # %%
 import re
@@ -187,6 +222,28 @@ print(
 )
 
 # %% [markdown]
+# **For the field — what you just saw.**
+#
+# *What we did:* we collected the official, certified results for every
+# statewide ballot question Missouri has voted on since 2018 — 21 of them —
+# for all 116 places the state reports (114 counties, St. Louis City, and
+# Kansas City). Every number was checked against the state's own totals to
+# the last vote before we used it.
+#
+# *Why:* you can't learn a county's habits from one vote. Twenty-one votes
+# on abortion, wages, marijuana, gambling, taxes, redistricting and more,
+# across eight years, is enough to see which counties consistently surprise.
+#
+# *How to read the table:* one row per past ballot question. The share is
+# the statewide result for the side we're tracking (0.6202 means 62 out of
+# every 100 voters). The "electorate" column says which kind of election it
+# was — a presidential November, a midterm November, or an August primary —
+# because different crowds show up for each, and that matters (see §3).
+#
+# *What it means for you:* the raw material is real votes, not polls. Nobody
+# was asked what they'd do; this is what they did.
+
+# %% [markdown]
 # ### A midterm partisan baseline: the 2018 U.S. Senate race
 #
 # MIT's file is presidential only. Missouri's 2018 canvass gives us the last
@@ -215,6 +272,27 @@ pres_1620 = ((dem[2016] + dem[2020]) / 2).reindex(dem18_senate.index)
 print(f"2018 Senate: {len(senate18)} jurisdictions; certified statewide totals reproduced exactly")
 r_senate = np.corrcoef(dem18_senate, pres_1620)[0, 1]
 print(f"corr(dem 2018 Senate, dem pres 2016/2020 avg) = {r_senate:.3f}")
+
+# %% [markdown]
+# **For the field — what you just saw.**
+#
+# *What we did:* November 2026 is a midterm — no presidential race on the
+# ballot — so we pulled the last midterm's big statewide race (the 2018
+# Senate contest) county by county, and confirmed our copy adds up to the
+# state's certified totals exactly.
+#
+# *Why:* the crowd that votes in a midterm is not the same crowd as in a
+# presidential year. We wanted to know whether counties line up the same
+# way when the smaller crowd shows up.
+#
+# *How to read the number:* "corr" is a correlation — a score from −1 to
+# +1 for how tightly two lists move together. 0 means no relationship; 1
+# means they march in lockstep. Ours is about 0.97: the county order in a
+# midterm is almost identical to a presidential year.
+#
+# *What it means for you:* a county that is friendly ground in a
+# presidential year is friendly ground in a midterm too. What changes is
+# how many people show up, not who the county is.
 
 # %% [markdown]
 # ## 2. Choosing the model by backtest
@@ -320,6 +398,35 @@ print("\nmeans:")
 print(backtest.drop(columns="analog").mean().round(2).to_string())
 
 # %% [markdown]
+# **For the field — what you just saw.**
+#
+# *What we did:* we took each of the 13 past November ballot questions,
+# hid its county results, predicted them three different ways using only
+# the OTHER votes, and then checked the score. That's the backtest.
+#
+# *Why:* anyone can draw a map of the future. The question is whether the
+# method has ever been right. This table is the proof — or the lack of it.
+#
+# *How to read the table:* every number is an average miss in **points out
+# of 100**. If a method says a county will vote 52 and the county votes 55,
+# that's a miss of 3. "3.69" means the plain-partisanship method missed the
+# typical county by about 3.7 points. Smaller is better. The columns are
+# the three methods; the bottom "means" row is the overall score.
+#
+# *What the numbers mean:*
+# * **Partisanship alone is very good.** Knowing how a county voted for
+#   president gets you within about 3.7 points on almost any issue. That
+#   is the bar. Anything we sell has to beat it, and we say so in writing.
+# * **The fancy "pooled position" idea did NOT beat it.** We tried; it
+#   scored 3.80. We're telling you because a tool that only shows you its
+#   wins is a sales pitch, not a tool.
+# * **Learning from a look-alike past vote DID beat it** — when the
+#   look-alike was real (minimum wage predicting minimum wage; sports betting
+#   predicting casinos). Then the miss drops to the mid-2s. When we forced a
+#   weak comparison, it got worse. Lesson: the method only helps when the
+#   history genuinely rhymes, and we only use it where it does.
+
+# %% [markdown]
 # **Reading the backtest.** Partisanship alone is a strong baseline — the
 # pooled position does *not* beat it on average (it helps on low-salience
 # gambling/tax measures where partisanship is loose, and hurts on the
@@ -339,6 +446,23 @@ print(k_table.round(2).to_string())
 print("\nmean over measures with an analog:")
 print(k_table.mean().round(2).to_string())
 K = 0.5  # registered shrinkage — best mean in the table; revisit ONLY before registration
+
+# %% [markdown]
+# **For the field — what you just saw.**
+#
+# *What we did:* when a county surprised us on the look-alike vote, how
+# much of that surprise should we expect again? All of it? Half? We tried
+# three settings (0.5, 0.75, 1.0 — meaning half, three-quarters, all) and
+# kept the one with the best score on past elections: **half**.
+#
+# *How to read the table:* same as before — average miss in points out of
+# 100, smaller is better — with one column per setting. The bottom row is
+# the average across the measures that had a look-alike.
+#
+# *What it means for you:* a county's personality is real but it doesn't
+# repeat in full. If a county ran 6 points ahead of its politics last
+# time, bank on about 3 this time, not 6. That's the difference between
+# a target list you can trust and one that burns a weekend.
 
 # %% [markdown]
 # ## 3. The electorate question
@@ -362,6 +486,28 @@ x24 = logit(dem[2024].reindex(L.index))
 for label, _n, _s in ENR_2026:
     r_c = np.corrcoef(x24, L[label])[0, 1]
     print(f"    {label:28s} r = {r_c:+.3f}   statewide progressive share {statewide[label]:.3f}")
+
+# %% [markdown]
+# **For the field — what you just saw.**
+#
+# *What we did:* three checks on the biggest worry — that a midterm crowd
+# behaves differently from a presidential crowd. (a) Do counties keep the
+# same personality across the two kinds of election? (b) Does the 2018
+# midterm Senate vote line up with the 2024 presidential vote? (c) The
+# newest test of all: this August's Missouri primary, a real 2026
+# electorate — did counties still line up by partisanship?
+#
+# *How to read the numbers:* these are correlations again (−1 to +1; near
+# 1 means "same order"). (a) is about 0.90 and (b) about 0.96: strong. In
+# (c), Amendment 4 — the legislature's attempt to make citizen initiatives
+# harder — was crushed 80–20, yet counties still lined up by partisanship
+# (about +0.5). The two low-profile items (the Jackson County assessor, the
+# income-tax phaseout) show almost no partisan pattern at all.
+#
+# *What it means for you:* on issues people care about, the map of who's
+# with you holds up even when the crowd changes. On sleepy, technical
+# measures, partisanship tells you much less — expect the map to be flat,
+# and don't over-plan around county differences for those.
 
 # %% [markdown]
 # The county *pattern* is stable across electorate types for measures with
@@ -556,6 +702,39 @@ for measure_id, *_rest in SLATE:
 print(pd.DataFrame(summary_rows).set_index("measure_id").round(3).to_string())
 
 # %% [markdown]
+# **For the field — what you just saw.**
+#
+# *What we did:* for each of the five November measures, we built the
+# county-by-county prediction: start from each county's partisanship, add
+# half of its personality from the look-alike vote, then slide the whole
+# map up or down until the statewide total matches our bracket's middle.
+#
+# *How to read the table:* one row per measure. "statewide_progressive_
+# central" is our middle statewide call for the side we're tracking (0.55
+# = 55 out of 100). "counties_progressive_majority" is how many of the 116
+# places we expect that side to WIN outright. "min" and "max" are the
+# coolest and warmest county. The "if_2024_turnout" column is a what-if:
+# the same county predictions, but assuming a presidential-year crowd
+# instead of a midterm one — it barely moves, which is reassuring.
+#
+# *What the numbers mean, measure by measure:*
+# * **Amendment 3 (abortion repeal).** We expect the NO side (keep the 2024
+#   rights) around 55 out of 100 statewide — but winning only about 11 of
+#   116 places. That's Missouri: a few big urban and college counties carry
+#   a statewide majority while most of the map votes the other way. The
+#   fight is turnout in the 11 and margins in the next 20.
+# * **Amendment 6 (protect voter initiatives).** Around 62 for YES, winning
+#   most counties. Broad, shallow support — an issue where rural and urban
+#   voters largely agree, which is rare and worth knowing.
+# * **Map referendum.** A coin flip, about 53 for rejecting the map, with
+#   roughly a dozen counties on that side. This one will be decided by
+#   turnout more than persuasion.
+# * **Amendment 7 (prosperity fund).** NO around 58, and almost every county
+#   leans NO — voters tend to reject tax schemes they can't picture.
+# * **Amendment 8 (sheriffs).** Passes comfortably (we track the NO side at
+#   36); not a single county is expected to reject it.
+
+# %% [markdown]
 # ## 5. What the map would look like — and the partisanship-only baseline we claim to beat
 #
 # The registered scorecard compares our county predictions with a
@@ -594,6 +773,26 @@ plt.tight_layout()
 plt.show()
 
 # %% [markdown]
+# **For the field — how to read the five charts.**
+#
+# Each chart is one measure. Every dot is a county. Left-to-right is how
+# Democratic the county voted for president in 2024 (further right = more
+# Democratic). Bottom-to-top is our predicted share for the side we're
+# tracking. The grey line is 50 — above it, that side wins the county.
+#
+# Two sets of dots: the faint ones are "partisanship only" (what you'd
+# predict knowing nothing but the presidential vote); the solid ones are
+# our prediction. **Where a solid dot sits above its faint twin, we think
+# that county is friendlier to the cause than its politics suggest.** Those
+# are the counties worth a second look. Where the solid dot sits below,
+# the county is tougher than it looks — don't be fooled by the party label.
+#
+# Notice how steep the abortion chart is and how flat the sheriffs chart
+# is: the steeper the slope, the more the issue is a party-line vote and
+# the more the map tells you where to go. A flat chart means the issue
+# cuts across party, and county targeting matters less than message.
+
+# %% [markdown]
 # ## 6. Write the DRAFT file
 #
 # Not registered. The registration commit (by 2026-10-15) will copy this to
@@ -625,6 +824,40 @@ print("\nAmendment 3 - where the model departs most from partisanship alone:")
 amdt3 = amdt3.assign(departure=amdt3["pred_progressive_share"] - amdt3["baseline_partisan_only"])
 departures = amdt3.reindex(amdt3["departure"].abs().sort_values(ascending=False).index)
 print(departures.head(8)[[*show_cols, "departure"]].to_string(index=False))
+
+# %% [markdown]
+# **For the field — how to read the Amendment 3 tables.**
+#
+# *The columns:* `dem_two_party_2024` is the county's partisanship (0.33 =
+# 33 of every 100 two-party presidential votes went Democratic).
+# `pred_progressive_share` is our call for the NO side (keep the 2024
+# rights). `pred_low_90` and `pred_high_90` are the range we'd bet on —
+# nine times in ten, the real result should land between them.
+# `baseline_partisan_only` is what you'd guess from politics alone.
+#
+# *The first table* is the friendliest ground: St. Louis City, Kansas
+# City, St. Louis County, Boone (Columbia), Platte. These are the counties
+# that carry the statewide majority; the job there is turnout, not
+# persuasion — every supporter who stays home costs a vote you can't get
+# back anywhere else.
+#
+# *The second table* is the toughest ground: NO share in the low 20s.
+# Nobody should spend a Saturday there unless it's home.
+#
+# *The third table is the one to print out.* These are the counties where
+# our prediction runs furthest ABOVE what partisanship alone would say —
+# Clark, Atchison, Camden, Saline, Ray, Carroll, Randolph, Holt. Every one
+# of them voted heavily Republican for president, yet each ran a few
+# points ahead of its politics on abortion rights in 2024 and we expect a
+# share of it to carry over. The "departure" column is the size of that
+# edge, in share (0.04 = 4 points out of 100). Saline sits right at 50:
+# a genuine toss-up county in deep-red territory. These are the places
+# where a persuasion conversation is worth having — voters there have
+# already shown they'll cross the line on this issue.
+#
+# *A caution:* the edge is a few points, not a landslide. It's the
+# difference between a wasted trip and a productive one, not between
+# losing and winning a county.
 
 # %% [markdown]
 # ## 6b. Statewide-only calls: Nevada Question 6 and Massachusetts Question 8
@@ -684,6 +917,16 @@ print(f"wrote {out_sw.relative_to(ROOT)}")
 print(statewide_only.drop(columns="ballot").to_string(index=False))
 
 # %% [markdown]
+# **For the field — what you just saw.**
+#
+# For Nevada and Massachusetts we don't yet hold county-by-county history,
+# so we make only a statewide call with a bracket, and we say plainly that
+# it's statewide only. No county map, no target list — we won't pretend to
+# know a county we haven't studied. Nevada: about 63 of 100 for YES.
+# Massachusetts: about 65 of 100 for keeping the legal market (a NO vote on
+# repeal). Both will be scored exactly like the Missouri statewide calls.
+
+# %% [markdown]
 # ## 7. Known weaknesses, stated now
 #
 # * **The level is a judgement.** Everything county-level is conditional on
@@ -698,3 +941,23 @@ print(statewide_only.drop(columns="ballot").to_string(index=False))
 #   from MIT's separate KC reporting.
 # * **One state, one cycle.** This is evidence, not proof — the point of
 #   registering it is to find out.
+#
+# ---
+#
+# ### For the field: what this means for you, in five sentences
+#
+# 1. **Start with partisanship.** How a county voted for president tells
+#    you most of what you need; we're not replacing that, we're sharpening
+#    it by a few points where history rhymes.
+# 2. **The list of surprise counties is the product.** Counties that ran
+#    ahead of their politics last time are where persuasion conversations
+#    pay off; the deep-blue counties are where turnout pays off; the
+#    deep-red-and-not-surprising counties are where you don't go.
+# 3. **Our statewide number is a range, on purpose.** The middle is the
+#    bet; the edges are honesty. Plan for the middle, prepare for the low.
+# 4. **We wrote it down before the election.** Every number here is being
+#    committed to a public record by October 15 and will be graded in
+#    public in November, win or lose. Ask anyone selling you a map whether
+#    they'll do the same.
+# 5. **A tool, not an oracle.** It tells you where a conversation is worth
+#    having. The conversation is still yours.
