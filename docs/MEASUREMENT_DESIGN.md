@@ -231,9 +231,10 @@ point in the catalog.
   outcome — a public miss with a good postmortem is still the method
   working.
 - Known risks, stated now: midterm turnout composition is the dominant
-  error source; the MO ballot may still gain measures via pending
-  litigation (redistricting referendum, initiative-protection
-  amendment); one cycle is evidence, not proof.
+  error source; the MO ballot DID gain two measures via litigation — the
+  Supreme Court ordered Amendment 6 (initiative protection) and the
+  congressional-map referendum onto the ballot on 2026-09-03, so the MO
+  slate is five measures; one cycle is evidence, not proof.
 
 **The prescriptive half: playbooks, sealed then revealed (added 2026-08-14).**
 The experiment covers the descriptive→predictive→prescriptive ladder end to

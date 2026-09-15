@@ -185,7 +185,8 @@ watchdog for hollow tests. (mutmut only runs on Linux CI — it refuses on Windo
 ## Layout
 
 - `src/geofluid/ingest/` — raw public data → canonical panels (`county_returns`,
-  `county_demographics`, `county_geometry`, `referendum`, `historical_returns`)
+  `county_demographics`, `county_geometry`, `referendum` (incl. `parse_mo_canvass` for SoS canvass PDFs and
+  `parse_mo_enr_results` for the SoS Election Night Results portal), `historical_returns`)
 - `src/geofluid/panel/master` — joins returns + demographics into the master panel
   (FIPS-harmonized; adds swing); `panel/spine` — joins historical + MIT returns into
   the 1868–2024 panel; `panel/measures` — stacks per-measure referendum panels into
@@ -215,6 +216,9 @@ watchdog for hollow tests. (mutmut only runs on Linux CI — it refuses on Windo
 - `scripts/export_web_data.py` — thin orchestration → `web/public/data/*.json`;
   `scripts/build_targeting_demo.py` — renders the public prescriptive demo
   (`web/public/demo.html`) from real data through the tested targeting engine
+- `data/predictions/` - the 2026 pre-registration receipts: `mo_2026-11-03_DRAFT_<date>.csv`
+  from `notebooks/mo_2026_predictions.py` (five MO measures x 116 jurisdictions; columns and
+  the freeze/scoring protocol in its README); the REGISTERED copy is frozen once committed
 - `notebooks/` — exploratory analysis (jupytext py:percent + paired executed .ipynb);
   EDA that leans on the tested `geofluid` library, **TDD-exempt** (see TDD_CONTRACT.md).
   The research arc: `realignment_1964_vs_2016` (Module 4 seed), `leadlag_node_roles`

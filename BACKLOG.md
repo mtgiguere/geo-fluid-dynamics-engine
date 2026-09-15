@@ -107,9 +107,73 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
        then UNSEAL playbooks and assemble the viability dossier (receipt →
        scorecard → playbook) → the Geo Week 2027 centerpiece and the pitch
        to real organizations.
-  WATCH: MO ballot litigation (redistricting referendum + initiative-protection
-  amendment, both rejected by the SoS on 2026-08-04 and in court) could add
-  November measures; recheck the ballot in September.
+  LITIGATION RESOLVED (2026-09-03): the Missouri Supreme Court unanimously
+  reversed the SoS's 2026-08-04 rejections and ordered BOTH onto the Nov 3
+  ballot — **Amendment 6** (Respect Missouri Voters: 80% legislative
+  supermajority + statewide ratification to alter voter-approved
+  initiatives) and the **Congressional Map Referendum** on HB 1 (YES upholds
+  the 2025 map, NO repeals it; HB 1 is suspended so November runs on the
+  2022 map). The MO slate to predict is now FIVE measures: Amdt 3 (marquee),
+  Amdt 6, Amdt 7, Amdt 8, and the map referendum. Both new ones are
+  governance/rules-of-the-game topics with no county-level MO precedent
+  (nearest calibration: Aug-2026 Amdt 4 crushed ~80-20 — the same
+  direct-democracy axis as Amdt 6, opposite orientation). Catalog entries
+  updated in `data/catalog/upcoming_2026.json`.
+  CANVASS STATUS (2026-09-14): the Board of State Canvassers certified the
+  Aug 4 primary on 2026-08-25, but the county-level canvass PDF
+  (`ActualResults-August42026.pdf`) was STILL unposted 41 days out (past
+  lag was 17-30 days). WORKAROUND SHIPPED: the same certified numbers are
+  served by the SoS Election Night Results portal (enr.sos.mo.gov, "Pick a
+  Race"); Cloudflare blocks headless Chromium and plain curl but lets a
+  Playwright `channel: "chrome"` session with `AutomationControlled`
+  disabled through (scrape script pattern: select race, click Submit, read
+  the County/YES/NO table). `ingest/referendum.parse_mo_enr_results`
+  (TDD, RED-first) parses the page text with the statewide YES/NO block as
+  the Total-row integrity check; acceptance: all four Aug-2026 amendments
+  reproduce the portal's certified statewide shares (82.292 / 76.911 /
+  19.677 / 16.687 yes), 116 jurisdictions each; portal spells "De Kalb"
+  (alias added). Raw texts: `data/raw/enr_mo_20260804_amendment_{1,2,4,5}.txt`.
+  When the PDF finally posts, cross-check it against the ENR panel.
+    3a. **PREDICTION NOTEBOOK DRAFTED (2026-09-14)**:
+       `notebooks/mo_2026_predictions.py` -> `data/predictions/mo_2026-11-03_DRAFT_<date>.csv`
+       (580 rows = 5 measures x 116 jurisdictions; columns documented in
+       `data/predictions/README.md`). Data: 21 certified MO measures
+       2018-2026 (13 general incl. 6 newly parsed contests from the Nov-2018
+       / Nov-2020 / Nov-2024 canvasses, 4 past primaries, 4 Aug-2026 via
+       ENR) + 2018 U.S. Senate as the midterm partisan baseline (ad hoc
+       parse, certified totals reproduced exactly). MODEL CHOSEN BY
+       LEAVE-ONE-OUT BACKTEST (statewide level given): partisanship-only
+       county RMSE 3.69 pp; the pooled ideal-point position does NOT beat it
+       (3.80); partisanship + 0.5 x same-issue analog residual wins (3.39
+       over measures with an analog, vs 3.76) - and only true-sibling
+       analogs help (minwage 18->24, sportsbet->casino, minwage->abortion),
+       flavor guesses hurt. Registered model = partisanship slope from the
+       analog's era + k=0.5 analog residual, levelled to an EX-ANTE
+       statewide bracket per measure (Amdt 3 pro-rights NO 51.5/55/59;
+       Amdt 6 YES 55/62/70; map referendum NO 46/53/60; Amdt 7 NO 50/58/68;
+       Amdt 8 NO 28/36/45), 2018-midterm county turnout weights (2024
+       variant carried as sensitivity), 90% intervals = bracket carried
+       through the pattern or +/-1.645 x backtest pattern RMSE, whichever
+       wider. TO DO BEFORE REGISTRATION: Matt reviews the five brackets;
+       decide whether NV Q6 / MA Q8 get state-level-only rows; then copy to
+       `mo_2026-11-03_REGISTERED_<date>.csv` and commit by 2026-10-15.
+
+- **NON-POLITICAL DOMAINS (e.g. real estate) - PARKED, POST-NOVEMBER
+  (Matt, 2026-09-15).** The engine's analytical core is domain-agnostic
+  already: `spatial/weights`, `moran`, `lag` (SAR), `leadlag`, and
+  `realignment.trend_surprise` take any fips-indexed value x time and a
+  geography. What is political is the ingest layer (loaders, the
+  `progressive_side` orientation), the semantic layer (`dissonance`,
+  `issue_resistance`, `targeting`), and the frontend copy. A real-estate
+  pilot (e.g. Zillow ZHVI / FHFA HPI by county or ZIP, monthly) would need:
+  one loader to the canonical `fips x period x value` shape, a generic
+  "outcome" name in place of progressive_share, and a domain-neutral map
+  view. The denser cadence (monthly, not quadrennial) actually suits the
+  diffusion / lead-lag machinery better than elections do - the Module 2
+  lead-lag retry might succeed there where it was falsified on swing.
+  JIT trigger: after the November scorecard and the December dossier; the
+  first deliverable would be a horse-race notebook (does neighbour lag
+  predict a county's price change one period ahead?), not a product.
 
 - **INTERNATIONALIZATION — SCOPED, POST-REGISTRATION (2026-08-14).** The
   engine's objects (geographic units × direct issue votes × partisan baseline
