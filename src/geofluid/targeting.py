@@ -71,3 +71,55 @@ def build_itinerary(
     return out.sort_values(
         ["_rank", "dissonance"], ascending=[True, False], ignore_index=True
     ).drop(columns="_rank")
+
+
+def history_buckets(
+    shares: pd.DataFrame,
+    statewide: "pd.Series[float]",
+    level: float,
+    *,
+    competitive_band: float = 0.08,
+    electorate: Mapping[str, str] | None = None,
+) -> pd.DataFrame:
+    """What a county's OWN voting record implies about it, given one stated
+    statewide level.
+
+    `shares` is fips x measure (progressive share per county per past
+    measure); `statewide` is the statewide progressive share of each measure.
+    The gap is county minus state, measure by measure: the county's habitual
+    distance from Missouri (or any state) as a whole. `expected_share` is the
+    stated `level` plus the county's mean gap - "if the state lands at 55,
+    this county's record says it lands here". Everything except `level` is a
+    certified vote; `level` is the one explicit assumption.
+    """
+    gaps = shares.sub(statewide.reindex(shares.columns), axis=1)
+    out = pd.DataFrame(index=shares.index)
+    out["mean_gap"] = gaps.mean(axis=1)
+    # Trust in the mean gap: how often the county was on the same side of the
+    # state as its average says (1.0 = every time), and how spread out the
+    # gaps are. A +0.04 built from +0.10 and -0.02 is not "ahead".
+    same_side = gaps.gt(0).eq(out["mean_gap"].gt(0), axis=0)
+    out["consistency"] = same_side.mean(axis=1)
+    out["gap_sd"] = gaps.std(axis=1, ddof=1)
+    out["expected_share"] = level + out["mean_gap"]
+
+    # The turnout tell. If `electorate` labels each measure "midterm" or
+    # "presidential", split the gap by crowd: a county whose edge is bigger
+    # in presidential years than in midterms has supporters who show up only
+    # for the big one - its problem is turnout, and midterm_penalty (the
+    # presidential gap minus the midterm gap) is the size of that problem.
+    if electorate is not None:
+        kind = pd.Series(dict(electorate)).reindex(shares.columns)
+        for name in ("midterm", "presidential"):
+            cols = list(kind.index[kind == name])
+            out[f"{name}_gap"] = gaps[cols].mean(axis=1) if cols else float("nan")
+        out["midterm_penalty"] = out["presidential_gap"] - out["midterm_gap"]
+
+    # The bucket is the expected share read against 0.50 with a band of
+    # genuine competitiveness around it: clearly ahead -> turnout (the job
+    # is showing up), inside the band -> persuade (the argument decides it),
+    # clearly behind -> hard. The band is the caller's stated tolerance.
+    out["bucket"] = "persuade"
+    out.loc[out["expected_share"] >= 0.5 + competitive_band, "bucket"] = "turnout"
+    out.loc[out["expected_share"] <= 0.5 - competitive_band, "bucket"] = "hard"
+    return out

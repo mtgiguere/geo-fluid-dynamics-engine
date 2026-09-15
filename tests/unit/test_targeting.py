@@ -23,7 +23,7 @@ happened upstream (the contest panel / overlay); presentation adds the flavor.
 
 import pandas as pd
 
-from geofluid.targeting import build_itinerary
+from geofluid.targeting import build_itinerary, history_buckets
 
 
 def _counties(rows: list[dict[str, object]]) -> pd.DataFrame:
@@ -141,3 +141,95 @@ def test_county_with_no_partisan_baseline_is_excluded_not_misclassified() -> Non
     )
 
     assert list(itinerary["fips"]) == ["20121"]
+
+
+# --- history_buckets: the bucket a county's OWN record implies ---------------
+#
+# build_itinerary classifies from one issue signal plus partisanship. The
+# question a buyer asks is different: "how do you KNOW St. Louis County is
+# turnout ground?" The answer has to be the county's record across every
+# statewide measure we hold - how far it runs ahead of or behind the STATE,
+# how consistently, and whether the gap shrinks when a smaller (midterm)
+# crowd shows up. history_buckets turns that record plus a stated statewide
+# level into a bucket, so the classification rests on certified votes and
+# one explicit assumption rather than on our own forecast.
+
+
+def _shares() -> tuple[pd.DataFrame, "pd.Series[float]"]:
+    """Two counties x two measures, progressive shares, plus the statewide
+    result of each measure. County A runs +0.10 over the state on both;
+    county B runs -0.05 on both."""
+    shares = pd.DataFrame(
+        {"m1": [0.60, 0.45], "m2": [0.70, 0.55]},
+        index=pd.Index(["A", "B"], name="fips"),
+    )
+    statewide = pd.Series({"m1": 0.50, "m2": 0.60})
+    return shares, statewide
+
+
+def test_history_mean_gap_and_expected_share_at_stated_level() -> None:
+    """Derivation: A's gaps are 0.60-0.50 = +0.10 and 0.70-0.60 = +0.10, mean
+    +0.10; B's are 0.45-0.50 = -0.05 and 0.55-0.60 = -0.05, mean -0.05. At a
+    stated statewide level of 0.55 the expected share is level + mean gap:
+    A 0.65, B 0.50."""
+    shares, statewide = _shares()
+
+    out = history_buckets(shares, statewide, level=0.55)
+
+    assert abs(float(out["mean_gap"].loc["A"]) - 0.10) < 1e-12
+    assert abs(float(out["mean_gap"].loc["B"]) - (-0.05)) < 1e-12
+    assert abs(float(out["expected_share"].loc["A"]) - 0.65) < 1e-12
+    assert abs(float(out["expected_share"].loc["B"]) - 0.50) < 1e-12
+
+
+def test_history_bucket_from_expected_share_and_competitive_band() -> None:
+    """With a competitive band of 0.08 around 0.50: expected 0.65 is above
+    0.58 -> 'turnout' (already ahead: the job is showing up); 0.50 is inside
+    the band -> 'persuade' (the argument decides it); a county C running
+    -0.20 on both measures expects 0.55 - 0.20 = 0.35, below 0.42 -> 'hard'.
+    Derived before the assertion."""
+    shares, statewide = _shares()
+    shares.loc["C"] = [0.30, 0.40]
+
+    out = history_buckets(shares, statewide, level=0.55, competitive_band=0.08)
+
+    assert out.loc["A", "bucket"] == "turnout"
+    assert out.loc["B", "bucket"] == "persuade"
+    assert out.loc["C", "bucket"] == "hard"
+
+
+def test_history_consistency_is_share_of_measures_on_the_mean_gap_side() -> None:
+    """A county that is +0.10 on one measure and -0.02 on the other has mean
+    gap +0.04 but was on the plus side only 1 of 2 times -> consistency 0.5.
+    County A (+0.10, +0.10) -> 1.0. gap_sd is the plain sample standard
+    deviation of the gaps: A 0.0; D sd of (+0.10, -0.02) = 0.0849 (ddof=1).
+    A mean gap earns trust only with high consistency and low sd."""
+    shares, statewide = _shares()
+    shares.loc["D"] = [0.60, 0.58]  # gaps +0.10 and -0.02
+
+    out = history_buckets(shares, statewide, level=0.55)
+
+    assert float(out["consistency"].loc["A"]) == 1.0
+    assert float(out["consistency"].loc["D"]) == 0.5
+    assert float(out["gap_sd"].loc["A"]) == 0.0
+    assert abs(float(out["gap_sd"].loc["D"]) - 0.08485281374238571) < 1e-12
+
+
+def test_history_midterm_penalty_from_electorate_types() -> None:
+    """The turnout tell: does the county's edge shrink when the smaller
+    midterm crowd shows up? With m1 a midterm measure and m2 a presidential
+    one, county E (shares 0.53, 0.72) has gaps +0.03 (midterm) and +0.12
+    (presidential): midterm_gap 0.03, presidential_gap 0.12, and
+    midterm_penalty = presidential - midterm = +0.09 - its presidential-year
+    voters are the ones who lean its way and they stay home in midterms.
+    County A (+0.10 both) has penalty 0.0."""
+    shares, statewide = _shares()
+    shares.loc["E"] = [0.53, 0.72]
+    electorate = {"m1": "midterm", "m2": "presidential"}
+
+    out = history_buckets(shares, statewide, level=0.55, electorate=electorate)
+
+    assert abs(float(out["midterm_gap"].loc["E"]) - 0.03) < 1e-12
+    assert abs(float(out["presidential_gap"].loc["E"]) - 0.12) < 1e-12
+    assert abs(float(out["midterm_penalty"].loc["E"]) - 0.09) < 1e-12
+    assert abs(float(out["midterm_penalty"].loc["A"])) < 1e-12

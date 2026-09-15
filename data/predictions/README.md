@@ -17,6 +17,19 @@ after certification.
   brackets for measures where we hold no county file (NV Question 6, MA
   Question 8; decided 2026-09-15). Same freeze rules; scored on the level
   criteria only.
+- `county_receipts_mo_DRAFT_<date>.csv` — the receipt cards' data: one row
+  per jurisdiction per certified Missouri measure (21 measures, 2018–2026):
+  `county_share`, `statewide_share`, `gap` (county minus state, on the
+  progressive side), `electorate` type. Every row is checkable against the
+  Secretary of State.
+- `county_record_buckets_mo_DRAFT_<date>.csv` — `targeting.history_buckets`
+  applied to each jurisdiction's record on the 13 general-election measures
+  at the Amendment 3 bracket middle: `mean_gap`, `consistency`, `gap_sd`,
+  `midterm_gap`, `presidential_gap`, `midterm_penalty`, `expected_share`,
+  `bucket` (turnout / persuade / hard), plus `abortion_2024_gap` and
+  `bucket_amdt3_at_level` from the same-issue record alone. This is how the
+  TURNOUT / PERSUADE / SKIP labels are justified from votes rather than from
+  our own forecast.
 - Sealed playbooks (the prescriptive half) will live alongside, per the
   protocol's seal-then-reveal rule.
 

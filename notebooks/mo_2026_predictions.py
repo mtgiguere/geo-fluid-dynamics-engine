@@ -98,6 +98,7 @@ import pandas as pd
 import pdfplumber
 
 from geofluid.ingest.referendum import parse_mo_canvass, parse_mo_enr_results
+from geofluid.targeting import history_buckets
 
 ROOT = next(p for p in (Path.cwd(), *Path.cwd().parents) if (p / "pyproject.toml").exists())
 RAW = ROOT / "data/raw"
@@ -880,11 +881,13 @@ print(departures.head(8)[[*show_cols, "departure"]].to_string(index=False))
 #   already leaning our way beyond what the party label suggests.
 # * **margin_votes** — the predicted winning or losing margin in votes.
 #
-# And a bucket, the same logic the tested `targeting.build_itinerary`
-# engine uses (TARGET / BASE / HARD), with illustrative thresholds here:
-# **TURNOUT** ground (we're comfortably ahead: every supporter who stays
-# home is a lost vote), **PERSUADE** ground (competitive: conversations
-# change the outcome), **SKIP** (far behind: spend nothing you can't spare).
+# And a bucket - but NOT read off our own forecast. `targeting.history_buckets`
+# (tested) derives it from the county's RECORD: its habitual gap to the
+# statewide result on the analog vote, added to the stated statewide level.
+# **TURNOUT** ground (the record says it lands clearly ahead: every supporter
+# who stays home is a lost vote), **PERSUADE** ground (the record says it
+# lands near 50: conversations change the outcome), **SKIP** (the record says
+# it lands clearly behind). One certified vote plus one stated assumption.
 
 # %%
 expected_votes = (turnout_2018 * float(total["cleanmo_2018"].sum())).round()
@@ -895,9 +898,22 @@ alloc["headroom_votes"] = (alloc["departure"] * alloc["expected_votes_2026"]).ro
 alloc["margin_votes"] = (
     (alloc["pred_progressive_share"] - 0.5) * alloc["expected_votes_2026"]
 ).round()
-alloc["bucket"] = "SKIP"
-alloc.loc[alloc["pred_progressive_share"] >= 0.42, "bucket"] = "PERSUADE"
-alloc.loc[alloc["pred_progressive_share"] >= 0.58, "bucket"] = "TURNOUT"
+LEVEL_AMDT3 = 0.55  # the bracket's middle, from SLATE
+ELECTORATE_GENERAL = {m: electorate[m] for m in general}
+# The bucket for THIS measure rests on the same-issue record (the 2024
+# abortion vote) at the stated level; the county's broader character comes
+# from its record on all 13 general-election measures.
+record_abortion = history_buckets(
+    share[["abortion_2024"]], statewide[["abortion_2024"]], LEVEL_AMDT3
+)
+record_general = history_buckets(
+    share[general], statewide[general], LEVEL_AMDT3, electorate=ELECTORATE_GENERAL
+)
+alloc["bucket"] = (
+    record_abortion["bucket"].reindex(alloc.index).str.upper().replace({"HARD": "SKIP"})
+)
+alloc["record_bucket_13"] = record_general["bucket"].reindex(alloc.index).str.upper()
+alloc["midterm_penalty"] = record_general["midterm_penalty"].reindex(alloc.index).round(3)
 alloc_cols = [
     "county",
     "bucket",
@@ -907,6 +923,8 @@ alloc_cols = [
     "votes_per_point",
     "headroom_votes",
     "margin_votes",
+    "record_bucket_13",
+    "midterm_penalty",
 ]
 print("The three counties in the question (Amendment 3, pro-rights NO side):")
 print(alloc.loc[["29183", "29189", "29099"], alloc_cols].to_string(index=False))
@@ -955,10 +973,114 @@ print(alloc.groupby("bucket")["expected_votes_2026"].agg(["count", "sum"]).to_st
 # you can split the budget by where the votes actually are rather than by
 # where the map looks red or blue.
 #
-# *The honest caveat:* the bucket thresholds are illustrative and the
-# turnout size is assumed (a 2018-sized midterm). What is NOT assumed is
-# the pattern — it comes from certified votes and a method whose track
-# record is printed in §2.
+# *The honest caveat:* the turnout size is assumed (a 2018-sized midterm)
+# and the statewide level is our stated bracket. What is NOT assumed is the
+# county's record - the bucket is read from certified votes - or the pattern,
+# whose track record is printed in the backtest above.
+
+# %% [markdown]
+# ## 6b-ii. County receipt cards: how we KNOW
+#
+# "How do you know St. Louis County is turnout ground and St. Charles is
+# persuasion ground?" The only convincing answer is the county's own votes,
+# laid next to the state's, for every statewide measure we hold. That is a
+# receipt card. Each line below is a certified result anyone can check
+# against the Secretary of State. The summary underneath is
+# `history_buckets` applied to that record.
+#
+# Two tells to look for on a card:
+#
+# * **A consistent gap.** If the county lands above the state on nearly every
+#   measure (consistency near 1.0) with a small spread, its lean is a habit,
+#   not a fluke.
+# * **The midterm penalty.** If the county's edge over the state is bigger
+#   in presidential years than in midterms, its supporters are the ones who
+#   skip midterms - the problem is turnout, and the penalty is its size.
+
+# %%
+receipt_rows = []
+all_measures = [(m[0], m[3], m[4]) for m in MEASURES] + [
+    (lbl, side, "primary") for lbl, _n, side in ENR_2026
+]
+for measure_label, side, etype in all_measures:
+    for fips in share.index:
+        gap = float(share.loc[fips, measure_label] - statewide[measure_label])
+        receipt_rows.append(
+            {
+                "fips": fips,
+                "county": county_name.get(fips, fips),
+                "measure": measure_label,
+                "electorate": etype,
+                "progressive_side": side,
+                "county_share": round(float(share.loc[fips, measure_label]), 4),
+                "statewide_share": round(float(statewide[measure_label]), 4),
+                "gap": round(gap, 4),
+            }
+        )
+receipts = pd.DataFrame(receipt_rows)
+out_receipts = out_dir / f"county_receipts_mo_DRAFT_{TODAY}.csv"
+receipts.to_csv(out_receipts, index=False)
+record_out = record_general.copy()
+record_out.insert(0, "county", [county_name.get(f, f) for f in record_out.index])
+record_out["abortion_2024_gap"] = record_abortion["mean_gap"]
+record_out["bucket_amdt3_at_level"] = record_abortion["bucket"]
+out_record = out_dir / f"county_record_buckets_mo_DRAFT_{TODAY}.csv"
+record_out.round(4).to_csv(out_record)
+print(f"wrote {out_receipts.relative_to(ROOT)} ({len(receipts)} rows)")
+print(f"wrote {out_record.relative_to(ROOT)}")
+
+
+def receipt_card(fips: str) -> None:
+    card = receipts[receipts["fips"] == fips].set_index("measure")
+    rec = record_general.loc[fips]
+    ab = record_abortion.loc[fips]
+    print(f"\n=== RECEIPT: {county_name.get(fips, fips)} (fips {fips}) ===")
+    print(card[["electorate", "county_share", "statewide_share", "gap"]].to_string())
+    print(
+        f"13 general-election measures: mean gap {rec['mean_gap']:+.3f}, "
+        f"consistency {rec['consistency']:.2f}, spread {rec['gap_sd']:.3f}"
+    )
+    print(
+        f"midterm gap {rec['midterm_gap']:+.3f} vs presidential gap "
+        f"{rec['presidential_gap']:+.3f} -> midterm penalty {rec['midterm_penalty']:+.3f}"
+    )
+    print(
+        f"2024 abortion gap {ab['mean_gap']:+.3f}; at a statewide level of {LEVEL_AMDT3:.2f} "
+        f"the record says {ab['expected_share']:.3f} -> Amendment 3 bucket: "
+        f"{ab['bucket'].upper()} (general character: {rec['bucket'].upper()})"
+    )
+
+
+for fips in ("29189", "29183", "29099"):
+    receipt_card(fips)
+
+# %% [markdown]
+# **For the field and the decision-maker - reading a receipt card.**
+#
+# Each card is one county. Every row is a real statewide vote: the county's
+# result, the state's result, and the gap between them. Positive gap means
+# the county ran ahead of the state on the side we track.
+#
+# *St. Louis County:* ahead of the state on nearly everything that matters,
+# by double digits on abortion rights, wages, and Medicaid. And the tell:
+# its edge over the state is about twice as big in presidential years as in
+# the 2018 midterm (a penalty of roughly 3.5 points). Its supporters skip
+# midterms. That is why the record - not our forecast -
+# calls it TURNOUT ground.
+#
+# *St. Charles:* the tightest tracker of the state in the trio. Its gap
+# hovers around zero with a small spread, and it lands above 50 about as
+# often as below. Whatever Missouri decides, St. Charles decides by roughly
+# the same margin. That is PERSUADE ground by definition - the argument
+# itself is what moves it.
+#
+# *Jefferson:* below the state on abortion rights, far above it on the
+# economic measures (right-to-work, minimum wage). A county that crosses
+# party lines when the question is about wages. The record calls it
+# PERSUADE for Amendment 3, sitting right at the line.
+#
+# The two CSVs written above carry the full receipt for all 116
+# jurisdictions, so any county's card can be printed the same way.
 
 # %% [markdown]
 # ## 6c. Statewide-only calls: Nevada Question 6 and Massachusetts Question 8
