@@ -1,0 +1,2 @@
+proposition_id,statement,metric,reference_slope_2024,ex_ante_call,scoring
+mo_2026_amdt3_coupling,The 2026 Amendment 3 county vote is at least as party-coupled as the 2024 abortion vote: OLS slope of logit(NO share) on logit(2024 Dem two-party share) >= the 2024 slope.,slope_2026 - slope_2024 (logit scale),0.7974,HOLD-or-STEEPEN (slope_2026 >= slope_2024 - 0.05),"STEEPEN if slope_2026 > slope_2024 + 0.05; RELAX if < slope_2024 - 0.05; HOLD otherwise. Result goes to FINDINGS.md as the first Module 5 order-parameter reading, whichever way it lands."

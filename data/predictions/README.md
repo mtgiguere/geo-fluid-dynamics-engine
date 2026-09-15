@@ -30,6 +30,11 @@ after certification.
   `bucket_amdt3_at_level` from the same-issue record alone. This is how the
   TURNOUT / PERSUADE / SKIP labels are justified from votes rather than from
   our own forecast.
+- `propositions_2026-11-03_DRAFT_<date>.csv` — registered structural
+  propositions scored alongside the predictions: currently the Module 5
+  order-parameter call that the 2026 Amendment 3 vote is at least as
+  party-coupled as 2024's (partisan slope, logit scale; STEEPEN / HOLD /
+  RELAX with the ex-ante call and scoring rule written down).
 - Sealed playbooks (the prescriptive half) will live alongside, per the
   protocol's seal-then-reveal rule.
 

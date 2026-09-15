@@ -158,6 +158,40 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
        decide whether NV Q6 / MA Q8 get state-level-only rows; then copy to
        `mo_2026-11-03_REGISTERED_<date>.csv` and commit by 2026-10-15.
 
+- **MODULE 5 SEED: MEASURE THE ORDER PARAMETER BEFORE CLAIMING A DETECTOR
+  (Matt + Claude, 2026-09-15).** The spec's Module 5 is a structural
+  early-warning for a losing faction rejecting the process: convergence +
+  acceleration of (a) cross-cutting-cleavage indicators (geographic sorting,
+  landslide counties, shared-space measures) and (b) institutional-legitimacy
+  indicators (officials resigning, concession refusal, rules-of-the-game
+  laws, rejection language). January 6 is the spec's worked example - NOT as
+  unpredictable human behaviour but as a signature that started years
+  earlier. Our findings (change is hard to predict; realignments flicker)
+  say: earn the detector by measuring its inputs faithfully first.
+  Order parameters computable from data we already hold:
+    1. **Issue-party coupling** - the partisan slope of each issue vote,
+       tracked over time (2024 abortion = steepest we hold). Steepening that
+       persists = ballot measures collapsing into party-line votes = the
+       cross-cutting cleavage closing. PRE-REGISTER with the Oct-15 file:
+       "2026 Amdt 3 slope >= 2024's" plus the same for every measure with a
+       same-issue predecessor (steepen / hold / relax).
+    2. **False-Bastion dispersion** - the spread of issue_resistance across
+       counties per measure; shrinking spread = fewer places where opponents
+       still share ground.
+    3. **Landslide-county share** on the 1868-2024 spine (the spec's own
+       example metric; we can compute it for 40 elections tonight).
+    4. **Midterm penalty distribution** - whether turnout asymmetry is
+       widening between the two coalitions' counties.
+  Institutional-legitimacy inputs need NEW ingests (election-official
+  turnover, concession behaviour, referee-override statutes; NLP layer for
+  rejection language = the parked PyTorch phase). The 2026 MO governance
+  measures (Amdt 6 initiative protection; HB 1 map referendum) are the first
+  BEHAVIOURAL data points on voters' response to referee-override moves -
+  score them as such in December. Product claim is bounded: "we measure the
+  coupling every cycle and say, with receipts, whether the ground shifted or
+  only the weather" - never "we will call the moment". JIT trigger: after the
+  December dossier; first deliverable = a notebook computing 1-3 over time.
+
 - **NON-POLITICAL DOMAINS (e.g. real estate) - PARKED, POST-NOVEMBER
   (Matt, 2026-09-15).** The engine's analytical core is domain-agnostic
   already: `spatial/weights`, `moran`, `lag` (SAR), `leadlag`, and

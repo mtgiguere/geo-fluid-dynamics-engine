@@ -1150,6 +1150,55 @@ print(statewide_only.drop(columns="ballot").to_string(index=False))
 # repeal). Both will be scored exactly like the Missouri statewide calls.
 
 # %% [markdown]
+# ## 6d. Registered propositions: is the ground shifting, or only the weather?
+#
+# A polarizing national environment moves the statewide LEVEL (weather: the
+# bracket absorbs it). Whether it also changes the STRUCTURE - ballot
+# measures collapsing into party-line votes - is the Module 5 question, and
+# it has an order parameter we can pre-register: the partisan slope of the
+# issue vote. A steeper slope means red counties get redder and blue
+# counties bluer on the measure; the middle, where persuasion lives, thins.
+#
+# We register the slope on the same-issue pair we hold and score it in
+# December alongside the predictions: STEEPEN / HOLD / RELAX, with the
+# ex-ante call written down now.
+
+# %%
+_i, slope_2024, _r = partisan_fit("abortion_2024")
+propositions = pd.DataFrame(
+    [
+        {
+            "proposition_id": "mo_2026_amdt3_coupling",
+            "statement": (
+                "The 2026 Amendment 3 county vote is at least as party-coupled as the "
+                "2024 abortion vote: OLS slope of logit(NO share) on logit(2024 Dem "
+                "two-party share) >= the 2024 slope."
+            ),
+            "metric": "slope_2026 - slope_2024 (logit scale)",
+            "reference_slope_2024": round(slope_2024, 4),
+            "ex_ante_call": "HOLD-or-STEEPEN (slope_2026 >= slope_2024 - 0.05)",
+            "scoring": (
+                "STEEPEN if slope_2026 > slope_2024 + 0.05; RELAX if < slope_2024 - 0.05; "
+                "HOLD otherwise. Result goes to FINDINGS.md as the first Module 5 order-"
+                "parameter reading, whichever way it lands."
+            ),
+        }
+    ]
+)
+out_props = out_dir / f"propositions_2026-11-03_DRAFT_{TODAY}.csv"
+propositions.to_csv(out_props, index=False)
+print(f"wrote {out_props.relative_to(ROOT)}")
+print(f"2024 abortion partisan slope (logit scale): {slope_2024:.3f}")
+
+# %% [markdown]
+# **For the decision-maker - why register this.** If the coupling steepens,
+# the persuadable middle is shrinking and future budgets should tilt toward
+# turnout. If it holds or relaxes, the split-ticket voter who votes party for
+# candidates and conscience on measures is alive and well, and persuasion
+# keeps its value. Either answer is worth money; writing the call down first
+# is what makes it worth trusting.
+
+# %% [markdown]
 # ## 7. Known weaknesses, stated now
 #
 # * **The level is a judgement.** Everything county-level is conditional on
