@@ -860,7 +860,108 @@ print(departures.head(8)[[*show_cols, "departure"]].to_string(index=False))
 # losing and winning a county.
 
 # %% [markdown]
-# ## 6b. Statewide-only calls: Nevada Question 6 and Massachusetts Question 8
+# ## 6b. For the decision-maker: where a dollar buys the most votes
+#
+# The volunteer asks "where do I knock?" The person running the
+# organization asks a harder question: **"why should my people and my
+# money go to St. Charles County instead of St. Louis County or Jefferson
+# County?"** Shares don't answer that — votes do. A 3-point edge in a
+# county of 8,000 voters is 240 votes; the same edge in a county of
+# 400,000 is 12,000. So this section converts the Amendment 3 map into
+# votes, using a 2018-sized midterm turnout as the expected 2026 turnout.
+#
+# Three numbers per county:
+#
+# * **votes_per_point** — how many votes one point of movement is worth
+#   there (expected votes ÷ 100). This is the price list: it tells you what
+#   a point of persuasion or a point of turnout BUYS in each county.
+# * **headroom_votes** — the county's personality edge (our prediction
+#   minus partisanship alone) expressed in votes: the votes we believe are
+#   already leaning our way beyond what the party label suggests.
+# * **margin_votes** — the predicted winning or losing margin in votes.
+#
+# And a bucket, the same logic the tested `targeting.build_itinerary`
+# engine uses (TARGET / BASE / HARD), with illustrative thresholds here:
+# **TURNOUT** ground (we're comfortably ahead: every supporter who stays
+# home is a lost vote), **PERSUADE** ground (competitive: conversations
+# change the outcome), **SKIP** (far behind: spend nothing you can't spare).
+
+# %%
+expected_votes = (turnout_2018 * float(total["cleanmo_2018"].sum())).round()
+alloc = amdt3.set_index("fips").copy()
+alloc["expected_votes_2026"] = expected_votes.reindex(alloc.index)
+alloc["votes_per_point"] = (alloc["expected_votes_2026"] / 100).round()
+alloc["headroom_votes"] = (alloc["departure"] * alloc["expected_votes_2026"]).round()
+alloc["margin_votes"] = (
+    (alloc["pred_progressive_share"] - 0.5) * alloc["expected_votes_2026"]
+).round()
+alloc["bucket"] = "SKIP"
+alloc.loc[alloc["pred_progressive_share"] >= 0.42, "bucket"] = "PERSUADE"
+alloc.loc[alloc["pred_progressive_share"] >= 0.58, "bucket"] = "TURNOUT"
+alloc_cols = [
+    "county",
+    "bucket",
+    "expected_votes_2026",
+    "pred_progressive_share",
+    "baseline_partisan_only",
+    "votes_per_point",
+    "headroom_votes",
+    "margin_votes",
+]
+print("The three counties in the question (Amendment 3, pro-rights NO side):")
+print(alloc.loc[["29183", "29189", "29099"], alloc_cols].to_string(index=False))
+print("\nPERSUADE ground ranked by what a point buys (votes_per_point):")
+print(
+    alloc[alloc["bucket"] == "PERSUADE"]
+    .nlargest(10, "votes_per_point")[alloc_cols]
+    .to_string(index=False)
+)
+print("\nBiggest personality edge in votes (headroom_votes), any bucket:")
+print(alloc.nlargest(10, "headroom_votes")[alloc_cols].to_string(index=False))
+print("\nVotes by bucket:")
+print(alloc.groupby("bucket")["expected_votes_2026"].agg(["count", "sum"]).to_string())
+
+# %% [markdown]
+# **For the decision-maker — how to read this, and how to answer the
+# St. Charles question.**
+#
+# *St. Louis County* is TURNOUT ground: we expect the pro-rights side near
+# 70 of 100 there, and it is the largest pile of votes in the state. You
+# will not persuade many people there — they already agree — but every
+# point of turnout you add is worth more votes than almost anywhere else.
+# That's where get-out-the-vote money (mail, rides, reminders) earns the
+# most.
+#
+# *St. Charles County* is the big competitive county: large, and predicted
+# in the mid-50s. Note its headroom is about zero — St. Charles votes
+# almost exactly the way its politics say it should, no hidden lean either
+# way. So the argument for it is not surprise, it's SIZE: a point of
+# movement there buys about 1,700 votes, more than any other competitive
+# county in the state. If you can afford one county for door-to-door
+# persuasion, that price list is the case for St. Charles.
+#
+# *Jefferson County* is a genuine toss-up — right around 50 — with a
+# personality edge: it runs a bit ahead of its politics on this issue.
+# Fewer votes per point than St. Charles, but the margin is so thin that
+# the county itself can flip. If your goal includes "counties won" (for
+# the narrative, or for a legislature that reads maps), Jefferson is where
+# a flip is cheapest.
+#
+# *How to use the three tables together:* the first tells you what kind of
+# ground each county is; the second is the shopping list for persuasion
+# money, priced in votes; the third shows where voters have already
+# shown they'll cross the party line — the cheapest conversations in the
+# state. The bottom table tells you how many votes live in each bucket, so
+# you can split the budget by where the votes actually are rather than by
+# where the map looks red or blue.
+#
+# *The honest caveat:* the bucket thresholds are illustrative and the
+# turnout size is assumed (a 2018-sized midterm). What is NOT assumed is
+# the pattern — it comes from certified votes and a method whose track
+# record is printed in §2.
+
+# %% [markdown]
+# ## 6c. Statewide-only calls: Nevada Question 6 and Massachusetts Question 8
 #
 # We hold no county files for Nevada or Massachusetts, so these two get
 # **statewide-only** rows in a separate file (decided 2026-09-15). They are
