@@ -24,6 +24,7 @@ from geofluid.ingest.referendum import (
     load_ky_referendum,
     load_oh_referendum,
     parse_mo_canvass,
+    parse_mo_enr_results,
 )
 
 _NAME_TO_FIPS = {"ALLEN": "20001", "JOHNSON": "20091"}
@@ -602,3 +603,77 @@ def test_mo_contest_spanning_pages_with_comma_numbers() -> None:
     assert list(panel["fips"]) == ["29001", "29510"]
     assert panel["yes_votes"].sum() == 100381
     assert panel["no_votes"].sum() == 25255
+
+
+# --- Missouri: SoS Election Night Results portal (page text -> canonical panel)
+#
+# For the Aug 4 2026 primary the SoS certified results (Board of State
+# Canvassers, 2026-08-25) but did not post the canvass PDF for weeks; the
+# same certified numbers are served by enr.sos.mo.gov as a race page. Its
+# rendered text carries a statewide "YES <votes> <pct>" / "NO <votes> <pct>"
+# block and then a tab-separated "County / YES / NO" table, one row per
+# jurisdiction (the same 116 as the canvass). The statewide block plays the
+# canvass Total row's part: parsed counties must reproduce it exactly.
+
+
+def _mo_enr_text(statewide: list[str], rows: list[str]) -> str:
+    return "\n".join(
+        [
+            "Pick a Race Results",
+            "State of Missouri - Primary Election, August 04, 2026",
+            "Official Results",
+            "Office/Candidate Name\tParty\tVotes\t% of Votes",
+            "Constitutional Amendment No. 1\t \t \t3235 of 3235 Precincts Reported",
+            *statewide,
+            " \tTotal Votes:\t1,391,312\t ",
+            " \t \t \t ",
+            "County\tYES\tNO",
+            "\xa0\t\xa0\t\xa0",
+            *rows,
+            "",
+            "Click here for All Results",
+        ]
+    )
+
+
+def test_mo_enr_parses_tab_table_into_canonical_panel() -> None:
+    """Derivation: Adair 3,798 yes / 953 no -> total 4751, no_share
+    953/4751; Andrew 3,840 / 694. The statewide block (7,638 / 1,647) is the
+    sum of both rows, so it is consumed as the integrity check and never
+    emitted as a jurisdiction. Comma thousands separators are the portal's
+    native format."""
+    text = _mo_enr_text(
+        [" \tYES\t7,638\t82.263%", " \tNO\t1,647\t17.737%"],
+        ["Adair\t3,798\t953", "Andrew\t3,840\t694"],
+    )
+
+    panel = parse_mo_enr_results(text, _MO_NAME_TO_FIPS)
+
+    assert list(panel["fips"]) == ["29001", "29003"]
+    assert list(panel["yes_votes"]) == [3798, 3840]
+    assert list(panel["no_votes"]) == [953, 694]
+    assert abs(panel["no_share"].iloc[0] - 953 / 4751) < 1e-12
+
+
+def test_mo_enr_statewide_mismatch_fails_loudly() -> None:
+    """Rows sum to 7,638 yes but the statewide block claims 9,999 — a
+    truncated or mis-split table. Refuse rather than ship a short count."""
+    text = _mo_enr_text(
+        [" \tYES\t9,999\t82.263%", " \tNO\t1,647\t17.737%"],
+        ["Adair\t3,798\t953", "Andrew\t3,840\t694"],
+    )
+
+    with pytest.raises(ValueError, match="statewide"):
+        parse_mo_enr_results(text, _MO_NAME_TO_FIPS)
+
+
+def test_mo_enr_unknown_jurisdiction_fails_loudly() -> None:
+    """Same policy as the canvass loader: Kansas City's mapping is the
+    caller's explicit decision, so an unmapped name raises naming it."""
+    text = _mo_enr_text(
+        [" \tYES\t103,714\t ", " \tNO\t25,119\t "],
+        ["Adair\t3,798\t953", "Kansas City\t99,916\t24,166"],
+    )
+
+    with pytest.raises(ValueError, match="Kansas City"):
+        parse_mo_enr_results(text, _MO_NAME_TO_FIPS)

@@ -278,6 +278,18 @@ def parse_mo_canvass(
             f"Total row says {total_row}"
         )
 
+    return _mo_jurisdictions_to_panel(contest, names, yes_votes, no_votes, county_fips)
+
+
+def _mo_jurisdictions_to_panel(
+    contest: str,
+    names: list[str],
+    yes_votes: list[int],
+    no_votes: list[int],
+    county_fips: Mapping[str, str],
+) -> pd.DataFrame:
+    """Shared tail of the Missouri loaders: map jurisdiction names to fips
+    (loudly refusing unknown ones) and assemble the canonical panel."""
     long = pd.DataFrame({"name": names, "yes_votes": yes_votes, "no_votes": no_votes})
     long["fips"] = long["name"].map(dict(county_fips))
     unmapped = long.loc[long["fips"].isna(), "name"]
@@ -294,6 +306,53 @@ def parse_mo_canvass(
         value_name="votes",
     )
     return _assemble_referendum_panel(melted, "votes")
+
+
+def parse_mo_enr_results(text: str, county_fips: Mapping[str, str]) -> pd.DataFrame:
+    """Parse the rendered text of a Missouri SoS Election Night Results race
+    page (enr.sos.mo.gov, "Pick a Race") into the canonical referendum panel.
+
+    Why a second Missouri loader: the SoS certifies results weeks before it
+    posts the canvass PDF (the Aug 4 2026 primary was certified 2026-08-25
+    and the PDF was still absent on 2026-09-14), but the portal serves the
+    same certified county numbers immediately. Its text carries a statewide
+    block -- "<tab>YES<tab><votes><tab><pct>" and the NO twin -- followed by a
+    tab-separated "County / YES / NO" table, one row per jurisdiction (the
+    canvass's 116). The statewide block is the built-in integrity check: the
+    parsed jurisdictions must reproduce it exactly or we mis-parsed.
+    """
+    statewide: dict[str, int] = {}
+    for side in ("YES", "NO"):
+        match = re.search(rf"^[^\t\n]*\t{side}\t([\d,]+)\t", text, flags=re.MULTILINE)
+        if match is None:
+            raise ValueError(f"ENR page: no statewide {side} total found")
+        statewide[side] = int(match.group(1).replace(",", ""))
+
+    names: list[str] = []
+    yes_votes: list[int] = []
+    no_votes: list[int] = []
+    row_re = re.compile(r"^([A-Za-z][A-Za-z .'\-]*?)\t([\d,]+)\t([\d,]+)$")
+    in_table = False
+    for line in text.splitlines():
+        if line.startswith("County\tYES\tNO"):
+            in_table = True
+            continue
+        if not in_table:
+            continue
+        match = row_re.match(line.rstrip("\r"))
+        if match is None:
+            continue
+        names.append(match.group(1))
+        yes_votes.append(int(match.group(2).replace(",", "")))
+        no_votes.append(int(match.group(3).replace(",", "")))
+
+    parsed = (sum(yes_votes), sum(no_votes))
+    if parsed != (statewide["YES"], statewide["NO"]):
+        raise ValueError(
+            f"ENR page: parsed jurisdictions sum to {parsed} but the statewide "
+            f"block says {(statewide['YES'], statewide['NO'])}"
+        )
+    return _mo_jurisdictions_to_panel("ENR page", names, yes_votes, no_votes, county_fips)
 
 
 def load_mo_referendum(
