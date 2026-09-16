@@ -94,12 +94,22 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
        referrals (Amdt 7 prosperity fund, Amdt 8 sheriffs — roll-off and
        status-quo-bias modeling, humbler intervals; the anti-cherry-picking
        move) and any litigation additions.
-    4. **Registration commit by 2026-10-15** — frozen thereafter (amendments =
-       new dated file; the old one still gets scored). PLUS (2026-08-14): the
-       parameterized PLAYBOOK generator — (measure, side) → org plan built on
-       build_itinerary + pooled resistance + the electorate-type turnout
-       split — drafted with the predictions, dated, committed SEALED;
-       protocol in MEASUREMENT_DESIGN.md §7.
+    4. **Registration commit by 2026-10-15** - frozen thereafter (amendments =
+       new dated file; the old one still gets scored). PLAYBOOK GENERATOR
+       DONE (2026-09-16): `targeting.build_playbook` (measure record + expected
+       votes + side -> oriented, re-bucketed, vote-priced, ranked plan) and
+       `playbook_budget_split` (persuasion pool = reachable votes in persuade
+       counties; turnout pool = votes at risk in turnout counties), both
+       TDD RED-first; `seal.sha256_manifest` / `verify_manifest` implement
+       the seal as a hash commitment (files in git-ignored
+       `data/predictions/sealed/`, digests committed in
+       `SEALED_MANIFEST_DRAFT_<date>.csv`). Notebook 6e writes all ten
+       playbooks (5 measures x 2 sides) and publishes only the bucket counts
+       and budget split per plan. REMAINING FOR THE FREEZE: Matt's bracket
+       review; copy every DRAFT (predictions, statewide-only, receipts,
+       record buckets, propositions, sealed manifest) to REGISTERED names;
+       keep the sealed/ folder safe OFF the repo (a second copy outside the
+       working tree) until December.
     5. November/December: ingest certified results, score BOTH products
        (predictions: per-county error, interval calibration, skill vs
        partisanship-only baseline; playbooks: did flagged TARGET counties

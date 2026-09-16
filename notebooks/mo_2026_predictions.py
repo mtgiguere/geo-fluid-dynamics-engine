@@ -98,7 +98,8 @@ import pandas as pd
 import pdfplumber
 
 from geofluid.ingest.referendum import parse_mo_canvass, parse_mo_enr_results
-from geofluid.targeting import history_buckets
+from geofluid.seal import sha256_manifest
+from geofluid.targeting import build_playbook, history_buckets, playbook_budget_split
 
 ROOT = next(p for p in (Path.cwd(), *Path.cwd().parents) if (p / "pyproject.toml").exists())
 RAW = ROOT / "data/raw"
@@ -1197,6 +1198,87 @@ print(f"2024 abortion partisan slope (logit scale): {slope_2024:.3f}")
 # candidates and conscience on measures is alive and well, and persuasion
 # keeps its value. Either answer is worth money; writing the call down first
 # is what makes it worth trusting.
+
+# %% [markdown]
+# ## 6e. The playbooks: drafted now, sealed, revealed in December
+#
+# The prescriptive half of the experiment. For each of the five measures
+# and for EACH side, `targeting.build_playbook` turns the county record
+# into a plan: every county priced in votes (what a point buys, the
+# predicted margin, the habitual lean in votes, the supporters at risk of
+# skipping the midterm), bucketed TURNOUT / PERSUADE / HARD for that side,
+# and ranked in the order the work should happen. `playbook_budget_split`
+# then says how the money divides between persuasion and turnout, in votes.
+#
+# The record behind each plan: expected share and habitual gap from the
+# measure's same-issue analog(s) at the bracket's middle; the midterm
+# penalty from the county's full 13-measure general-election record.
+#
+# **Why nothing is printed here.** The protocol seals the playbooks until
+# the November scorecard is public, so that nobody can say the advice was
+# written after the fact. In a public repository a committed file is a
+# published file, so the seal is a hash: the ten playbook files are written
+# to `data/predictions/sealed/` (git-ignored) and their SHA-256 digests go
+# into a committed manifest. In December the files are committed and
+# `seal.verify_manifest` proves they are byte-for-byte what was sealed.
+
+# %%
+sealed_dir = out_dir / "sealed"
+sealed_dir.mkdir(exist_ok=True)
+expected_votes_2026 = (turnout_2018 * float(total["cleanmo_2018"].sum())).round()
+sealed_files = []
+split_rows = []
+for measure_id, _ballot, side, analogs, (_low, central, _high) in SLATE:
+    analog_record = history_buckets(share[analogs], statewide[analogs], central)
+    record = analog_record[["expected_share", "mean_gap"]].copy()
+    record["midterm_penalty"] = record_general["midterm_penalty"].reindex(record.index)
+    for plan_side in ("progressive", "conservative"):
+        plan = build_playbook(record, expected_votes_2026, side=plan_side)
+        plan.insert(1, "county", [county_name.get(f, f) for f in plan["fips"]])
+        plan.insert(0, "measure_id", measure_id)
+        answer = "YES" if (side == "yes") == (plan_side == "progressive") else "NO"
+        plan.insert(1, "plan_for", f"{plan_side} side ({answer})")
+        path = sealed_dir / f"playbook_{measure_id}_{plan_side}_DRAFT_{TODAY}.csv"
+        plan.round(4).to_csv(path, index=False)
+        sealed_files.append(path)
+        split = playbook_budget_split(plan)
+        split_rows.append(
+            {
+                "measure_id": measure_id,
+                "plan_for": plan_side,
+                "counties_persuade": int((plan["bucket"] == "persuade").sum()),
+                "counties_turnout": int((plan["bucket"] == "turnout").sum()),
+                "counties_hard": int((plan["bucket"] == "hard").sum()),
+                **{k: round(float(v), 3) for k, v in split.items()},
+            }
+        )
+manifest = sha256_manifest(sealed_files, root=out_dir)
+manifest_path = out_dir / f"SEALED_MANIFEST_DRAFT_{TODAY}.csv"
+manifest.to_csv(manifest_path, index=False)
+print(f"sealed {len(sealed_files)} playbooks; manifest -> {manifest_path.relative_to(ROOT)}")
+print(manifest.to_string(index=False))
+
+# %% [markdown]
+# The one thing we DO publish now is the shape of each plan - how many
+# counties fall in each bucket and how the budget splits - because it is
+# derivable from the public prediction file anyway, and because it is the
+# headline a decision-maker needs to decide whether to open the envelope.
+
+# %%
+print(pd.DataFrame(split_rows).to_string(index=False))
+
+# %% [markdown]
+# **For the decision-maker - reading the split table.** Each row is one
+# side's plan for one measure. `counties_persuade` / `turnout` / `hard` is
+# how the 116 places fall for THAT side. The two pools are in votes: the
+# persuasion pool is what is within reach in the toss-up counties, the
+# turnout pool is your supporters who tend to skip midterms in the counties
+# you already hold. `turnout_share` is the fraction of the budget the record
+# says should go to getting people out rather than changing minds. Notice
+# how the two sides of the same measure get different answers: the side
+# with the bigger, habitually-skipping base has more to gain from turnout;
+# the side behind on the map has almost nothing but persuasion to spend on.
+# That asymmetry is the whole point of pricing a plan in votes.
 
 # %% [markdown]
 # ## 7. Known weaknesses, stated now

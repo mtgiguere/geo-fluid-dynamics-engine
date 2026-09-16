@@ -26,3 +26,6 @@ data/raw/
 # Playwright artifacts (any location)
 test-results/
 playwright-report/
+
+# Sealed playbooks: hashed in the committed manifest, revealed after the scorecard
+data/predictions/sealed/

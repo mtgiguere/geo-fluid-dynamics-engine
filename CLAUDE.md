@@ -208,7 +208,12 @@ watchdog for hollow tests. (mutmut only runs on Linux CI — it refuses on Windo
   `issue_resistance` (the partisanship-controlled version: OLS residual of
   progressive on partisan share — the rigorous "defies its partisan peers" trait)
 - `src/geofluid/targeting` — `build_itinerary` (Stage-4 prescriptive: rank/classify
-  counties into a campaign itinerary; politics-agnostic)
+  counties into a campaign itinerary; politics-agnostic); `history_buckets` (a county's
+  turnout/persuade/hard bucket from its OWN record vs the state at a stated level, with
+  consistency and the midterm penalty); `build_playbook` + `playbook_budget_split` (the
+  2026 (measure, side) -> vote-priced, ranked plan and its persuasion/turnout split)
+- `src/geofluid/seal` — `sha256_manifest` / `verify_manifest`: the seal-then-reveal
+  mechanism for the 2026 playbooks (hash committed, files revealed in December)
 - `src/geofluid/realignment` — `trend_surprise` (Module 4 seed: per-county residual
   from its own trend)
 - `src/geofluid/scope` — geographic scope catalog + cross-border neighborhood expansion
