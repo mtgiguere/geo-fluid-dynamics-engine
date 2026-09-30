@@ -114,9 +114,21 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
        (predictions: per-county error, interval calibration, skill vs
        partisanship-only baseline; playbooks: did flagged TARGET counties
        carry the claimed headroom?), postmortem into FINDINGS.md win or lose,
-       then UNSEAL playbooks and assemble the viability dossier (receipt →
-       scorecard → playbook) → the Geo Week 2027 centerpiece and the pitch
-       to real organizations.
+       then UNSEAL playbooks and assemble the viability dossier (receipt ->
+       scorecard -> playbook) -> the Geo Week 2027 centerpiece and the pitch
+       to real organizations. **SCORECARD TOOLING DONE (2026-09-29, TDD
+       RED-first, six tests):** `scoring.score_counties` / `score_summary`
+       (errors, RMSE, skill = 1 - RMSE_model/RMSE_baseline, 90% coverage),
+       `relevel` (logit shift to the certified statewide share - both model
+       and baseline are relevelled before comparison so the pattern grade is
+       independent of the level grade), `score_level` (bracket hit),
+       `coupling_slope` / `classify_coupling` (the registered Module 5
+       proposition). **ELECTION-NIGHT FETCH COMMITTED:**
+       `scripts/fetch_mo_enr.cjs` (parameterized race filter + output
+       prefix; smoke-tested 2026-09-29 against the Aug primary - byte-identical
+       to the Sept-14 fetch). December recipe: fetch -> parse_mo_enr_results
+       per measure -> a scoring notebook (TDD-exempt, on the tested scorer)
+       -> FINDINGS.md -> commit sealed/ files -> seal.verify_manifest.
   LITIGATION RESOLVED (2026-09-03): the Missouri Supreme Court unanimously
   reversed the SoS's 2026-08-04 rejections and ordered BOTH onto the Nov 3
   ballot — **Amendment 6** (Respect Missouri Voters: 80% legislative
