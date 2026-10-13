@@ -83,6 +83,8 @@
   .range { font-size:13.5px; color:var(--graphite); margin:6px 0 10px; }
   .card p { font-size:14.5px; margin:.4em 0; }
   .past { font:500 12px var(--mono); color:var(--muted); margin-top:10px; }
+  .odds { font-size:13.5px; background:#F2F3EF; border-left:3px solid var(--ember);
+    padding:8px 12px; margin:6px 0 10px; }
   .ops { background:var(--ink); color:#EAF0F4; border-bottom:none; }
   .ops h2 { color:#fff; }
   .opsgrid { display:grid; grid-template-columns:1.15fr .85fr; gap:36px; align-items:start; }
@@ -205,11 +207,36 @@
 
 <section class="wrap">
   <div class="act"><span class="n">3</span>What you get</div>
-  <h2>A plan priced in votes: where to go, what to do there, how to split the money.</h2>
-  <p>Here is what the engine hands a campaign, worked through for one side of one measure:
+  <h2>If you were running a campaign this October: where, what kind, how much,
+  and whether it changes the odds.</h2>
+  <p>Suppose you are an organization that wants one of these measures to pass or fail, and it
+  is October. Here is what the engine hands you, worked through for one side of one measure:
   keeping abortion rights in Missouri (the NO side of Amendment 3). It is built from the same
   public county records as everything else on this page, by the same tested code that wrote the
-  sealed plans. Three things, in the order a campaign decides them.</p>
+  sealed plans. First the question every treasurer asks, then three things in the order a
+  campaign decides them.</p>
+  <div class="col2">
+    <div>
+      <h3>0. Does our money change the outcome, or just the margin?</h3>
+      <p>Every statewide point is about <b>23,687 net votes</b>. Whether that point
+      matters depends on how close the measure is. The table ranks the five by how much one point
+      of effort moves the chance of winning: spend where the odds move, not where they are already
+      settled.</p>
+    </div>
+    <table class="plan">
+      <thead><tr><th>Measure</th><th>Side</th><th>Chance ahead now</th>
+        <th>One point moves it by</th></tr></thead>
+      <tbody><tr><td>Map referendum</td><td>NO</td><td>76%</td><td>+6.7 pts</td></tr>
+<tr><td>Amendment 7</td><td>NO</td><td>93%</td><td>+2.2 pts</td></tr>
+<tr><td>Amendment 3</td><td>NO</td><td>99%</td><td>+1.0 pts</td></tr>
+<tr><td>Amendment 8</td><td>NO</td><td>under 1%</td><td>+0.3 pts</td></tr>
+<tr><td>Amendment 6</td><td>YES</td><td>over 99%</td><td>+0.2 pts</td></tr></tbody>
+    </table>
+  </div>
+  <p class="fine">The chance reads our registered range as a 90% interval around the middle call.
+  It is a statement about where things stand, not a promise that effort buys a point: how many
+  points a campaign actually produces is the campaign's own experience, and no election file
+  contains that experiment.</p>
   <div class="col2">
     <div>
       <h3>1. Where a conversation buys the most</h3>
@@ -286,6 +313,9 @@
   <div class="range">Range we'd stop being surprised in:
     <b>52 to 59</b>. Counties we expect that side to win:
     <b>11 of 116</b>. Kansas City: <b>82</b>.</div>
+  <div class="odds">Chance the <b>NO</b> side is ahead on election night, as
+    things stand: <b>99%</b>. One statewide point its way
+    (about 23,687 net votes) moves that to <b>over 99%</b>.</div>
   <p>In 2024, 51.6% of Missourians voted to protect abortion rights on a presidential turnout. A near-total ban asks a harsher question than a viability right did: in Kansas, Kentucky and Ohio the ban side ran 8 to 15 points behind its state's partisan lean. The crowd that votes in a midterm is smaller and a little older, but August's 80-to-20 rejection of the legislature's initiative restriction says the anti-legislature mood is real. Our middle call is 55 of every 100 for NO; the low end is the 2024 coalition merely holding.</p>
   <div class="past">Learned from: 2024 Amendment 3, 51.6% yes</div>
 </article>
@@ -298,6 +328,9 @@
   <div class="range">Range we'd stop being surprised in:
     <b>55 to 70</b>. Counties we expect that side to win:
     <b>105 of 116</b>. Kansas City: <b>74</b>.</div>
+  <div class="odds">Chance the <b>YES</b> side is ahead on election night, as
+    things stand: <b>over 99%</b>. One statewide point its way
+    (about 23,687 net votes) moves that to <b>over 99%</b>.</div>
   <p>The closest past vote is Clean Missouri in 2018, an anti-legislature reform that won 62% on the same kind of midterm crowd. And in August the legislature's own attempt to make initiatives harder lost 80 to 20. The risk is that an 80% threshold reads as extreme once the opposition calls it a lock-in. Middle call: 62 of 100 for YES.</p>
   <div class="past">Learned from: 2018 Amendment 1 (Clean Missouri), 62.0% yes; Aug-2026 Amendment 4, 80.3% no</div>
 </article>
@@ -310,6 +343,9 @@
   <div class="range">Range we'd stop being surprised in:
     <b>46 to 60</b>. Counties we expect that side to win:
     <b>12 of 116</b>. Kansas City: <b>68</b>.</div>
+  <div class="odds">Chance the <b>NO</b> side is ahead on election night, as
+    things stand: <b>76%</b>. One statewide point its way
+    (about 23,687 net votes) moves that to <b>83%</b>.</div>
   <p>Genuinely close, and the widest range on the page. The legislature's last redistricting power play, the 2020 repeal of Clean Missouri, passed with 51% on a presidential crowd. A referendum on a mid-decade map is easier to explain and the mood is anti-legislature, but this will be the most party-charged question on the ballot in a state that leans Republican by 18. Middle call: 53 of 100 for NO, with a range from 46 to 60.</p>
   <div class="past">Learned from: 2020 Amendment 3 (Clean Missouri repeal), 51.0% yes</div>
 </article>
@@ -322,6 +358,9 @@
   <div class="range">Range we'd stop being surprised in:
     <b>50 to 68</b>. Counties we expect that side to win:
     <b>116 of 116</b>. Kansas City: <b>62</b>.</div>
+  <div class="odds">Chance the <b>NO</b> side is ahead on election night, as
+    things stand: <b>93%</b>. One statewide point its way
+    (about 23,687 net votes) moves that to <b>95%</b>.</div>
   <p>Missouri voters default to NO on referrals they can't picture: court fees in 2024 (39% yes), term limits in 2020 (47%), the childcare tax change in August 2024 (45%). And the tax-elimination agenda's own flagship, Amendment 5, just lost 83 to 17. This one is softer and vaguer, which keeps it off that floor. Middle call: 58 of 100 for NO. Weak party structure, so the county map is flat.</p>
   <div class="past">Learned from: 2024 Amendment 6 (court fees), 39.4% yes; Aug-2026 Amendment 5, 16.7% yes</div>
 </article>
@@ -334,6 +373,9 @@
   <div class="range">Range we'd stop being surprised in:
     <b>28 to 45</b>. Counties we expect that side to win:
     <b>0 of 116</b>. Kansas City: <b>46</b>.</div>
+  <div class="odds">Chance the <b>NO</b> side is ahead on election night, as
+    things stand: <b>under 1%</b>. One statewide point its way
+    (about 23,687 net votes) moves that to <b>1%</b>.</div>
   <p>Pro-law-enforcement, populist and low-controversy. Its nearest relative is 2024's Amendment 7 (citizen-only voting, 68% yes). We expect it to pass comfortably: the NO side at 36 of 100, and not a single county expected to reject it unless the removal-protection clause draws organized opposition.</p>
   <div class="past">Learned from: 2024 Amendment 7 (citizen voting / RCV ban), 68.4% yes</div>
 </article>

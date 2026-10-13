@@ -157,6 +157,28 @@ def _latest(prefix: str) -> tuple[Path, str]:
     return drafts[-1], "DRAFT"
 
 
+def _odds(low: float, central: float, high: float) -> tuple[float, float, float]:
+    """Read the registered bracket as a 90% interval around the central call
+    (sd = half-width / 1.645, errors roughly normal) and return: the chance
+    the tracked side is above 50 as things stand, the chance if the state
+    moves one point its way, and the sd. Derived from the frozen numbers,
+    not a new prediction."""
+    sd = (high - low) / (2 * 1.645)
+    phi = lambda z: 0.5 * (1 + math.erf(z / math.sqrt(2)))  # noqa: E731
+    now = phi((central - 0.5) / sd)
+    plus_one = phi((central + 0.01 - 0.5) / sd)
+    return now, plus_one, sd
+
+
+def _pct(p: float) -> str:
+    """A chance as a reader-safe percent: nothing on this page is certain."""
+    if p < 0.005:
+        return "under 1%"
+    if p > 0.995:
+        return "over 99%"
+    return f"{p * 100:.0f}%"
+
+
 def _lerp_hex(c1: str, c2: str, t: float) -> str:
     a = [int(c1[i : i + 2], 16) for i in (1, 3, 5)]
     b = [int(c2[i : i + 2], 16) for i in (1, 3, 5)]
@@ -287,8 +309,13 @@ def main() -> None:
         if fid in data[first]
     )
 
-    # Measure cards
+    # One statewide point, in votes: 1% of the expected 2026 turnout.
+    total_votes = float(rec["expected_votes_2026"].sum())
+    point_votes = total_votes / 100
+
+    # Measure cards, plus the odds table: where a point of effort moves the chance most
     cards = []
+    odds_rows = []
     for mid, meta in MEASURES.items():
         g = preds[preds["measure_id"] == mid]
         lo, mid_level, hi = (
@@ -298,6 +325,8 @@ def main() -> None:
         )
         wins = int((g["pred_progressive_share"] > 0.5).sum())
         kc = g[g["fips"] == "2938000"]["pred_progressive_share"].iloc[0]
+        now, plus_one, _sd = _odds(lo, mid_level, hi)
+        odds_rows.append((meta["short"], meta["tracked"], now, plus_one - now))
         cards.append(
             f"""<article class="card" id="card-{mid}">
   <div class="eyebrow">{meta["short"]}</div>
@@ -308,10 +337,19 @@ def main() -> None:
   <div class="range">Range we'd stop being surprised in:
     <b>{lo * 100:.0f} to {hi * 100:.0f}</b>. Counties we expect that side to win:
     <b>{wins} of 116</b>. Kansas City: <b>{kc * 100:.0f}</b>.</div>
+  <div class="odds">Chance the <b>{meta["tracked"]}</b> side is ahead on election night, as
+    things stand: <b>{_pct(now)}</b>. One statewide point its way
+    (about {point_votes:,.0f} net votes) moves that to <b>{_pct(plus_one)}</b>.</div>
   <p>{meta["why"]}</p>
   <div class="past">Learned from: {meta["past"]}</div>
 </article>"""
         )
+    odds_rows.sort(key=lambda r: -r[3])
+    odds_html = "\n".join(
+        f"<tr><td>{short}</td><td>{side}</td><td>{_pct(now)}</td>"
+        f"<td>{gain * 100:+.1f} pts</td></tr>"
+        for short, side, now, gain in odds_rows
+    )
     sw_cards = []
     for r in statewide_only.itertuples():
         meta = STATEWIDE_ONLY[r.measure_id]
@@ -366,6 +404,8 @@ def main() -> None:
         manifest_rows=manifest_rows,
         status_line=status_line,
         plan_rows=plan_rows,
+        odds_html=odds_html,
+        point_votes=point_votes,
         turnout_rows=turnout_rows,
         n_persuade=int((plan["bucket"] == "persuade").sum()),
         n_turnout=int((plan["bucket"] == "turnout").sum()),
@@ -473,6 +513,8 @@ _TEMPLATE = r"""<!doctype html>
   .range {{ font-size:13.5px; color:var(--graphite); margin:6px 0 10px; }}
   .card p {{ font-size:14.5px; margin:.4em 0; }}
   .past {{ font:500 12px var(--mono); color:var(--muted); margin-top:10px; }}
+  .odds {{ font-size:13.5px; background:#F2F3EF; border-left:3px solid var(--ember);
+    padding:8px 12px; margin:6px 0 10px; }}
   .ops {{ background:var(--ink); color:#EAF0F4; border-bottom:none; }}
   .ops h2 {{ color:#fff; }}
   .opsgrid {{ display:grid; grid-template-columns:1.15fr .85fr; gap:36px; align-items:start; }}
@@ -595,11 +637,32 @@ _TEMPLATE = r"""<!doctype html>
 
 <section class="wrap">
   <div class="act"><span class="n">3</span>What you get</div>
-  <h2>A plan priced in votes: where to go, what to do there, how to split the money.</h2>
-  <p>Here is what the engine hands a campaign, worked through for one side of one measure:
+  <h2>If you were running a campaign this October: where, what kind, how much,
+  and whether it changes the odds.</h2>
+  <p>Suppose you are an organization that wants one of these measures to pass or fail, and it
+  is October. Here is what the engine hands you, worked through for one side of one measure:
   keeping abortion rights in Missouri (the NO side of Amendment 3). It is built from the same
   public county records as everything else on this page, by the same tested code that wrote the
-  sealed plans. Three things, in the order a campaign decides them.</p>
+  sealed plans. First the question every treasurer asks, then three things in the order a
+  campaign decides them.</p>
+  <div class="col2">
+    <div>
+      <h3>0. Does our money change the outcome, or just the margin?</h3>
+      <p>Every statewide point is about <b>{point_votes:,.0f} net votes</b>. Whether that point
+      matters depends on how close the measure is. The table ranks the five by how much one point
+      of effort moves the chance of winning: spend where the odds move, not where they are already
+      settled.</p>
+    </div>
+    <table class="plan">
+      <thead><tr><th>Measure</th><th>Side</th><th>Chance ahead now</th>
+        <th>One point moves it by</th></tr></thead>
+      <tbody>{odds_html}</tbody>
+    </table>
+  </div>
+  <p class="fine">The chance reads our registered range as a 90% interval around the middle call.
+  It is a statement about where things stand, not a promise that effort buys a point: how many
+  points a campaign actually produces is the campaign's own experience, and no election file
+  contains that experiment.</p>
   <div class="col2">
     <div>
       <h3>1. Where a conversation buys the most</h3>
