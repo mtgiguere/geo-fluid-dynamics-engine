@@ -50,6 +50,30 @@
     letter-spacing:.04em; }
   details p { font-size:14.5px; margin:.6em 0 0; }
   code { font:500 13px var(--mono); }
+  table.plan { width:100%; border-collapse:collapse; font-size:14px; margin:8px 0 6px; }
+  table.plan th { text-align:left; font:600 11px var(--mono); letter-spacing:.08em;
+    text-transform:uppercase; color:var(--muted); padding:6px 8px;
+    border-bottom:2px solid var(--line); }
+  table.plan td { padding:7px 8px; border-bottom:1px solid var(--line);
+    font-variant-numeric:tabular-nums; }
+  table.plan td:nth-child(n+2) { text-align:right; }
+  .fine { font-size:13px; color:var(--muted); }
+  .diff { margin-top:26px; background:#fff; border:1px solid var(--line); border-radius:8px;
+    padding:22px 26px; }
+  .diff ul { padding-left:20px; } .diff li { margin:8px 0; font-size:14.5px; max-width:80ch; }
+  .calc { margin-top:28px; background:var(--ink); color:#EAF0F4; border-radius:8px;
+    padding:24px 26px; }
+  .calcrow { display:flex; gap:28px; flex-wrap:wrap; margin:12px 0 16px; }
+  .calcrow label { font-size:14px; color:#B7C4CE; }
+  .calcrow input { width:120px; margin:0 6px; padding:6px 8px; border-radius:6px;
+    border:1px solid #33485A; background:#1E2D3B; color:#fff; font:600 15px var(--mono); }
+  #calcout { display:grid; grid-template-columns:1fr 1fr; gap:22px; }
+  @media (max-width:760px) { #calcout { grid-template-columns:1fr; } }
+  #calcout h4 { margin:0 0 6px; font-size:15px; color:#fff; }
+  #calcout .sum { font:800 26px/1.1 var(--mono); color:var(--ember); margin-bottom:8px; }
+  #calcout ul { margin:0; padding-left:18px; font-size:14px; color:#CDD8E0; }
+  #calcout li { margin:3px 0; }
+  .calc .fine { color:#8FA0AE; margin-top:14px; }
   .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:18px;
     margin-top:24px; }
   .card { background:#fff; border:1px solid var(--line); border-radius:8px;
@@ -62,6 +86,8 @@
   .range { font-size:13.5px; color:var(--graphite); margin:6px 0 10px; }
   .card p { font-size:14.5px; margin:.4em 0; }
   .past { font:500 12px var(--mono); color:var(--muted); margin-top:10px; }
+  .odds { font-size:13.5px; background:#F2F3EF; border-left:3px solid var(--ember);
+    padding:8px 12px; margin:6px 0 10px; }
   .ops { background:var(--ink); color:#EAF0F4; border-bottom:none; }
   .ops h2 { color:#fff; }
   .opsgrid { display:grid; grid-template-columns:1.15fr .85fr; gap:36px; align-items:start; }
@@ -183,7 +209,126 @@
 </section>
 
 <section class="wrap">
-  <div class="act"><span class="n">3</span>What we predict, and why</div>
+  <div class="act"><span class="n">3</span>What you get</div>
+  <h2>If you were running a campaign this October: where, what kind, how much,
+  and whether it changes the odds.</h2>
+  <p>Suppose you are an organization that wants one of these measures to pass or fail, and it
+  is October. Here is what the engine hands you, worked through for one side of one measure:
+  keeping abortion rights in Missouri (the NO side of Amendment 3). It is built from the same
+  public county records as everything else on this page, by the same tested code that wrote the
+  sealed plans. First the question every treasurer asks, then three things in the order a
+  campaign decides them.</p>
+  <div class="col2">
+    <div>
+      <h3>0. Does our money change the outcome, or just the margin?</h3>
+      <p>Every statewide point is about <b>23,687 net votes</b>. Whether that point
+      matters depends on how close the measure is. The table ranks the five by how much one point
+      of effort moves the chance of winning: spend where the odds move, not where they are already
+      settled.</p>
+    </div>
+    <table class="plan">
+      <thead><tr><th>Measure</th><th>Side</th><th>Chance ahead now</th>
+        <th>One point moves it by</th></tr></thead>
+      <tbody><tr><td>Map referendum</td><td>NO</td><td>76%</td><td>+6.7 pts</td></tr>
+<tr><td>Amendment 7</td><td>NO</td><td>93%</td><td>+2.2 pts</td></tr>
+<tr><td>Amendment 3</td><td>NO</td><td>99%</td><td>+1.0 pts</td></tr>
+<tr><td>Amendment 8</td><td>NO</td><td>under 1%</td><td>+0.3 pts</td></tr>
+<tr><td>Amendment 6</td><td>YES</td><td>over 99%</td><td>+0.2 pts</td></tr></tbody>
+    </table>
+  </div>
+  <p class="fine">The chance reads our registered range as a 90% interval around the middle call.
+  It is a statement about where things stand, not a promise that effort buys a point: how many
+  points a campaign actually produces is the campaign's own experience, and no election file
+  contains that experiment.</p>
+  <div class="col2">
+    <div>
+      <h3>1. Where a conversation buys the most</h3>
+      <p>Persuasion ground: counties the record puts near 50 for this side, ranked by what one
+      point of movement is worth in votes. Start at the top.
+      <b>30 counties</b> qualify.</p>
+      <table class="plan">
+        <thead><tr><th>County</th><th>Votes per point</th><th>Record says</th>
+          <th>Lean beyond party</th></tr></thead>
+        <tbody><tr><td>St. Charles</td><td>1,701</td><td>57</td><td>+2,841</td></tr>
+<tr><td>Greene</td><td>1,141</td><td>53</td><td>-2,659</td></tr>
+<tr><td>Jefferson</td><td>880</td><td>51</td><td>-3,952</td></tr>
+<tr><td>Cass</td><td>430</td><td>52</td><td>-1,186</td></tr>
+<tr><td>Franklin</td><td>418</td><td>43</td><td>-5,030</td></tr>
+<tr><td>Cole</td><td>328</td><td>46</td><td>-2,945</td></tr>
+<tr><td>Buchanan</td><td>295</td><td>54</td><td>-360</td></tr>
+<tr><td>St. Francois</td><td>213</td><td>44</td><td>-2,409</td></tr></tbody>
+      </table>
+      <p class="fine">"Record says" is the share for NO the county's own history implies at our
+      statewide middle; "lean beyond party" is the votes the county already leans this way
+      beyond what its presidential vote predicts.</p>
+    </div>
+    <div>
+      <h3>2. Where showing up is the whole job</h3>
+      <p>Turnout ground: counties the record puts clearly ahead, ranked by the supporters who
+      tend to skip midterms. Nobody here needs persuading; every one who stays home is a vote
+      lost. <b>7 counties</b> qualify; <b>79</b> are hard ground where the advice
+      is to spend nothing you can't spare.</p>
+      <table class="plan">
+        <thead><tr><th>County</th><th>Votes per point</th><th>Record says</th>
+          <th>Votes at risk</th></tr></thead>
+        <tbody><tr><td>St. Louis County</td><td>4,417</td><td>71</td><td>15,767</td></tr>
+<tr><td>Kansas City</td><td>1,106</td><td>84</td><td>1,615</td></tr>
+<tr><td>St. Louis City</td><td>1,117</td><td>86</td><td>78</td></tr>
+<tr><td>Boone</td><td>712</td><td>70</td><td>0</td></tr>
+<tr><td>Clay</td><td>949</td><td>65</td><td>0</td></tr></tbody>
+      </table>
+      <h3>3. How the money divides</h3>
+      <p>For this side of this measure the reachable votes sit <b>78% in persuasion
+      ground and 22% in turnout ground</b>. The other side's plan, from the same
+      record, is nearly all persuasion: it holds almost no counties where its own voters stay
+      home. Same data, mirror plans.</p>
+    </div>
+  </div>
+  <div class="calc" id="calc">
+    <div class="eyebrow" style="color:var(--ember)">Try it: a budget, in votes and dollars</div>
+    <div class="calcrow">
+      <label>Budget <input id="budget" type="number" value="250000" min="0" step="5000"> $</label>
+      <label>Your cost per vote <input id="cpv" type="number" value="40" min="1" step="1"> $</label>
+    </div>
+    <div id="calcout"></div>
+    <p class="fine">The cost per vote is yours, not ours: what your organization has found a
+    persuaded or turned-out vote costs. We price the ground; you know your own plow. The split
+    applies the shares above; within each bucket, dollars follow what a point buys in each
+    county (votes per point), with the turnout list ranked by votes at risk.</p>
+  </div>
+  <p class="thesis" style="margin-top:28px">Not “campaign somewhere.” Not “start a domino.”
+  Where, what kind, and how much, with the receipt for each.</p>
+  <div class="diff">
+    <div class="eyebrow">Why this is different</div>
+    <p>Campaigns already have maps. Voter-file vendors score individuals by party; consultants
+    turn the scores into walk lists; pollsters supply the statewide number. That stack is built
+    for candidates, it is expensive, and nobody grades it afterward. This is the layer above it:</p>
+    <ul>
+      <li><b>It models the measure, not the party.</b> On a ballot question the whole game is
+      the voters who split from their party. A partisan score cannot see them by construction;
+      twenty-one certified measure votes in the same counties can.</li>
+      <li><b>It prices the ground; the voter file lists the people.</b> Budgets are spent on
+      counties and media markets, not individuals. This answers the treasurer's question in
+      votes per point; the walk list answers the canvasser's.</li>
+      <li><b>It shows you the other side's best plan.</b> The same record yields your
+      opponent's optimal allocation. Know where to expect them.</li>
+      <li><b>Turnout versus persuasion is measured, not guessed.</b> The midterm penalty says,
+      county by county, how many of your supporters skip this kind of election.</li>
+      <li><b>It has been graded.</b> Every number here is committed before the vote and scored
+      in public after it, against the obvious alternative. Ask anyone else for their last
+      scorecard.</li>
+      <li><b>It is cheap and fast.</b> Public data, tested code, a new state in days.</li>
+    </ul>
+    <p class="fine">What it is not: a replacement for the voter file, or a promise of a lift.
+    How many points a plan actually produces is measurable only by running it. The first
+    campaign that follows this plan in half of a matched set of counties, and not the other
+    half, becomes that measurement, and every campaign after it gets the answer with a
+    receipt.</p>
+  </div>
+</section>
+
+<section class="wrap">
+  <div class="act"><span class="n">4</span>What we predict, and why</div>
   <h2>Five Missouri questions, county by county.</h2>
   <p>Each card gives the statewide call as "N of every 100 votes" for the side we track, the
   range we'd stop being surprised in, and the reasoning in plain words. The side we track is a
@@ -198,6 +343,9 @@
   <div class="range">Range we'd stop being surprised in:
     <b>52 to 59</b>. Counties we expect that side to win:
     <b>11 of 116</b>. Kansas City: <b>82</b>.</div>
+  <div class="odds">Chance the <b>NO</b> side is ahead on election night, as
+    things stand: <b>99%</b>. One statewide point its way
+    (about 23,687 net votes) moves that to <b>over 99%</b>.</div>
   <p>In 2024, 51.6% of Missourians voted to protect abortion rights on a presidential turnout. A near-total ban asks a harsher question than a viability right did: in Kansas, Kentucky and Ohio the ban side ran 8 to 15 points behind its state's partisan lean. The crowd that votes in a midterm is smaller and a little older, but August's 80-to-20 rejection of the legislature's initiative restriction says the anti-legislature mood is real. Our middle call is 55 of every 100 for NO; the low end is the 2024 coalition merely holding.</p>
   <div class="past">Learned from: 2024 Amendment 3, 51.6% yes</div>
 </article>
@@ -210,6 +358,9 @@
   <div class="range">Range we'd stop being surprised in:
     <b>55 to 70</b>. Counties we expect that side to win:
     <b>105 of 116</b>. Kansas City: <b>74</b>.</div>
+  <div class="odds">Chance the <b>YES</b> side is ahead on election night, as
+    things stand: <b>over 99%</b>. One statewide point its way
+    (about 23,687 net votes) moves that to <b>over 99%</b>.</div>
   <p>The closest past vote is Clean Missouri in 2018, an anti-legislature reform that won 62% on the same kind of midterm crowd. And in August the legislature's own attempt to make initiatives harder lost 80 to 20. The risk is that an 80% threshold reads as extreme once the opposition calls it a lock-in. Middle call: 62 of 100 for YES.</p>
   <div class="past">Learned from: 2018 Amendment 1 (Clean Missouri), 62.0% yes; Aug-2026 Amendment 4, 80.3% no</div>
 </article>
@@ -222,6 +373,9 @@
   <div class="range">Range we'd stop being surprised in:
     <b>46 to 60</b>. Counties we expect that side to win:
     <b>12 of 116</b>. Kansas City: <b>68</b>.</div>
+  <div class="odds">Chance the <b>NO</b> side is ahead on election night, as
+    things stand: <b>76%</b>. One statewide point its way
+    (about 23,687 net votes) moves that to <b>83%</b>.</div>
   <p>Genuinely close, and the widest range on the page. The legislature's last redistricting power play, the 2020 repeal of Clean Missouri, passed with 51% on a presidential crowd. A referendum on a mid-decade map is easier to explain and the mood is anti-legislature, but this will be the most party-charged question on the ballot in a state that leans Republican by 18. Middle call: 53 of 100 for NO, with a range from 46 to 60.</p>
   <div class="past">Learned from: 2020 Amendment 3 (Clean Missouri repeal), 51.0% yes</div>
 </article>
@@ -234,6 +388,9 @@
   <div class="range">Range we'd stop being surprised in:
     <b>50 to 68</b>. Counties we expect that side to win:
     <b>116 of 116</b>. Kansas City: <b>62</b>.</div>
+  <div class="odds">Chance the <b>NO</b> side is ahead on election night, as
+    things stand: <b>93%</b>. One statewide point its way
+    (about 23,687 net votes) moves that to <b>95%</b>.</div>
   <p>Missouri voters default to NO on referrals they can't picture: court fees in 2024 (39% yes), term limits in 2020 (47%), the childcare tax change in August 2024 (45%). And the tax-elimination agenda's own flagship, Amendment 5, just lost 83 to 17. This one is softer and vaguer, which keeps it off that floor. Middle call: 58 of 100 for NO. Weak party structure, so the county map is flat.</p>
   <div class="past">Learned from: 2024 Amendment 6 (court fees), 39.4% yes; Aug-2026 Amendment 5, 16.7% yes</div>
 </article>
@@ -246,6 +403,9 @@
   <div class="range">Range we'd stop being surprised in:
     <b>28 to 45</b>. Counties we expect that side to win:
     <b>0 of 116</b>. Kansas City: <b>46</b>.</div>
+  <div class="odds">Chance the <b>NO</b> side is ahead on election night, as
+    things stand: <b>under 1%</b>. One statewide point its way
+    (about 23,687 net votes) moves that to <b>1%</b>.</div>
   <p>Pro-law-enforcement, populist and low-controversy. Its nearest relative is 2024's Amendment 7 (citizen-only voting, 68% yes). We expect it to pass comfortably: the NO side at 36 of 100, and not a single county expected to reject it unless the removal-protection clause draws organized opposition.</p>
   <div class="past">Learned from: 2024 Amendment 7 (citizen voting / RCV ban), 68.4% yes</div>
 </article>
@@ -274,7 +434,7 @@
 </section>
 
 <section class="ops"><div class="wrap">
-  <div class="act"><span class="n">4</span>The map</div>
+  <div class="act"><span class="n">5</span>The map</div>
   <h2>Hover a county. Switch the measure.</h2>
   <p class="lede">Each county is shaded by the share we predict for the side we track: deep
   slate well below 50, neutral at the line, amber well above. The readout shows the prediction,
@@ -426,7 +586,7 @@
 </div></section>
 
 <section class="wrap">
-  <div class="act"><span class="n">5</span>How we'll grade ourselves</div>
+  <div class="act"><span class="n">6</span>How we'll grade ourselves</div>
   <h2>The yardstick was chosen before the data exists.</h2>
   <div class="col2">
     <div>
@@ -473,7 +633,7 @@
 </section>
 
 <section class="wrap">
-  <div class="act"><span class="n">6</span>What we are not claiming</div>
+  <div class="act"><span class="n">7</span>What we are not claiming</div>
   <div class="col2">
     <p class="thesis">A tool, not an oracle. It says where a conversation is worth having; the
     conversation is still yours.</p>
@@ -539,6 +699,30 @@
     c.addEventListener('blur', () => c.classList.remove('lit'));
   });
   recolor();
+
+  const CALC = {"persuasion_share":0.7758,"turnout_share":0.2242,"persuade":[["St. Charles",1701.3],["Greene",1141.3],["Jefferson",880.1],["Cass",429.8],["Franklin",418.5],["Cole",327.6],["Buchanan",294.8],["St. Francois",212.6],["Camden",195.4],["Johnson",173.9],["Callaway",167.3],["Phelps",149.9]],"turnout":[["St. Louis County",4416.6],["Kansas City",1106.5],["St. Louis City",1117.2],["Boone",711.7],["Clay",949.2],["Jackson",1453.5]]};
+  const money = x => '$' + Math.round(x).toLocaleString();
+  function calc() {
+    const budget = Math.max(0, +document.getElementById('budget').value || 0);
+    const cpv = Math.max(1, +document.getElementById('cpv').value || 1);
+    const votes = budget / cpv;
+    const pBudget = budget * CALC.persuasion_share, tBudget = budget * CALC.turnout_share;
+    const pTot = CALC.persuade.reduce((a, r) => a + r[1], 0);
+    const tTot = CALC.turnout.reduce((a, r) => a + r[1], 0);
+    const li = (name, amt) => '<li>' + name + ': <b>' + money(amt) + '</b></li>';
+    document.getElementById('calcout').innerHTML =
+      '<div><h4>Persuasion (' + Math.round(CALC.persuasion_share * 100) + '%)</h4>'
+      + '<div class="sum">' + money(pBudget) + '</div><ul>'
+      + CALC.persuade.map(r => li(r[0], pBudget * r[1] / pTot)).join('') + '</ul></div>'
+      + '<div><h4>Turnout (' + Math.round(CALC.turnout_share * 100) + '%)</h4>'
+      + '<div class="sum">' + money(tBudget) + '</div><ul>'
+      + CALC.turnout.map(r => li(r[0], tBudget * r[1] / tTot)).join('') + '</ul>'
+      + '<p style="color:#8FA0AE;font-size:13px;margin:10px 0 0">About <b style="color:#fff">'
+      + Math.round(votes).toLocaleString() + ' votes</b> at your cost per vote.</p></div>';
+  }
+  document.getElementById('budget').addEventListener('input', calc);
+  document.getElementById('cpv').addEventListener('input', calc);
+  calc();
 </script>
 
 </body>
