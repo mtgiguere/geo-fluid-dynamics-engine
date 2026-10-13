@@ -18,7 +18,11 @@
  *
  * Usage (from the repo root; Playwright is installed in web/):
  *   NODE_PATH=web/node_modules node scripts/fetch_mo_enr.cjs \
- *       --out data/raw --prefix enr_mo_20261103 [--match "amendment|referendum"]
+ *       --out data/raw --prefix enr_mo_20261103 [--match amendment,referendum]
+ *
+ * --match is a comma-separated list of plain keywords; a race is fetched when
+ * its name contains any of them (case-insensitive substring, no regular
+ * expression is built from the argument).
  *
  * Writes one <prefix>_<race-slug>.txt per matching race (page innerText)
  * plus the raw HTML alongside, and prints the statewide YES/NO block of each
@@ -36,7 +40,11 @@ function arg(name, fallback) {
 
 const OUT = arg("out", "data/raw");
 const PREFIX = arg("prefix", "enr_mo");
-const MATCH = new RegExp(arg("match", "amendment|proposition|referendum|question"), "i");
+const KEYWORDS = arg("match", "amendment,proposition,referendum,question")
+  .split(",")
+  .map((k) => k.trim().toLowerCase())
+  .filter(Boolean);
+const matches = (text) => KEYWORDS.some((k) => text.toLowerCase().includes(k));
 const UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36";
 
@@ -68,8 +76,8 @@ const UA =
     const options = await page.$$eval("#cboRaces option", (os) =>
       os.map((o) => ({ value: o.value, text: o.text.trim() })),
     );
-    const races = options.filter((o) => MATCH.test(o.text));
-    console.log(`${races.length} race(s) match /${MATCH.source}/i out of ${options.length}`);
+    const races = options.filter((o) => matches(o.text));
+    console.log(`${races.length} race(s) match [${KEYWORDS.join(", ")}] out of ${options.length}`);
     for (const race of races) {
       await page.selectOption("#cboRaces", race.value);
       await page.waitForTimeout(1500);
