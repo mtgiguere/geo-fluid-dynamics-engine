@@ -32,8 +32,12 @@
 
   /* sections */
   section { padding:64px 0; border-bottom:1px solid var(--line); }
-  .act { font:600 12px/1 var(--mono); letter-spacing:.18em; text-transform:uppercase;
-    color:var(--muted); }
+  .act { display:flex; align-items:center; gap:12px; font:700 14px/1 var(--sans);
+    letter-spacing:.08em; text-transform:uppercase; color:var(--ink); padding-top:6px;
+    border-top:3px solid var(--ember); width:max-content; padding-right:14px; }
+  .act .n { display:inline-flex; align-items:center; justify-content:center; min-width:30px;
+    height:30px; padding:0 9px; border-radius:999px; background:var(--ember);
+    color:var(--ink); font:800 13px var(--mono); letter-spacing:.04em; }
   section h2 { font-size:clamp(26px,3.4vw,38px); font-weight:800; margin:.25em 0 .5em; }
   .thesis { font-family:var(--serif); font-size:clamp(20px,2.5vw,27px); line-height:1.4;
     color:var(--ink); max-width:30ch; }
@@ -49,7 +53,7 @@
 
   /* map + itinerary */
   .ops { background:var(--ink); color:#EAF0F4; border-bottom:none; }
-  .ops .act { color:#7E8EA0; }
+  .ops .act { color:#fff; }
   .ops h2 { color:#fff; }
   .ops .lede { margin-bottom:34px; }
   .opsgrid { display:grid; grid-template-columns:1.05fr .95fr; gap:36px; align-items:start; }
@@ -116,7 +120,7 @@
 </div></header>
 
 <section class="wrap">
-  <div class="act">Act 1 · The map we started from</div>
+  <div class="act"><span class="n">Act 1</span>The map we started from</div>
   <h2>A map tells you what happened.</h2>
   <div class="col2">
     <p>Here's how Kansas voted on abortion rights in August 2022 — every county, shaded by
@@ -129,7 +133,7 @@
 </section>
 
 <section class="wrap">
-  <div class="act">Act 2 · The tell</div>
+  <div class="act"><span class="n">Act 2</span>The tell</div>
   <h2>Some red counties are persuadable. The data says which.</h2>
   <div class="col2">
     <div>
@@ -155,7 +159,7 @@
 </section>
 
 <section class="ops"><div class="wrap">
-  <div class="act">Act 3 · The marching orders</div>
+  <div class="act"><span class="n">Act 3</span>The marching orders</div>
   <h2>You live in Kansas City. Here's your Saturday.</h2>
   <p class="lede">The engine ranks every county by how far it votes ahead of its party,
   sets your base and your dead ends aside, and orders what's left by drive time. Hover a
@@ -354,7 +358,7 @@
 </div></section>
 
 <section class="wave"><div class="wrap">
-  <div class="act">A word on “riding the wave”</div>
+  <div class="act"><span class="n">+</span>A word on “riding the wave”</div>
   <div class="col2">
     <p class="thesis">We tested whether political change ripples county-to-county like a
     stone dropped in a pond.</p>
