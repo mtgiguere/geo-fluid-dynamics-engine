@@ -180,6 +180,21 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
        decide whether NV Q6 / MA Q8 get state-level-only rows; then copy to
        `mo_2026-11-03_REGISTERED_<date>.csv` and commit by 2026-10-15.
 
+- **BALLOT-LANGUAGE FEATURES AS A LEVEL COVARIATE (Matt, 2026-10-13) - the
+  NLP phase's first concrete job.** Confusing verbiage (net neutrality is
+  the famous case; MO 2024 Amendment 3's court-rewritten summary the local
+  one) shifts a measure's statewide level toward NO and raises roll-off,
+  roughly uniformly across counties. Today that enters the brackets as
+  judgement only. Training set: the 271-measure catalog
+  (`data/catalog/ballot_measures.csv`) with each measure's status-quo lean as
+  the signal; candidate text features: repeal / double-negative framing
+  ("a NO vote keeps..."), length, reading level, number of subjects. First
+  deliverable: a notebook testing whether those features explain residual
+  statewide level after topic and severity, on PAST measures; only then a
+  covariate. Post-November: report roll-off per 2026 measure as the
+  confusion measurement. JIT trigger: after the December dossier, with the
+  PyTorch/Hugging Face plan in [[feedback-pytorch-nlp]] memory.
+
 - **MODULE 5 SEED: MEASURE THE ORDER PARAMETER BEFORE CLAIMING A DETECTOR
   (Matt + Claude, 2026-09-15).** The spec's Module 5 is a structural
   early-warning for a losing faction rejecting the process: convergence +
