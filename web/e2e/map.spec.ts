@@ -188,3 +188,38 @@ test("the Demo button opens the public prescriptive demo page", async ({ page })
   await expect(page.locator("a.backlink").first()).toHaveAttribute("href", "./");
   expect(errors).toEqual([]);
 });
+
+test("the Receipt button opens the public pre-registration page", async ({ page }) => {
+  // The November receipt is the public face of the 2026 pre-registration: a
+  // self-contained static page (inline SVG/CSS/JS, zero runtime fetches) built
+  // from the prediction files. Integration only: the button links into it at
+  // the deployment base path, the measure switcher and the Missouri map render,
+  // console clean. The numbers themselves are the tested library's business.
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(String(e)));
+  page.on("console", (m) => {
+    if (m.type() === "error") errors.push(m.text());
+  });
+  page.on("response", (r) => {
+    if (r.status() >= 400) errors.push(`HTTP ${r.status()} ${r.url()}`);
+  });
+
+  await page.goto("./");
+  const link = page.locator("#forecast-link");
+  await expect(link).toHaveText(/November receipt/i);
+  await expect(link).toHaveAttribute("href", /(^|\/)forecast\.html$/);
+  await link.click();
+
+  await expect(page).toHaveURL(/\/geo-fluid-dynamics-engine\/forecast\.html$/);
+  await expect(page.getByRole("heading", { name: /before Missouri voted/ })).toBeVisible();
+  // Five Missouri measures in the switcher; the map renders a county for each
+  // of the 115 county polygons (Kansas City reports separately, no polygon).
+  await expect(page.locator("#measure option")).toHaveCount(5);
+  await expect(page.locator("svg.map path.county")).toHaveCount(115);
+  // Switching the measure recolors without error and the readout responds to hover.
+  await page.selectOption("#measure", "mo_20261103_amendment_8");
+  await page.locator('svg.map path.county[data-fips="29019"]').hover();
+  await expect(page.locator("#readout")).toContainText("Boone County");
+  await expect(page.locator("a.backlink").first()).toHaveAttribute("href", "./");
+  expect(errors).toEqual([]);
+});
