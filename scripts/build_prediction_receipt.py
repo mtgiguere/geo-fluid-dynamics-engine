@@ -488,6 +488,9 @@ _TEMPLATE = r"""<!doctype html>
     font-variant-numeric:tabular-nums; }}
   table.plan td:nth-child(n+2) {{ text-align:right; }}
   .fine {{ font-size:13px; color:var(--muted); }}
+  .diff {{ margin-top:26px; background:#fff; border:1px solid var(--line); border-radius:8px;
+    padding:22px 26px; }}
+  .diff ul {{ padding-left:20px; }} .diff li {{ margin:8px 0; font-size:14.5px; max-width:80ch; }}
   .calc {{ margin-top:28px; background:var(--ink); color:#EAF0F4; border-radius:8px;
     padding:24px 26px; }}
   .calcrow {{ display:flex; gap:28px; flex-wrap:wrap; margin:12px 0 16px; }}
@@ -710,6 +713,33 @@ _TEMPLATE = r"""<!doctype html>
   </div>
   <p class="thesis" style="margin-top:28px">Not “campaign somewhere.” Not “start a domino.”
   Where, what kind, and how much, with the receipt for each.</p>
+  <div class="diff">
+    <div class="eyebrow">Why this is different</div>
+    <p>Campaigns already have maps. Voter-file vendors score individuals by party; consultants
+    turn the scores into walk lists; pollsters supply the statewide number. That stack is built
+    for candidates, it is expensive, and nobody grades it afterward. This is the layer above it:</p>
+    <ul>
+      <li><b>It models the measure, not the party.</b> On a ballot question the whole game is
+      the voters who split from their party. A partisan score cannot see them by construction;
+      twenty-one certified measure votes in the same counties can.</li>
+      <li><b>It prices the ground; the voter file lists the people.</b> Budgets are spent on
+      counties and media markets, not individuals. This answers the treasurer's question in
+      votes per point; the walk list answers the canvasser's.</li>
+      <li><b>It shows you the other side's best plan.</b> The same record yields your
+      opponent's optimal allocation. Know where to expect them.</li>
+      <li><b>Turnout versus persuasion is measured, not guessed.</b> The midterm penalty says,
+      county by county, how many of your supporters skip this kind of election.</li>
+      <li><b>It has been graded.</b> Every number here is committed before the vote and scored
+      in public after it, against the obvious alternative. Ask anyone else for their last
+      scorecard.</li>
+      <li><b>It is cheap and fast.</b> Public data, tested code, a new state in days.</li>
+    </ul>
+    <p class="fine">What it is not: a replacement for the voter file, or a promise of a lift.
+    How many points a plan actually produces is measurable only by running it. The first
+    campaign that follows this plan in half of a matched set of counties, and not the other
+    half, becomes that measurement, and every campaign after it gets the answer with a
+    receipt.</p>
+  </div>
 </section>
 
 <section class="wrap">
