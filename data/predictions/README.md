@@ -13,6 +13,10 @@ after certification.
   committed by **2026-10-15**). **Never edited after the commit.** New
   information yields a new dated file; every registered file still gets
   scored.
+  The freeze is `scripts/register_predictions.py --draft-date <d>`: it copies
+  every DRAFT product verbatim to its REGISTERED name, verifies the sealed
+  drafts against their manifest, renames them, and writes the REGISTERED
+  manifest. It never recomputes anything.
 - `statewide_only_2026-11-03_DRAFT_<date>.csv` — level-only calls with
   brackets for measures where we hold no county file (NV Question 6, MA
   Question 8; decided 2026-09-15). Same freeze rules; scored on the level
