@@ -227,7 +227,12 @@ watchdog for hollow tests. (mutmut only runs on Linux CI — it refuses on Windo
   `scripts/build_targeting_demo.py` — renders the public prescriptive demo
   (`web/public/demo.html`) from real data through the tested targeting engine;
   `scripts/fetch_mo_enr.cjs` — election-night fetch of county ballot-measure results from
-  the MO SoS results portal (real Chrome via Playwright; output feeds `parse_mo_enr_results`)
+  the MO SoS results portal (real Chrome via Playwright; output feeds `parse_mo_enr_results`);
+  `scripts/build_prediction_receipt.py` — renders the public "November receipt" page
+  (`web/public/forecast.html`) from `data/predictions/` (REGISTERED files if present, else
+  the latest DRAFT): the lay + technical explainer of the 2026 pre-registration with a
+  measure-switching inline Missouri choropleth; `scripts/register_predictions.py` — the
+  DRAFT -> REGISTERED freeze
 - `data/predictions/` - the 2026 pre-registration receipts: `mo_2026-11-03_DRAFT_<date>.csv`
   from `notebooks/mo_2026_predictions.py` (five MO measures x 116 jurisdictions; columns and
   the freeze/scoring protocol in its README); the REGISTERED copy is frozen once committed
@@ -240,7 +245,8 @@ watchdog for hollow tests. (mutmut only runs on Linux CI — it refuses on Windo
   change organizes). Each finding is summarized in `docs/FINDINGS.md`.
 - `web/` — Vite + TS + Mapbox frontend (`src/metrics.ts`, `src/scope.ts`,
   `src/measure.ts`; `e2e/` Playwright); `public/demo.html` — the static, public
-  Stage-4 prescriptive demo, linked from the app's "The art of the possible" button
+  Stage-4 prescriptive demo, linked from the app's "The art of the possible" button; `public/forecast.html` — the static, public 2026 pre-registration
+  explainer, linked from the app's "The November receipt" button (rebuild after registration)
 - `tests/unit/` — Python unit tests (one file per module)
 - `TDD_CONTRACT.md` — the development contract; binding for every session
 - `BACKLOG.md` — agreed-but-deferred work, each item with its JIT trigger
