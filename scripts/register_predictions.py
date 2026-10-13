@@ -29,6 +29,7 @@ PUBLIC_PRODUCTS = (
     "county_receipts_mo",
     "county_record_buckets_mo",
     "propositions_2026-11-03",
+    "inputs_manifest",
 )
 
 

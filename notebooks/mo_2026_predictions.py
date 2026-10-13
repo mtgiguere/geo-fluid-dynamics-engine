@@ -1163,11 +1163,84 @@ print(statewide_only.drop(columns="ballot").to_string(index=False))
 # We register the slope on the same-issue pair we hold and score it in
 # December alongside the predictions: STEEPEN / HOLD / RELAX, with the
 # ex-ante call written down now.
+#
+# Three more rows ride along (added 2026-10-13), none of them predictions:
+#
+# * **The statistical test itself**, named before the data exists: a
+#   one-sided paired Wilcoxon test on absolute county errors, model versus
+#   partisanship baseline, over all 580 county x measure rows, alpha 0.05 -
+#   plus the calibration band and the rule that brackets are judged apart.
+# * **A spatial diagnostic.** The registered model uses none of the
+#   engine's spatial machinery. If its county errors cluster in space
+#   (Moran's I > 0), the spatial layer holds information the model left on
+#   the table - the argument for the hybrid model next.
+# * **A turnout-composition diagnostic.** If the misses are the counties
+#   whose turnout changed most since 2018, "who shows up" was the culprit
+#   and must be modelled, not assumed.
 
 # %%
 _i, slope_2024, _r = partisan_fit("abortion_2024")
 propositions = pd.DataFrame(
     [
+        {
+            "proposition_id": "scoring_rule_pattern_skill",
+            "statement": (
+                "PRE-REGISTERED TEST. Pattern skill is judged on all Missouri county x "
+                "measure rows (5 x 116 = 580) after BOTH the registered prediction and the "
+                "partisanship-only baseline are relevelled to the certified statewide share "
+                "(scoring.relevel). H1: the registered model's absolute county error is "
+                "smaller than the baseline's."
+            ),
+            "metric": "paired |error_model| - |error_baseline| per row",
+            "reference_slope_2024": float("nan"),
+            "ex_ante_call": "model beats baseline (skill > 0)",
+            "scoring": (
+                "One-sided Wilcoxon signed-rank test on the 580 paired differences, alpha "
+                "0.05; report per-measure skill = 1 - RMSE_model/RMSE_baseline as well. "
+                "Interval calibration: fraction of rows inside [pred_low_90, pred_high_90] "
+                "reported against the 0.90 target; 0.85-0.95 counts as calibrated. "
+                "Level: each bracket scored hit/miss separately; brackets are judgement, "
+                "not model, and are reported as such."
+            ),
+        },
+        {
+            "proposition_id": "diag_spatial_residuals",
+            "statement": (
+                "DIAGNOSTIC (the geo in geo-fluid). The registered model uses no spatial "
+                "machinery. If neighbouring counties share local factors the model does "
+                "not see, its county errors will cluster in space: Moran's I of the "
+                "relevelled Amendment 3 errors (queen adjacency, row-standardised W, "
+                "spatial.moran) will be positive and significant at 0.05 by permutation."
+            ),
+            "metric": "Moran's I of county errors, Amendment 3",
+            "reference_slope_2024": float("nan"),
+            "ex_ante_call": "I > 0, significant",
+            "scoring": (
+                "If confirmed: the spatial layer holds information the registered model "
+                "left on the table - the hybrid (spatial-lag) model is the next build. If "
+                "not: the residual is noise and the spatial layer's job is description. "
+                "Either way goes to FINDINGS.md."
+            ),
+        },
+        {
+            "proposition_id": "diag_turnout_composition",
+            "statement": (
+                "DIAGNOSTIC (who shows up). Turnout composition is assumed, not modelled. "
+                "If the misses are the counties whose electorate changed most, the county "
+                "error will correlate with the change in turnout: Pearson r between the "
+                "relevelled Amendment 3 county error and (2026 votes cast / 2018 votes "
+                "cast) across the 116 jurisdictions."
+            ),
+            "metric": "r(error, turnout ratio 2026/2018), Amendment 3",
+            "reference_slope_2024": float("nan"),
+            "ex_ante_call": "|r| < 0.3 (composition not the dominant miss)",
+            "scoring": (
+                "|r| >= 0.3 means a surge or collapse electorate drove the misses and "
+                "turnout composition must be modelled next; below 0.3 the assumption held "
+                "well enough. Reported with its sign (positive = we over-predicted where "
+                "turnout grew)."
+            ),
+        },
         {
             "proposition_id": "mo_2026_amdt3_coupling",
             "statement": (
@@ -1183,13 +1256,23 @@ propositions = pd.DataFrame(
                 "HOLD otherwise. Result goes to FINDINGS.md as the first Module 5 order-"
                 "parameter reading, whichever way it lands."
             ),
-        }
+        },
     ]
 )
 out_props = out_dir / f"propositions_2026-11-03_DRAFT_{TODAY}.csv"
 propositions.to_csv(out_props, index=False)
 print(f"wrote {out_props.relative_to(ROOT)}")
 print(f"2024 abortion partisan slope (logit scale): {slope_2024:.3f}")
+
+# The raw inputs are git-ignored (large, fetched); their digests are not.
+# This manifest lets anyone confirm in December that the registered
+# predictions came from exactly these certified files.
+raw_inputs = [RAW / c for c in CANVASSES] + [RAW / "countypres_2000-2024.csv"]
+raw_inputs += [RAW / f"enr_mo_20260804_amendment_{n}.txt" for _l, n, _s in ENR_2026]
+inputs_manifest = sha256_manifest(raw_inputs, root=RAW)
+out_inputs = out_dir / f"inputs_manifest_DRAFT_{TODAY}.csv"
+inputs_manifest.to_csv(out_inputs, index=False)
+print(f"wrote {out_inputs.relative_to(ROOT)} ({len(inputs_manifest)} raw inputs hashed)")
 
 # %% [markdown]
 # **For the decision-maker - why register this.** If the coupling steepens,
