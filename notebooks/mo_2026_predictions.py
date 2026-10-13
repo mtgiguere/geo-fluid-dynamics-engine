@@ -1378,6 +1378,14 @@ print(pd.DataFrame(split_rows).to_string(index=False))
 #   intervals are correspondingly wide.
 # * **Turnout composition is assumed, not modelled** — 2018's county shares
 #   stand in for 2026's; the file carries the 2024-weighted alternative.
+# * **Ballot language is not modelled.** Confusing text pushes voters toward
+#   NO (the status-quo answer) and raises roll-off, roughly uniformly across
+#   the state - so it lands on the LEVEL, which the brackets absorb by
+#   judgement only. Named risks on this ballot: the map referendum ("vote
+#   NO to reject the map" is a double negative) and Amendment 3 (its summary
+#   was rewritten twice by courts because the first version misled voters
+#   about what YES does). Post-election, each measure's roll-off is a free
+#   measurement of how confusing it was; the scoring notebook reports it.
 # * **Kansas City is a pseudo-jurisdiction**; its 2024 partisan baseline comes
 #   from MIT's separate KC reporting.
 # * **One state, one cycle.** This is evidence, not proof — the point of
