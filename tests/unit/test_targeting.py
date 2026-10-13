@@ -22,6 +22,7 @@ happened upstream (the contest panel / overlay); presentation adds the flavor.
 """
 
 import pandas as pd
+import pytest
 
 from geofluid.targeting import (
     build_itinerary,
@@ -341,3 +342,13 @@ def test_budget_split_weighs_reachable_votes_against_votes_at_risk() -> None:
     assert abs(float(split["turnout_pool_votes"]) - 4_000.0) < 1e-6
     assert abs(float(split["turnout_share"]) - 4_000 / 14_400) < 1e-12
     assert abs(float(split["persuasion_share"]) - 10_400 / 14_400) < 1e-12
+
+
+def test_playbook_rejects_an_unknown_side_loudly() -> None:
+    """The generator orients to exactly two sides. A typo ('progresive') must
+    raise naming the bad value rather than silently produce the progressive
+    plan - an org would act on the wrong side's map."""
+    record, votes = _record()
+
+    with pytest.raises(ValueError, match="progresive"):
+        build_playbook(record, votes, side="progresive")

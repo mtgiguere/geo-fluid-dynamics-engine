@@ -128,6 +128,67 @@ structure. *(Notebook: `education_channel_over_time`.)*
 
 ---
 
+## 6. Predicting a ballot measure: partisanship is the bar, and the same-issue residual clears it
+
+The 2026 pre-registration experiment (`docs/MEASUREMENT_DESIGN.md` §7) forced
+the question the earlier findings had circled: given every certified
+statewide measure Missouri has voted on since 2018 - 21 contests on the same
+116 jurisdictions, three electorate types - how well can a county's vote on a
+NEW measure be predicted, and by what? A leave-one-out backtest (each past
+measure predicted from the others, statewide level given, so the score is
+about the county pattern) ranked three candidates by county error:
+
+| model | county RMSE (pp) |
+|---|---|
+| partisanship only (logit-linear on the era's presidential two-party share) | 3.69 |
+| pooled ideal point (mean standardized share across the other measures) | 3.80 |
+| partisanship + 0.5 x the same-issue analog's partisanship residual | 3.39 (3.76 baseline on the same subset) |
+
+- **Partisanship alone is very good** - within about 3.7 points on almost any
+  issue. Anything sold as a targeting tool has to beat that, in writing.
+- **The pooled ideal point did NOT beat it.** The design doc's favored
+  construction helps on low-salience gambling and tax measures, where
+  partisanship is loose, and hurts on hot-button ones, where partisanship
+  already explains 90%+ of the variance.
+- **The same-issue residual is where the skill is** - but only when the
+  analog is a true sibling (minimum wage 2018 -> 2024, sports betting ->
+  casino, minimum wage -> abortion, the cross-issue trait of Finding 3).
+  Flavor-guess analogs (term limits -> court fees) made it worse. Half the
+  residual is the shrinkage that wins on average: a county's personality
+  repeats, but not in full.
+- **The pattern survives the electorate change**; the level does not.
+  County positions from 2018 midterm measures and from presidential-year
+  measures correlate 0.90; the 2018 Senate vote and the 2024 presidential
+  vote correlate 0.96; the Aug-2026 primary - a real 2026 electorate - still
+  ordered counties by partisanship even in an 80-20 landslide. What moves
+  between electorates is WHO shows up, not who the county is - so the
+  statewide level is registered as a bracket and the county pattern as a
+  point.
+
+**The receipt, not the forecast, is the product.** The question a buyer
+asks - "how do you KNOW St. Louis County is turnout ground and St. Charles is
+persuasion ground?" - is answered by the county's own record laid next to
+the state's (`targeting.history_buckets`): St. Louis County runs ahead of
+the state on 12 of 13 general-election measures and its edge roughly doubles
+in presidential years (its supporters skip midterms: a turnout problem,
+measured); St. Charles tracks the state within half a point with the
+tightest spread of any large county (whatever Missouri decides, it decides
+by the same margin: persuasion ground by definition); Jefferson sits below
+the state on abortion and 11 points above it against right-to-work (the
+economic False Bastion of Finding 3, one county). Priced in votes, the
+same record yields mirror-image plans for the two sides of a measure
+(`targeting.build_playbook`): the side holding the turnout counties has a
+turnout budget, the side behind on the map has nothing to spend on but
+persuasion.
+
+*Limits:* one state; the level brackets are judgement, stated in advance and
+scored as such; turnout composition is assumed (2018 county shares), not
+modelled. The whole construction is registered before Nov 3 2026 and graded
+in public afterward - see `data/predictions/README.md`.
+*(Notebook: `mo_2026_predictions`.)*
+
+---
+
 ## 8. Deep time: the Populist reservoir discharged into the New Deal
 
 The 1868–2024 spine lets us test whether today's "Second Gilded Age" rhyme has

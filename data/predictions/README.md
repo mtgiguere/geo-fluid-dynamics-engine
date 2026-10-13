@@ -74,3 +74,11 @@ after certification.
    `[pred_low_90, pred_high_90]` (target ≈ 90%).
 
 Results go in `docs/FINDINGS.md` win or lose.
+
+The yardstick is code, fixed before the election: `geofluid.scoring`
+(`score_counties`, `score_summary`, `relevel`, `score_level`,
+`coupling_slope`, `classify_coupling`), tested against hand-derived
+fixtures. Both the registered prediction and the baseline are relevelled to
+the certified statewide share before county errors are compared, so the
+pattern grade cannot be rescued or sunk by the level call. Certified county
+results arrive via `scripts/fetch_mo_enr.cjs` and `parse_mo_enr_results`.

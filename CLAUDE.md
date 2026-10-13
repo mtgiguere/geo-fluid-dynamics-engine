@@ -212,6 +212,11 @@ watchdog for hollow tests. (mutmut only runs on Linux CI — it refuses on Windo
   turnout/persuade/hard bucket from its OWN record vs the state at a stated level, with
   consistency and the midterm penalty); `build_playbook` + `playbook_budget_split` (the
   2026 (measure, side) -> vote-priced, ranked plan and its persuasion/turnout split)
+- `src/geofluid/scoring` — the December scorecard, written before any result exists:
+  `score_counties` / `score_summary` (per-county error, RMSE and skill vs the
+  partisanship-only baseline, 90% coverage), `relevel` (shift a pattern to the certified
+  statewide share so pattern skill is isolated from the level call), `score_level`
+  (bracket hit), `coupling_slope` / `classify_coupling` (the Module 5 proposition)
 - `src/geofluid/seal` — `sha256_manifest` / `verify_manifest`: the seal-then-reveal
   mechanism for the 2026 playbooks (hash committed, files revealed in December)
 - `src/geofluid/realignment` — `trend_surprise` (Module 4 seed: per-county residual
@@ -220,7 +225,9 @@ watchdog for hollow tests. (mutmut only runs on Linux CI — it refuses on Windo
 - `src/geofluid/map/layers` — GeoJSON layer + per-year metrics export shaping
 - `scripts/export_web_data.py` — thin orchestration → `web/public/data/*.json`;
   `scripts/build_targeting_demo.py` — renders the public prescriptive demo
-  (`web/public/demo.html`) from real data through the tested targeting engine
+  (`web/public/demo.html`) from real data through the tested targeting engine;
+  `scripts/fetch_mo_enr.cjs` — election-night fetch of county ballot-measure results from
+  the MO SoS results portal (real Chrome via Playwright; output feeds `parse_mo_enr_results`)
 - `data/predictions/` - the 2026 pre-registration receipts: `mo_2026-11-03_DRAFT_<date>.csv`
   from `notebooks/mo_2026_predictions.py` (five MO measures x 116 jurisdictions; columns and
   the freeze/scoring protocol in its README); the REGISTERED copy is frozen once committed

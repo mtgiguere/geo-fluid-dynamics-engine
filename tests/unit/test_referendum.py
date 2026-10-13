@@ -677,3 +677,13 @@ def test_mo_enr_unknown_jurisdiction_fails_loudly() -> None:
 
     with pytest.raises(ValueError, match="Kansas City"):
         parse_mo_enr_results(text, _MO_NAME_TO_FIPS)
+
+
+def test_mo_enr_missing_statewide_block_fails_loudly() -> None:
+    """A page whose statewide YES/NO block is absent (a race page that did
+    not finish rendering) has no integrity check to parse against - refuse
+    naming the missing side rather than emit an unverified panel."""
+    text = _mo_enr_text([], ["Adair\t3,798\t953"])
+
+    with pytest.raises(ValueError, match="YES"):
+        parse_mo_enr_results(text, _MO_NAME_TO_FIPS)
