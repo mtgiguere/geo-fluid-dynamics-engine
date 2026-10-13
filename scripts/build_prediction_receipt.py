@@ -364,8 +364,13 @@ _TEMPLATE = r"""<!doctype html>
     border-radius:6px; font-size:14px; color:#AEBDC8; max-width:72ch; }}
   .status b {{ color:var(--ember); }}
   section {{ padding:60px 0; border-bottom:1px solid var(--line); }}
-  .act {{ font:600 12px/1 var(--mono); letter-spacing:.18em; text-transform:uppercase;
-    color:var(--muted); }}
+  .act {{ display:flex; align-items:center; gap:12px; font:700 14px/1 var(--sans);
+    letter-spacing:.08em; text-transform:uppercase; color:var(--ink); padding-top:6px;
+    border-top:3px solid var(--ember); width:max-content; padding-right:14px; }}
+  .act .n {{ display:inline-flex; align-items:center; justify-content:center; min-width:30px;
+    height:30px; padding:0 9px; border-radius:999px; background:var(--ember);
+    color:var(--ink); font:800 15px var(--mono); }}
+  .ops .act {{ color:#fff; }}
   section h2 {{ font-size:clamp(26px,3.4vw,38px); font-weight:800; margin:.25em 0 .5em; }}
   .thesis {{ font-family:var(--serif); font-size:clamp(20px,2.5vw,27px); line-height:1.4;
     color:var(--ink); max-width:34ch; }}
@@ -391,7 +396,7 @@ _TEMPLATE = r"""<!doctype html>
   .card p {{ font-size:14.5px; margin:.4em 0; }}
   .past {{ font:500 12px var(--mono); color:var(--muted); margin-top:10px; }}
   .ops {{ background:var(--ink); color:#EAF0F4; border-bottom:none; }}
-  .ops .act {{ color:#7E8EA0; }} .ops h2 {{ color:#fff; }}
+  .ops h2 {{ color:#fff; }}
   .opsgrid {{ display:grid; grid-template-columns:1.15fr .85fr; gap:36px; align-items:start; }}
   @media (max-width:860px) {{ .opsgrid {{ grid-template-columns:1fr; }} }}
   .mapcard {{ background:#101A24; border:1px solid #233240; border-radius:6px; padding:14px; }}
@@ -442,7 +447,7 @@ _TEMPLATE = r"""<!doctype html>
 </div></header>
 
 <section class="wrap">
-  <div class="act">1 · What we did</div>
+  <div class="act"><span class="n">1</span>What we did</div>
   <h2>Twenty-one past votes, one county personality.</h2>
   <div class="col2">
     <div>
@@ -474,7 +479,7 @@ _TEMPLATE = r"""<!doctype html>
 </section>
 
 <section class="wrap">
-  <div class="act">2 · Where geo-fluid dynamics comes in</div>
+  <div class="act"><span class="n">2</span>Where geo-fluid dynamics comes in</div>
   <h2>Ideas move like a flock, not like dominoes.</h2>
   <div class="col2">
     <div>
@@ -511,7 +516,7 @@ _TEMPLATE = r"""<!doctype html>
 </section>
 
 <section class="wrap">
-  <div class="act">3 · What we predict, and why</div>
+  <div class="act"><span class="n">3</span>What we predict, and why</div>
   <h2>Five Missouri questions, county by county.</h2>
   <p>Each card gives the statewide call as "N of every 100 votes" for the side we track, the
   range we'd stop being surprised in, and the reasoning in plain words. The side we track is a
@@ -528,7 +533,7 @@ _TEMPLATE = r"""<!doctype html>
 </section>
 
 <section class="ops"><div class="wrap">
-  <div class="act">4 · The map</div>
+  <div class="act"><span class="n">4</span>The map</div>
   <h2>Hover a county. Switch the measure.</h2>
   <p class="lede">Each county is shaded by the share we predict for the side we track: deep
   slate well below 50, neutral at the line, amber well above. The readout shows the prediction,
@@ -536,7 +541,8 @@ _TEMPLATE = r"""<!doctype html>
   four counties and is listed on the card above.</p>
   <div class="opsgrid">
     <div>
-      <label for="measure" class="act" style="display:block;margin-bottom:6px">Measure</label>
+      <label for="measure" class="eyebrow"
+             style="display:block;margin-bottom:6px;color:#B7C4CE">Measure</label>
       <select id="measure" aria-label="Choose a measure">
         {options}
       </select>
@@ -561,7 +567,7 @@ _TEMPLATE = r"""<!doctype html>
 </div></section>
 
 <section class="wrap">
-  <div class="act">5 · How we'll grade ourselves</div>
+  <div class="act"><span class="n">5</span>How we'll grade ourselves</div>
   <h2>The yardstick was chosen before the data exists.</h2>
   <div class="col2">
     <div>
@@ -596,7 +602,7 @@ _TEMPLATE = r"""<!doctype html>
 </section>
 
 <section class="wrap">
-  <div class="act">6 · What we are not claiming</div>
+  <div class="act"><span class="n">6</span>What we are not claiming</div>
   <div class="col2">
     <p class="thesis">A tool, not an oracle. It says where a conversation is worth having; the
     conversation is still yours.</p>
