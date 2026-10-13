@@ -23,7 +23,12 @@ happened upstream (the contest panel / overlay); presentation adds the flavor.
 
 import pandas as pd
 
-from geofluid.targeting import build_itinerary, history_buckets
+from geofluid.targeting import (
+    build_itinerary,
+    build_playbook,
+    history_buckets,
+    playbook_budget_split,
+)
 
 
 def _counties(rows: list[dict[str, object]]) -> pd.DataFrame:
@@ -233,3 +238,106 @@ def test_history_midterm_penalty_from_electorate_types() -> None:
     assert abs(float(out["presidential_gap"].loc["E"]) - 0.12) < 1e-12
     assert abs(float(out["midterm_penalty"].loc["E"]) - 0.09) < 1e-12
     assert abs(float(out["midterm_penalty"].loc["A"])) < 1e-12
+
+
+# --- build_playbook: the (measure, side) -> plan generator -------------------
+#
+# The protocol (MEASUREMENT_DESIGN.md s7) wants playbooks parameterized by
+# goal, never partisan: the SAME record produces the plan for whichever side
+# asks. The record comes from history_buckets (fips x expected_share,
+# mean_gap, midterm_penalty); the playbook orients it to the requested side,
+# re-buckets, prices each county in votes, and orders the work.
+
+
+def _record() -> tuple[pd.DataFrame, "pd.Series[float]"]:
+    """Three counties as history_buckets would describe them for the
+    progressive side, plus expected votes cast: A is comfortably ahead
+    (0.65, habitual gap +0.10, a midterm penalty of 0.04), B is a toss-up
+    (0.50), C is far behind (0.35, gap -0.20)."""
+    record = pd.DataFrame(
+        {
+            "expected_share": [0.65, 0.50, 0.35],
+            "mean_gap": [0.10, 0.00, -0.20],
+            "midterm_penalty": [0.04, 0.00, 0.01],
+        },
+        index=pd.Index(["A", "B", "C"], name="fips"),
+    )
+    votes = pd.Series({"A": 100_000.0, "B": 50_000.0, "C": 20_000.0}, name="expected_votes")
+    return record, votes
+
+
+def test_playbook_orients_to_the_side_that_asks() -> None:
+    """For the progressive side the record stands: A 0.65 -> turnout, B 0.50
+    -> persuade, C 0.35 -> hard (band 0.08). For the other side every share
+    is 1 - share and the buckets mirror: C becomes 0.65 -> turnout, A
+    becomes 0.35 -> hard, B stays persuade. Same record, two plans."""
+    record, votes = _record()
+
+    prog = build_playbook(record, votes, side="progressive").set_index("fips")
+    cons = build_playbook(record, votes, side="conservative").set_index("fips")
+
+    assert list(prog.loc[["A", "B", "C"], "bucket"]) == ["turnout", "persuade", "hard"]
+    assert list(cons.loc[["A", "B", "C"], "bucket"]) == ["hard", "persuade", "turnout"]
+    assert abs(float(cons["expected_share"].loc["A"]) - 0.35) < 1e-12
+    assert abs(float(cons["expected_share"].loc["C"]) - 0.65) < 1e-12
+
+
+def test_playbook_prices_each_county_in_votes() -> None:
+    """A (100,000 expected votes) for the progressive side: one point of
+    movement = 1,000 votes; predicted margin (0.65 - 0.50) x 100,000 =
+    +15,000; headroom = habitual gap +0.10 x 100,000 = +10,000 votes the
+    record says already lean this way beyond partisanship; votes at risk in
+    a midterm = penalty 0.04 x 100,000 = 4,000 supporters who skip midterms.
+    For the conservative side C's numbers mirror: share 0.65 -> margin
+    +3,000 on 20,000 votes; headroom -(-0.20) x 20,000 = +4,000; the midterm
+    penalty flips sign to -0.01, and votes at risk floor at 0 (their crowd
+    GROWS in midterms)."""
+    record, votes = _record()
+
+    prog = build_playbook(record, votes, side="progressive").set_index("fips")
+    cons = build_playbook(record, votes, side="conservative").set_index("fips")
+
+    assert abs(float(prog["votes_per_point"].loc["A"]) - 1_000.0) < 1e-6
+    assert abs(float(prog["margin_votes"].loc["A"]) - 15_000.0) < 1e-6
+    assert abs(float(prog["headroom_votes"].loc["A"]) - 10_000.0) < 1e-6
+    assert abs(float(prog["votes_at_risk_midterm"].loc["A"]) - 4_000.0) < 1e-6
+    assert abs(float(cons["margin_votes"].loc["C"]) - 3_000.0) < 1e-6
+    assert abs(float(cons["headroom_votes"].loc["C"]) - 4_000.0) < 1e-6
+    assert abs(float(cons["votes_at_risk_midterm"].loc["C"]) - 0.0) < 1e-6
+
+
+def test_playbook_orders_persuade_by_price_then_turnout_by_risk_then_hard() -> None:
+    """The plan is a ranked list. Persuade counties come first, biggest
+    votes_per_point first (a point is worth more there); turnout counties
+    next, most votes_at_risk_midterm first (the largest pile of supporters
+    who might stay home); hard ground last. With a fourth toss-up county D
+    (0.50, 80,000 votes) the order is D (800/pt) > B (500/pt) > A (turnout)
+    > C (hard), and `priority` numbers them 1..4."""
+    record, votes = _record()
+    record.loc["D"] = [0.50, 0.00, 0.00]
+    votes.loc["D"] = 80_000.0
+
+    plan = build_playbook(record, votes, side="progressive")
+
+    assert list(plan["fips"]) == ["D", "B", "A", "C"]
+    assert list(plan["priority"]) == [1, 2, 3, 4]
+
+
+def test_budget_split_weighs_reachable_votes_against_votes_at_risk() -> None:
+    """The persuasion-vs-turnout split, in votes. Persuasion pool = the votes
+    within reach in persuade counties: expected_votes x the competitive band
+    (moving a toss-up county by the band's width): B 50,000 x 0.08 = 4,000
+    and D 80,000 x 0.08 = 6,400 -> 10,400. Turnout pool = supporters at risk
+    of skipping the midterm in turnout counties: A 4,000. Turnout share of
+    the budget = 4,000 / 14,400 = 0.2778; persuasion gets the rest."""
+    record, votes = _record()
+    record.loc["D"] = [0.50, 0.00, 0.00]
+    votes.loc["D"] = 80_000.0
+    plan = build_playbook(record, votes, side="progressive")
+
+    split = playbook_budget_split(plan, competitive_band=0.08)
+
+    assert abs(float(split["persuasion_pool_votes"]) - 10_400.0) < 1e-6
+    assert abs(float(split["turnout_pool_votes"]) - 4_000.0) < 1e-6
+    assert abs(float(split["turnout_share"]) - 4_000 / 14_400) < 1e-12
+    assert abs(float(split["persuasion_share"]) - 10_400 / 14_400) < 1e-12
