@@ -220,6 +220,10 @@ test("the Receipt button opens the public pre-registration page", async ({ page 
   await page.selectOption("#measure", "mo_20261103_amendment_8");
   await page.locator('svg.map path.county[data-fips="29019"]').hover();
   await expect(page.locator("#readout")).toContainText("Boone County");
+  // The worked plan and its budget calculator render from the public record file.
+  await expect(page.locator("table.plan").first()).toContainText("St. Charles");
+  await page.fill("#budget", "100000");
+  await expect(page.locator("#calcout")).toContainText("$");
   await expect(page.locator("a.backlink").first()).toHaveAttribute("href", "./");
   expect(errors).toEqual([]);
 });

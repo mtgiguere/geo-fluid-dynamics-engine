@@ -20,6 +20,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from geofluid.targeting import build_playbook, playbook_budget_split
+
 ROOT = Path(__file__).resolve().parents[1]
 PRED = ROOT / "data/predictions"
 HTML_OUT = ROOT / "web/public/forecast.html"
@@ -206,6 +208,53 @@ def main() -> None:
     props = pd.read_csv(_latest("propositions_2026-11-03")[0])
     manifest = pd.read_csv(_latest("SEALED_MANIFEST")[0])
 
+    # The worked example: the pro-rights (NO) side of Amendment 3, rebuilt from
+    # the public record file through the tested playbook generator. Same code
+    # path as the sealed playbooks; this one is shown because the receipt is
+    # only worth something if a reader can see what a plan looks like.
+    record_file, _st = _latest("county_record_buckets_mo")
+    rec = pd.read_csv(record_file, dtype={"fips": str}).set_index("fips")
+    level_a3 = float(
+        preds.loc[preds["measure_id"] == "mo_20261103_amendment_3", "level_central"].iloc[0]
+    )
+    record = pd.DataFrame(
+        {
+            "expected_share": level_a3 + rec["abortion_2024_gap"],
+            "mean_gap": rec["abortion_2024_gap"],
+            "midterm_penalty": rec["midterm_penalty"],
+        }
+    )
+    plan = build_playbook(record, rec["expected_votes_2026"], side="progressive")
+    plan["county"] = plan["fips"].map(rec["county"])
+    split = playbook_budget_split(plan)
+    persuade = plan[plan["bucket"] == "persuade"].nlargest(8, "votes_per_point")
+    turnout = plan[plan["bucket"] == "turnout"].nlargest(5, "votes_at_risk_midterm")
+    n_hard = int((plan["bucket"] == "hard").sum())
+    plan_rows = "\n".join(
+        f"<tr><td>{r.county}</td><td>{r.votes_per_point:,.0f}</td>"
+        f"<td>{r.expected_share * 100:.0f}</td><td>{r.headroom_votes:+,.0f}</td></tr>"
+        for r in persuade.itertuples()
+    )
+    turnout_rows = "\n".join(
+        f"<tr><td>{r.county}</td><td>{r.votes_per_point:,.0f}</td>"
+        f"<td>{r.expected_share * 100:.0f}</td><td>{r.votes_at_risk_midterm:,.0f}</td></tr>"
+        for r in turnout.itertuples()
+    )
+    calc_data = {
+        "persuasion_share": round(float(split["persuasion_share"]), 4),
+        "turnout_share": round(float(split["turnout_share"]), 4),
+        "persuade": [
+            [r.county, round(float(r.votes_per_point), 1)]
+            for r in plan[plan["bucket"] == "persuade"].nlargest(12, "votes_per_point").itertuples()
+        ],
+        "turnout": [
+            [r.county, round(float(r.votes_per_point), 1)]
+            for r in plan[plan["bucket"] == "turnout"]
+            .nlargest(6, "votes_at_risk_midterm")
+            .itertuples()
+        ],
+    }
+
     geo = json.loads((ROOT / "web/public/data/counties.geojson").read_text())
     rings, names = {}, {}
     for f in geo["features"]:
@@ -316,6 +365,14 @@ def main() -> None:
         prop_rows=prop_rows,
         manifest_rows=manifest_rows,
         status_line=status_line,
+        plan_rows=plan_rows,
+        turnout_rows=turnout_rows,
+        n_persuade=int((plan["bucket"] == "persuade").sum()),
+        n_turnout=int((plan["bucket"] == "turnout").sum()),
+        n_hard=n_hard,
+        persuasion_pct=round(float(split["persuasion_share"]) * 100),
+        turnout_pct=round(float(split["turnout_share"]) * 100),
+        calc_json=json.dumps(calc_data, separators=(",", ":")),
         bt=BACKTEST,
         favicon=_FAVICON,
         ink=INK,
@@ -383,6 +440,27 @@ _TEMPLATE = r"""<!doctype html>
     letter-spacing:.04em; }}
   details p {{ font-size:14.5px; margin:.6em 0 0; }}
   code {{ font:500 13px var(--mono); }}
+  table.plan {{ width:100%; border-collapse:collapse; font-size:14px; margin:8px 0 6px; }}
+  table.plan th {{ text-align:left; font:600 11px var(--mono); letter-spacing:.08em;
+    text-transform:uppercase; color:var(--muted); padding:6px 8px;
+    border-bottom:2px solid var(--line); }}
+  table.plan td {{ padding:7px 8px; border-bottom:1px solid var(--line);
+    font-variant-numeric:tabular-nums; }}
+  table.plan td:nth-child(n+2) {{ text-align:right; }}
+  .fine {{ font-size:13px; color:var(--muted); }}
+  .calc {{ margin-top:28px; background:var(--ink); color:#EAF0F4; border-radius:8px;
+    padding:24px 26px; }}
+  .calcrow {{ display:flex; gap:28px; flex-wrap:wrap; margin:12px 0 16px; }}
+  .calcrow label {{ font-size:14px; color:#B7C4CE; }}
+  .calcrow input {{ width:120px; margin:0 6px; padding:6px 8px; border-radius:6px;
+    border:1px solid #33485A; background:#1E2D3B; color:#fff; font:600 15px var(--mono); }}
+  #calcout {{ display:grid; grid-template-columns:1fr 1fr; gap:22px; }}
+  @media (max-width:760px) {{ #calcout {{ grid-template-columns:1fr; }} }}
+  #calcout h4 {{ margin:0 0 6px; font-size:15px; color:#fff; }}
+  #calcout .sum {{ font:800 26px/1.1 var(--mono); color:var(--ember); margin-bottom:8px; }}
+  #calcout ul {{ margin:0; padding-left:18px; font-size:14px; color:#CDD8E0; }}
+  #calcout li {{ margin:3px 0; }}
+  .calc .fine {{ color:#8FA0AE; margin-top:14px; }}
   .cards {{ display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:18px;
     margin-top:24px; }}
   .card {{ background:#fff; border:1px solid var(--line); border-radius:8px;
@@ -516,7 +594,63 @@ _TEMPLATE = r"""<!doctype html>
 </section>
 
 <section class="wrap">
-  <div class="act"><span class="n">3</span>What we predict, and why</div>
+  <div class="act"><span class="n">3</span>What you get</div>
+  <h2>A plan priced in votes: where to go, what to do there, how to split the money.</h2>
+  <p>Here is what the engine hands a campaign, worked through for one side of one measure:
+  keeping abortion rights in Missouri (the NO side of Amendment 3). It is built from the same
+  public county records as everything else on this page, by the same tested code that wrote the
+  sealed plans. Three things, in the order a campaign decides them.</p>
+  <div class="col2">
+    <div>
+      <h3>1. Where a conversation buys the most</h3>
+      <p>Persuasion ground: counties the record puts near 50 for this side, ranked by what one
+      point of movement is worth in votes. Start at the top.
+      <b>{n_persuade} counties</b> qualify.</p>
+      <table class="plan">
+        <thead><tr><th>County</th><th>Votes per point</th><th>Record says</th>
+          <th>Lean beyond party</th></tr></thead>
+        <tbody>{plan_rows}</tbody>
+      </table>
+      <p class="fine">"Record says" is the share for NO the county's own history implies at our
+      statewide middle; "lean beyond party" is the votes the county already leans this way
+      beyond what its presidential vote predicts.</p>
+    </div>
+    <div>
+      <h3>2. Where showing up is the whole job</h3>
+      <p>Turnout ground: counties the record puts clearly ahead, ranked by the supporters who
+      tend to skip midterms. Nobody here needs persuading; every one who stays home is a vote
+      lost. <b>{n_turnout} counties</b> qualify; <b>{n_hard}</b> are hard ground where the advice
+      is to spend nothing you can't spare.</p>
+      <table class="plan">
+        <thead><tr><th>County</th><th>Votes per point</th><th>Record says</th>
+          <th>Votes at risk</th></tr></thead>
+        <tbody>{turnout_rows}</tbody>
+      </table>
+      <h3>3. How the money divides</h3>
+      <p>For this side of this measure the reachable votes sit <b>{persuasion_pct}% in persuasion
+      ground and {turnout_pct}% in turnout ground</b>. The other side's plan, from the same
+      record, is nearly all persuasion: it holds almost no counties where its own voters stay
+      home. Same data, mirror plans.</p>
+    </div>
+  </div>
+  <div class="calc" id="calc">
+    <div class="eyebrow" style="color:var(--ember)">Try it: a budget, in votes and dollars</div>
+    <div class="calcrow">
+      <label>Budget <input id="budget" type="number" value="250000" min="0" step="5000"> $</label>
+      <label>Your cost per vote <input id="cpv" type="number" value="40" min="1" step="1"> $</label>
+    </div>
+    <div id="calcout"></div>
+    <p class="fine">The cost per vote is yours, not ours: what your organization has found a
+    persuaded or turned-out vote costs. We price the ground; you know your own plow. The split
+    applies the shares above; within each bucket, dollars follow what a point buys in each
+    county (votes per point), with the turnout list ranked by votes at risk.</p>
+  </div>
+  <p class="thesis" style="margin-top:28px">Not “campaign somewhere.” Not “start a domino.”
+  Where, what kind, and how much, with the receipt for each.</p>
+</section>
+
+<section class="wrap">
+  <div class="act"><span class="n">4</span>What we predict, and why</div>
   <h2>Five Missouri questions, county by county.</h2>
   <p>Each card gives the statewide call as "N of every 100 votes" for the side we track, the
   range we'd stop being surprised in, and the reasoning in plain words. The side we track is a
@@ -533,7 +667,7 @@ _TEMPLATE = r"""<!doctype html>
 </section>
 
 <section class="ops"><div class="wrap">
-  <div class="act"><span class="n">4</span>The map</div>
+  <div class="act"><span class="n">5</span>The map</div>
   <h2>Hover a county. Switch the measure.</h2>
   <p class="lede">Each county is shaded by the share we predict for the side we track: deep
   slate well below 50, neutral at the line, amber well above. The readout shows the prediction,
@@ -567,7 +701,7 @@ _TEMPLATE = r"""<!doctype html>
 </div></section>
 
 <section class="wrap">
-  <div class="act"><span class="n">5</span>How we'll grade ourselves</div>
+  <div class="act"><span class="n">6</span>How we'll grade ourselves</div>
   <h2>The yardstick was chosen before the data exists.</h2>
   <div class="col2">
     <div>
@@ -602,7 +736,7 @@ _TEMPLATE = r"""<!doctype html>
 </section>
 
 <section class="wrap">
-  <div class="act"><span class="n">6</span>What we are not claiming</div>
+  <div class="act"><span class="n">7</span>What we are not claiming</div>
   <div class="col2">
     <p class="thesis">A tool, not an oracle. It says where a conversation is worth having; the
     conversation is still yours.</p>
@@ -668,6 +802,30 @@ _TEMPLATE = r"""<!doctype html>
     c.addEventListener('blur', () => c.classList.remove('lit'));
   }});
   recolor();
+
+  const CALC = {calc_json};
+  const money = x => '$' + Math.round(x).toLocaleString();
+  function calc() {{
+    const budget = Math.max(0, +document.getElementById('budget').value || 0);
+    const cpv = Math.max(1, +document.getElementById('cpv').value || 1);
+    const votes = budget / cpv;
+    const pBudget = budget * CALC.persuasion_share, tBudget = budget * CALC.turnout_share;
+    const pTot = CALC.persuade.reduce((a, r) => a + r[1], 0);
+    const tTot = CALC.turnout.reduce((a, r) => a + r[1], 0);
+    const li = (name, amt) => '<li>' + name + ': <b>' + money(amt) + '</b></li>';
+    document.getElementById('calcout').innerHTML =
+      '<div><h4>Persuasion (' + Math.round(CALC.persuasion_share * 100) + '%)</h4>'
+      + '<div class="sum">' + money(pBudget) + '</div><ul>'
+      + CALC.persuade.map(r => li(r[0], pBudget * r[1] / pTot)).join('') + '</ul></div>'
+      + '<div><h4>Turnout (' + Math.round(CALC.turnout_share * 100) + '%)</h4>'
+      + '<div class="sum">' + money(tBudget) + '</div><ul>'
+      + CALC.turnout.map(r => li(r[0], tBudget * r[1] / tTot)).join('') + '</ul>'
+      + '<p style="color:#8FA0AE;font-size:13px;margin:10px 0 0">About <b style="color:#fff">'
+      + Math.round(votes).toLocaleString() + ' votes</b> at your cost per vote.</p></div>';
+  }}
+  document.getElementById('budget').addEventListener('input', calc);
+  document.getElementById('cpv').addEventListener('input', calc);
+  calc();
 </script>
 
 </body>

@@ -1025,6 +1025,10 @@ record_out = record_general.copy()
 record_out.insert(0, "county", [county_name.get(f, f) for f in record_out.index])
 record_out["abortion_2024_gap"] = record_abortion["mean_gap"]
 record_out["bucket_amdt3_at_level"] = record_abortion["bucket"]
+# The turnout assumption, made public: expected 2026 votes cast per
+# jurisdiction (a 2018-sized midterm), so the plan's vote prices can be
+# rebuilt from this file alone.
+record_out["expected_votes_2026"] = (turnout_2018 * float(total["cleanmo_2018"].sum())).round()
 out_record = out_dir / f"county_record_buckets_mo_DRAFT_{TODAY}.csv"
 record_out.round(4).to_csv(out_record)
 print(f"wrote {out_receipts.relative_to(ROOT)} ({len(receipts)} rows)")

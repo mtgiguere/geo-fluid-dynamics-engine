@@ -50,6 +50,27 @@
     letter-spacing:.04em; }
   details p { font-size:14.5px; margin:.6em 0 0; }
   code { font:500 13px var(--mono); }
+  table.plan { width:100%; border-collapse:collapse; font-size:14px; margin:8px 0 6px; }
+  table.plan th { text-align:left; font:600 11px var(--mono); letter-spacing:.08em;
+    text-transform:uppercase; color:var(--muted); padding:6px 8px;
+    border-bottom:2px solid var(--line); }
+  table.plan td { padding:7px 8px; border-bottom:1px solid var(--line);
+    font-variant-numeric:tabular-nums; }
+  table.plan td:nth-child(n+2) { text-align:right; }
+  .fine { font-size:13px; color:var(--muted); }
+  .calc { margin-top:28px; background:var(--ink); color:#EAF0F4; border-radius:8px;
+    padding:24px 26px; }
+  .calcrow { display:flex; gap:28px; flex-wrap:wrap; margin:12px 0 16px; }
+  .calcrow label { font-size:14px; color:#B7C4CE; }
+  .calcrow input { width:120px; margin:0 6px; padding:6px 8px; border-radius:6px;
+    border:1px solid #33485A; background:#1E2D3B; color:#fff; font:600 15px var(--mono); }
+  #calcout { display:grid; grid-template-columns:1fr 1fr; gap:22px; }
+  @media (max-width:760px) { #calcout { grid-template-columns:1fr; } }
+  #calcout h4 { margin:0 0 6px; font-size:15px; color:#fff; }
+  #calcout .sum { font:800 26px/1.1 var(--mono); color:var(--ember); margin-bottom:8px; }
+  #calcout ul { margin:0; padding-left:18px; font-size:14px; color:#CDD8E0; }
+  #calcout li { margin:3px 0; }
+  .calc .fine { color:#8FA0AE; margin-top:14px; }
   .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:18px;
     margin-top:24px; }
   .card { background:#fff; border:1px solid var(--line); border-radius:8px;
@@ -183,7 +204,74 @@
 </section>
 
 <section class="wrap">
-  <div class="act"><span class="n">3</span>What we predict, and why</div>
+  <div class="act"><span class="n">3</span>What you get</div>
+  <h2>A plan priced in votes: where to go, what to do there, how to split the money.</h2>
+  <p>Here is what the engine hands a campaign, worked through for one side of one measure:
+  keeping abortion rights in Missouri (the NO side of Amendment 3). It is built from the same
+  public county records as everything else on this page, by the same tested code that wrote the
+  sealed plans. Three things, in the order a campaign decides them.</p>
+  <div class="col2">
+    <div>
+      <h3>1. Where a conversation buys the most</h3>
+      <p>Persuasion ground: counties the record puts near 50 for this side, ranked by what one
+      point of movement is worth in votes. Start at the top.
+      <b>30 counties</b> qualify.</p>
+      <table class="plan">
+        <thead><tr><th>County</th><th>Votes per point</th><th>Record says</th>
+          <th>Lean beyond party</th></tr></thead>
+        <tbody><tr><td>St. Charles</td><td>1,701</td><td>57</td><td>+2,841</td></tr>
+<tr><td>Greene</td><td>1,141</td><td>53</td><td>-2,659</td></tr>
+<tr><td>Jefferson</td><td>880</td><td>51</td><td>-3,952</td></tr>
+<tr><td>Cass</td><td>430</td><td>52</td><td>-1,186</td></tr>
+<tr><td>Franklin</td><td>418</td><td>43</td><td>-5,030</td></tr>
+<tr><td>Cole</td><td>328</td><td>46</td><td>-2,945</td></tr>
+<tr><td>Buchanan</td><td>295</td><td>54</td><td>-360</td></tr>
+<tr><td>St. Francois</td><td>213</td><td>44</td><td>-2,409</td></tr></tbody>
+      </table>
+      <p class="fine">"Record says" is the share for NO the county's own history implies at our
+      statewide middle; "lean beyond party" is the votes the county already leans this way
+      beyond what its presidential vote predicts.</p>
+    </div>
+    <div>
+      <h3>2. Where showing up is the whole job</h3>
+      <p>Turnout ground: counties the record puts clearly ahead, ranked by the supporters who
+      tend to skip midterms. Nobody here needs persuading; every one who stays home is a vote
+      lost. <b>7 counties</b> qualify; <b>79</b> are hard ground where the advice
+      is to spend nothing you can't spare.</p>
+      <table class="plan">
+        <thead><tr><th>County</th><th>Votes per point</th><th>Record says</th>
+          <th>Votes at risk</th></tr></thead>
+        <tbody><tr><td>St. Louis County</td><td>4,417</td><td>71</td><td>15,767</td></tr>
+<tr><td>Kansas City</td><td>1,106</td><td>84</td><td>1,615</td></tr>
+<tr><td>St. Louis City</td><td>1,117</td><td>86</td><td>78</td></tr>
+<tr><td>Boone</td><td>712</td><td>70</td><td>0</td></tr>
+<tr><td>Clay</td><td>949</td><td>65</td><td>0</td></tr></tbody>
+      </table>
+      <h3>3. How the money divides</h3>
+      <p>For this side of this measure the reachable votes sit <b>78% in persuasion
+      ground and 22% in turnout ground</b>. The other side's plan, from the same
+      record, is nearly all persuasion: it holds almost no counties where its own voters stay
+      home. Same data, mirror plans.</p>
+    </div>
+  </div>
+  <div class="calc" id="calc">
+    <div class="eyebrow" style="color:var(--ember)">Try it: a budget, in votes and dollars</div>
+    <div class="calcrow">
+      <label>Budget <input id="budget" type="number" value="250000" min="0" step="5000"> $</label>
+      <label>Your cost per vote <input id="cpv" type="number" value="40" min="1" step="1"> $</label>
+    </div>
+    <div id="calcout"></div>
+    <p class="fine">The cost per vote is yours, not ours: what your organization has found a
+    persuaded or turned-out vote costs. We price the ground; you know your own plow. The split
+    applies the shares above; within each bucket, dollars follow what a point buys in each
+    county (votes per point), with the turnout list ranked by votes at risk.</p>
+  </div>
+  <p class="thesis" style="margin-top:28px">Not “campaign somewhere.” Not “start a domino.”
+  Where, what kind, and how much, with the receipt for each.</p>
+</section>
+
+<section class="wrap">
+  <div class="act"><span class="n">4</span>What we predict, and why</div>
   <h2>Five Missouri questions, county by county.</h2>
   <p>Each card gives the statewide call as "N of every 100 votes" for the side we track, the
   range we'd stop being surprised in, and the reasoning in plain words. The side we track is a
@@ -274,7 +362,7 @@
 </section>
 
 <section class="ops"><div class="wrap">
-  <div class="act"><span class="n">4</span>The map</div>
+  <div class="act"><span class="n">5</span>The map</div>
   <h2>Hover a county. Switch the measure.</h2>
   <p class="lede">Each county is shaded by the share we predict for the side we track: deep
   slate well below 50, neutral at the line, amber well above. The readout shows the prediction,
@@ -426,7 +514,7 @@
 </div></section>
 
 <section class="wrap">
-  <div class="act"><span class="n">5</span>How we'll grade ourselves</div>
+  <div class="act"><span class="n">6</span>How we'll grade ourselves</div>
   <h2>The yardstick was chosen before the data exists.</h2>
   <div class="col2">
     <div>
@@ -473,7 +561,7 @@
 </section>
 
 <section class="wrap">
-  <div class="act"><span class="n">6</span>What we are not claiming</div>
+  <div class="act"><span class="n">7</span>What we are not claiming</div>
   <div class="col2">
     <p class="thesis">A tool, not an oracle. It says where a conversation is worth having; the
     conversation is still yours.</p>
@@ -539,6 +627,30 @@
     c.addEventListener('blur', () => c.classList.remove('lit'));
   });
   recolor();
+
+  const CALC = {"persuasion_share":0.7758,"turnout_share":0.2242,"persuade":[["St. Charles",1701.3],["Greene",1141.3],["Jefferson",880.1],["Cass",429.8],["Franklin",418.5],["Cole",327.6],["Buchanan",294.8],["St. Francois",212.6],["Camden",195.4],["Johnson",173.9],["Callaway",167.3],["Phelps",149.9]],"turnout":[["St. Louis County",4416.6],["Kansas City",1106.5],["St. Louis City",1117.2],["Boone",711.7],["Clay",949.2],["Jackson",1453.5]]};
+  const money = x => '$' + Math.round(x).toLocaleString();
+  function calc() {
+    const budget = Math.max(0, +document.getElementById('budget').value || 0);
+    const cpv = Math.max(1, +document.getElementById('cpv').value || 1);
+    const votes = budget / cpv;
+    const pBudget = budget * CALC.persuasion_share, tBudget = budget * CALC.turnout_share;
+    const pTot = CALC.persuade.reduce((a, r) => a + r[1], 0);
+    const tTot = CALC.turnout.reduce((a, r) => a + r[1], 0);
+    const li = (name, amt) => '<li>' + name + ': <b>' + money(amt) + '</b></li>';
+    document.getElementById('calcout').innerHTML =
+      '<div><h4>Persuasion (' + Math.round(CALC.persuasion_share * 100) + '%)</h4>'
+      + '<div class="sum">' + money(pBudget) + '</div><ul>'
+      + CALC.persuade.map(r => li(r[0], pBudget * r[1] / pTot)).join('') + '</ul></div>'
+      + '<div><h4>Turnout (' + Math.round(CALC.turnout_share * 100) + '%)</h4>'
+      + '<div class="sum">' + money(tBudget) + '</div><ul>'
+      + CALC.turnout.map(r => li(r[0], tBudget * r[1] / tTot)).join('') + '</ul>'
+      + '<p style="color:#8FA0AE;font-size:13px;margin:10px 0 0">About <b style="color:#fff">'
+      + Math.round(votes).toLocaleString() + ' votes</b> at your cost per vote.</p></div>';
+  }
+  document.getElementById('budget').addEventListener('input', calc);
+  document.getElementById('cpv').addEventListener('input', calc);
+  calc();
 </script>
 
 </body>
