@@ -84,6 +84,10 @@ Two things a lay person should know about this step:
   gets made. You don't have to trust the programmer; you can check the
   one number yourself.
 
+If you are the programmer, or are hiring one: the step-by-step with the
+schema, the test pattern, and the lie detector is `docs/ADD_A_STATE.md`.
+Where every existing raw file came from is `docs/DATA_SOURCES.md`.
+
 ## Ingredient 5: A human decision — which side is which
 
 The engine is politics-agnostic; it needs to be told which side of your
@@ -206,6 +210,14 @@ translated from map-language into Tuesday-afternoon language:
    next time? (A primary-day gap may not survive a general-day crowd.)
 5. What's the *second* measure this county voted on? (Missouri showed
    defiance travels across issues — two data points on a county beat one.)
+
+## See it done for a vote that hasn't happened
+
+The whole path, run end to end on Missouri's November 2026 ballot and
+frozen before the vote, is on the public site: the blueprint (how we got
+here), the November receipt (the predictions and the plan, priced in votes),
+and the art of the possible (one volunteer's weekend). The scorecard follows
+in December.
 
 ## What it will never tell you
 

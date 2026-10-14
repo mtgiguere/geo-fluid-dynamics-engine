@@ -253,5 +253,10 @@ watchdog for hollow tests. (mutmut only runs on Linux CI — it refuses on Windo
   explainer, linked from the app's "The November receipt" button (rebuild after registration); `public/blueprint.html` — the public deep-dive
   (research arc with inline notebook figures), linked from "The blueprint" button
 - `tests/unit/` — Python unit tests (one file per module)
+- `docs/` — `FINDINGS.md` (what was learned), `MEASUREMENT_DESIGN.md` (the research design
+  + the 2026 protocol), `RUNBOOK_2026.md` (election night + December scorecard, step by step),
+  `BRING_YOUR_OWN_STATE.md` (lay guide), `ADD_A_STATE.md` (programmer's guide: schema, loader
+  pattern, certified-total acceptance, catalog entry), `DATA_SOURCES.md` (every raw file's
+  source and quirks), `DEMO.md` (the five-minute demo); `CONTRIBUTING.md` at the root
 - `TDD_CONTRACT.md` — the development contract; binding for every session
 - `BACKLOG.md` — agreed-but-deferred work, each item with its JIT trigger
