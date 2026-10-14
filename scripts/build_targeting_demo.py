@@ -11,11 +11,11 @@ itself under test. Run:  uv run python scripts/build_targeting_demo.py
 """
 
 import json
-import math
 from pathlib import Path
 
 import pandas as pd
 
+from geofluid.map.svg import project_rings
 from geofluid.spatial.distance import bounding_box_center, haversine_miles
 from geofluid.targeting import build_itinerary
 
@@ -108,50 +108,8 @@ def _print_talking_points(itinerary: pd.DataFrame, home: str) -> None:
     print(f"\ncounts: {itinerary['category'].value_counts().to_dict()}")
 
 
-# ── SVG projection (equirectangular with cos(lat) aspect correction) ─────────
-def _project_paths(
-    rings: dict[str, list],
-) -> tuple[dict[str, str], dict[str, tuple[float, float]], float]:
-    all_lon = [pt[0] for parts in rings.values() for poly in parts for ring in poly for pt in ring]
-    all_lat = [pt[1] for parts in rings.values() for poly in parts for ring in poly for pt in ring]
-    lon0, lon1 = min(all_lon), max(all_lon)
-    lat0, lat1 = min(all_lat), max(all_lat)
-    midlat = math.radians((lat0 + lat1) / 2)
-    kx = math.cos(midlat)
-    width = 1000.0
-    height = width * (lat1 - lat0) / ((lon1 - lon0) * kx)
-
-    def px(lon: float) -> float:
-        return round((lon - lon0) * kx / ((lon1 - lon0) * kx) * width, 1)
-
-    def py(lat: float) -> float:
-        return round((lat1 - lat) / (lat1 - lat0) * height, 1)
-
-    paths: dict[str, str] = {}
-    centroids_px: dict[str, tuple[float, float]] = {}
-    for fid, parts in rings.items():
-        segs = []
-        for poly in parts:
-            for ring in poly:
-                pts = "".join(
-                    f"{'M' if i == 0 else 'L'}{px(p[0])},{py(p[1])}" for i, p in enumerate(ring)
-                )
-                segs.append(pts + "Z")
-        paths[fid] = "".join(segs)
-        cx = (
-            px(min(p[0] for poly in parts for ring in poly for p in ring))
-            + px(max(p[0] for poly in parts for ring in poly for p in ring))
-        ) / 2
-        cy = (
-            py(min(p[1] for poly in parts for ring in poly for p in ring))
-            + py(max(p[1] for poly in parts for ring in poly for p in ring))
-        ) / 2
-        centroids_px[fid] = (round(cx, 1), round(cy, 1))
-    return paths, centroids_px, height
-
-
 def _render_html(itinerary: pd.DataFrame, rings: dict[str, list], names: dict[str, str]) -> str:
-    paths, cpx, height = _project_paths(rings)
+    paths, cpx, height = project_rings(rings)
     by_fips = {r["fips"]: r for r in itinerary.to_dict("records")}
     targets = [r for r in itinerary.to_dict("records") if r["category"] == "target"]
     d_lo = min(r["dissonance"] for r in targets)

@@ -15,11 +15,12 @@ Run:  uv run python scripts/build_prediction_receipt.py
 """
 
 import json
-import math
 from pathlib import Path
 
 import pandas as pd
 
+from geofluid.map.svg import project_rings
+from geofluid.scoring import bracket_odds
 from geofluid.targeting import build_playbook, playbook_budget_split
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -158,19 +159,6 @@ def _latest(prefix: str) -> tuple[Path, str]:
     return drafts[-1], "DRAFT"
 
 
-def _odds(low: float, central: float, high: float) -> tuple[float, float, float]:
-    """Read the registered bracket as a 90% interval around the central call
-    (sd = half-width / 1.645, errors roughly normal) and return: the chance
-    the tracked side is above 50 as things stand, the chance if the state
-    moves one point its way, and the sd. Derived from the frozen numbers,
-    not a new prediction."""
-    sd = (high - low) / (2 * 1.645)
-    phi = lambda z: 0.5 * (1 + math.erf(z / math.sqrt(2)))  # noqa: E731
-    now = phi((central - 0.5) / sd)
-    plus_one = phi((central + 0.01 - 0.5) / sd)
-    return now, plus_one, sd
-
-
 def _pct(p: float) -> str:
     """A chance as a reader-safe percent: nothing on this page is certain."""
     if p < 0.005:
@@ -191,36 +179,6 @@ def _fill(share: float) -> str:
     if share < 0.5:
         return _lerp_hex(NEUTRAL, SLATE_DEEP, min(1.0, (0.5 - share) / 0.3))
     return _lerp_hex(NEUTRAL, EMBER_DEEP, min(1.0, (share - 0.5) / 0.3))
-
-
-def _project_paths(rings: dict[str, list]) -> tuple[dict[str, str], float]:
-    all_lon = [pt[0] for parts in rings.values() for poly in parts for ring in poly for pt in ring]
-    all_lat = [pt[1] for parts in rings.values() for poly in parts for ring in poly for pt in ring]
-    lon0, lon1 = min(all_lon), max(all_lon)
-    lat0, lat1 = min(all_lat), max(all_lat)
-    kx = math.cos(math.radians((lat0 + lat1) / 2))
-    width = 1000.0
-    height = width * (lat1 - lat0) / ((lon1 - lon0) * kx)
-
-    def px(lon: float) -> float:
-        return round((lon - lon0) / (lon1 - lon0) * width, 1)
-
-    def py(lat: float) -> float:
-        return round((lat1 - lat) / (lat1 - lat0) * height, 1)
-
-    paths = {}
-    for fid, parts in rings.items():
-        segs = []
-        for poly in parts:
-            for ring in poly:
-                segs.append(
-                    "".join(
-                        f"{'M' if i == 0 else 'L'}{px(p[0])},{py(p[1])}" for i, p in enumerate(ring)
-                    )
-                    + "Z"
-                )
-        paths[fid] = "".join(segs)
-    return paths, height
 
 
 def main() -> None:
@@ -288,7 +246,7 @@ def main() -> None:
                 geom["coordinates"] if geom["type"] == "MultiPolygon" else [geom["coordinates"]]
             )
             names[fid] = f["properties"]["NAME"]
-    paths, height = _project_paths(rings)
+    paths, _centroids, height = project_rings(rings)
 
     # Embedded data: per measure, per fips -> [pred, low, high, baseline]
     data = {}
@@ -326,7 +284,7 @@ def main() -> None:
         )
         wins = int((g["pred_progressive_share"] > 0.5).sum())
         kc = g[g["fips"] == "2938000"]["pred_progressive_share"].iloc[0]
-        now, plus_one, _sd = _odds(lo, mid_level, hi)
+        now, plus_one, _sd = bracket_odds(low=lo, central=mid_level, high=hi)
         odds_rows.append((meta["short"], meta["tracked"], now, plus_one - now))
         cards.append(
             f"""<article class="card" id="card-{mid}">
@@ -854,7 +812,8 @@ _TEMPLATE = r"""<!doctype html>
   &nbsp;·&nbsp; <a class="backlink" href="demo.html">The art of the possible &rarr;</a></p>
 </div></footer>
 
-<script>
+<script type="module">
+  import {{ allocate }} from "./calc.js";
   const DATA = {data_json};
   const NAMES = {names_json};
   const TRACKED = {tracked_json};
@@ -900,22 +859,18 @@ _TEMPLATE = r"""<!doctype html>
   const CALC = {calc_json};
   const money = x => '$' + Math.round(x).toLocaleString();
   function calc() {{
-    const budget = Math.max(0, +document.getElementById('budget').value || 0);
-    const cpv = Math.max(1, +document.getElementById('cpv').value || 1);
-    const votes = budget / cpv;
-    const pBudget = budget * CALC.persuasion_share, tBudget = budget * CALC.turnout_share;
-    const pTot = CALC.persuade.reduce((a, r) => a + r[1], 0);
-    const tTot = CALC.turnout.reduce((a, r) => a + r[1], 0);
-    const li = (name, amt) => '<li>' + name + ': <b>' + money(amt) + '</b></li>';
+    const out = allocate(document.getElementById('budget').value,
+                         document.getElementById('cpv').value, CALC);
+    const li = r => '<li>' + r.name + ': <b>' + money(r.dollars) + '</b></li>';
     document.getElementById('calcout').innerHTML =
       '<div><h4>Persuasion (' + Math.round(CALC.persuasion_share * 100) + '%)</h4>'
-      + '<div class="sum">' + money(pBudget) + '</div><ul>'
-      + CALC.persuade.map(r => li(r[0], pBudget * r[1] / pTot)).join('') + '</ul></div>'
+      + '<div class="sum">' + money(out.persuasion.total) + '</div><ul>'
+      + out.persuasion.rows.map(li).join('') + '</ul></div>'
       + '<div><h4>Turnout (' + Math.round(CALC.turnout_share * 100) + '%)</h4>'
-      + '<div class="sum">' + money(tBudget) + '</div><ul>'
-      + CALC.turnout.map(r => li(r[0], tBudget * r[1] / tTot)).join('') + '</ul>'
+      + '<div class="sum">' + money(out.turnout.total) + '</div><ul>'
+      + out.turnout.rows.map(li).join('') + '</ul>'
       + '<p style="color:#8FA0AE;font-size:13px;margin:10px 0 0">About <b style="color:#fff">'
-      + Math.round(votes).toLocaleString() + ' votes</b> at your cost per vote.</p></div>';
+      + Math.round(out.votes).toLocaleString() + ' votes</b> at your cost per vote.</p></div>';
   }}
   document.getElementById('budget').addEventListener('input', calc);
   document.getElementById('cpv').addEventListener('input', calc);
