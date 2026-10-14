@@ -229,3 +229,32 @@ test("the Receipt button opens the public pre-registration page", async ({ page 
   await expect(page.locator("a.backlink").first()).toHaveAttribute("href", "./");
   expect(errors).toEqual([]);
 });
+
+test("the Blueprint button opens the public deep-dive page", async ({ page }) => {
+  // The blueprint is the companion to the receipt: the whole research arc with
+  // the notebooks' own figures embedded inline. Integration only: the link
+  // resolves at the base path, the figures and the module cards render, the
+  // registration date is shown, console clean.
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(String(e)));
+  page.on("console", (m) => {
+    if (m.type() === "error") errors.push(m.text());
+  });
+  page.on("response", (r) => {
+    if (r.status() >= 400) errors.push(`HTTP ${r.status()} ${r.url()}`);
+  });
+
+  await page.goto("./");
+  const link = page.locator("#blueprint-link");
+  await expect(link).toHaveText(/blueprint/i);
+  await expect(link).toHaveAttribute("href", /(^|\/)blueprint\.html$/);
+  await link.click();
+
+  await expect(page).toHaveURL(/\/geo-fluid-dynamics-engine\/blueprint\.html$/);
+  await expect(page.getByRole("heading", { name: /the way forests do/ })).toBeVisible();
+  await expect(page.locator("figure img")).toHaveCount(8);
+  await expect(page.locator(".mod")).toHaveCount(5);
+  await expect(page.locator("section.locked")).toContainText(/Registered 20\d\d-\d\d-\d\d/);
+  await expect(page.locator("a.backlink").first()).toHaveAttribute("href", "./");
+  expect(errors).toEqual([]);
+});
