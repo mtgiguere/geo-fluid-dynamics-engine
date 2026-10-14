@@ -531,6 +531,9 @@ _TEMPLATE = r"""<!doctype html>
       is worth.</p>
       <p class="thesis" style="margin-top:22px">Every consultant has a map. This one is priced
       in votes, shows you the other side's map too, and has been graded in public.</p>
+      <p>To see the idea at the smallest scale, one volunteer with one free Saturday and a tank
+      of gas, the Kansas example is the place to start.</p>
+      <a class="cta" href="demo.html">The art of the possible &rarr;</a>
     </div>
   </div>
 </section>
