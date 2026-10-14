@@ -94,8 +94,15 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
        referrals (Amdt 7 prosperity fund, Amdt 8 sheriffs — roll-off and
        status-quo-bias modeling, humbler intervals; the anti-cherry-picking
        move) and any litigation additions.
-    4. **Registration commit by 2026-10-15** - frozen thereafter (amendments =
-       new dated file; the old one still gets scored). PLAYBOOK GENERATOR
+    4. **REGISTERED 2026-10-14** (tag `registration-2026-11-03`): predictions
+       (5 x 116), statewide-only (NV Q6, MA Q8), receipts, record buckets,
+       propositions (pre-registered Wilcoxon test + Moran and turnout
+       diagnostics + coupling), raw-input manifest, sealed-playbook manifest;
+       freeze guard test re-hashes them on every pytest run. Final brackets:
+       Amdt 3 NO 48.5/55/59, Amdt 6 YES 50/62/70 (low ends widened at
+       registration on the implied-odds review), map NO 46/53/60, Amdt 7 NO
+       50/58/68, Amdt 8 NO 28/36/45, NV Q6 YES 58/63/68, MA Q8 NO 58/65/72.
+       Amendments = new dated file; the old one still gets scored. PLAYBOOK GENERATOR
        DONE (2026-09-16): `targeting.build_playbook` (measure record + expected
        votes + side -> oriented, re-bucketed, vote-priced, ranked plan) and
        `playbook_budget_split` (persuasion pool = reachable votes in persuade

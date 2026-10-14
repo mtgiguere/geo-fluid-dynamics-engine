@@ -54,8 +54,9 @@ MEASURES = {
             "Kansas, Kentucky and Ohio the ban side ran 8 to 15 points behind its state's "
             "partisan lean. The crowd that votes in a midterm is smaller and a little older, "
             "but August's 80-to-20 rejection of the legislature's initiative restriction says "
-            "the anti-legislature mood is real. Our middle call is 55 of every 100 for NO; "
-            "the low end is the 2024 coalition merely holding."
+            "the anti-legislature mood is real. Our middle call is 55 of every 100 for NO. "
+            "The low end of the range allows the ban side a real chance: money, a still-"
+            "confusing summary, and an older midterm crowd."
         ),
         "past": "2024 Amendment 3, 51.6% yes",
     },
@@ -71,8 +72,8 @@ MEASURES = {
             "The closest past vote is Clean Missouri in 2018, an anti-legislature reform that "
             "won 62% on the same kind of midterm crowd. And in August the legislature's own "
             "attempt to make initiatives harder lost 80 to 20. The risk is that an 80% "
-            "threshold reads as extreme once the opposition calls it a lock-in. Middle call: "
-            "62 of 100 for YES."
+            "threshold reads as extreme once the opposition calls it a lock-in, and YES is "
+            "the change-the-rules answer. Middle call: 62 of 100 for YES."
         ),
         "past": "2018 Amendment 1 (Clean Missouri), 62.0% yes; Aug-2026 Amendment 4, 80.3% no",
     },

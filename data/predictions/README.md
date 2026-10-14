@@ -5,6 +5,18 @@ county-level predictions for statewide ballot measures, committed to `main`
 BEFORE the election so that git history is the notary, then scored in public
 after certification.
 
+## Status
+
+**REGISTERED 2026-10-14.** The `*_REGISTERED_2026-10-14.csv` files below are
+the frozen registration for the November 3, 2026 election (git tag
+`registration-2026-11-03`). They are never edited; the freeze guard
+(`tests/unit/test_registration_frozen.py`) re-hashes every one of them
+against `REGISTERED_SHA256_2026-10-14.csv` on every test run and fails any
+commit that changes a byte. The ten sealed playbooks are in the git-ignored
+`sealed/` folder (backed up off the repository) and are committed only after
+the November scorecard, verified against `SEALED_MANIFEST_REGISTERED_2026-10-14.csv`.
+Draft files are no longer tracked.
+
 ## Files
 
 - `mo_2026-11-03_DRAFT_<date>.csv` — working drafts produced by

@@ -235,7 +235,8 @@ watchdog for hollow tests. (mutmut only runs on Linux CI — it refuses on Windo
   DRAFT -> REGISTERED freeze
 - `data/predictions/` - the 2026 pre-registration receipts: `mo_2026-11-03_DRAFT_<date>.csv`
   from `notebooks/mo_2026_predictions.py` (five MO measures x 116 jurisdictions; columns and
-  the freeze/scoring protocol in its README); the REGISTERED copy is frozen once committed
+  the freeze/scoring protocol in its README); **REGISTERED 2026-10-14** (tag
+  `registration-2026-11-03`) - never edit a `*_REGISTERED_*` file; the freeze-guard test enforces it
 - `notebooks/` — exploratory analysis (jupytext py:percent + paired executed .ipynb);
   EDA that leans on the tested `geofluid` library, **TDD-exempt** (see TDD_CONTRACT.md).
   The research arc: `realignment_1964_vs_2016` (Module 4 seed), `leadlag_node_roles`

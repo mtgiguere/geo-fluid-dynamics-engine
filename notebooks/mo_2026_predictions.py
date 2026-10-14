@@ -537,18 +537,22 @@ turnout_2024 = total["abortion_2024"] / total["abortion_2024"].sum()
 # registered model (slope from the analog's era fit, analog residual shrunk
 # by `K`), shifted so the turnout-weighted statewide share equals the level.
 #
-# * **Amdt 3 (abortion repeal; progressive = NO): 51.5 / 55.0 / 59.0.**
+# * **Amdt 3 (abortion repeal; progressive = NO): 48.5 / 55.0 / 59.0.**
 #   The 2024 rights side won 51.6% on a presidential electorate. A near-total
 #   ban is a harsher cutpoint than a viability right — in KS-2022, KY-2022
 #   and OH-2023 the ban side under-performed the state's partisan lean by
 #   8–15 points. Midterm 2022 electorates favored the rights side, and
 #   Aug-2026's 80–20 rejection of Amendment 4 shows an anti-legislature mood.
-#   Low end: the 2024 coalition merely holds.
-# * **Amdt 6 (initiative protection; progressive = YES): 55 / 62 / 70.**
+#   Low end (widened 2026-10-14 at registration): the ban side has money, a
+#   still-confusing summary, and an older midterm crowd - a real, not
+#   one-in-a-hundred, chance of being ahead.
+# * **Amdt 6 (initiative protection; progressive = YES): 50 / 62 / 70.**
 #   Clean Missouri 2018 (anti-legislature reform) got 62.0% on a midterm —
 #   the same electorate type; Aug-2026 Amendment 4 (the legislature's
 #   initiative restriction) lost 80–20. Risk: the 80% threshold reads as
-#   extreme and the opposition will call it a lock-in.
+#   extreme and the opposition will call it a lock-in; YES is the
+#   change-the-rules answer, so status-quo bias cuts against it (low end
+#   widened to 50 at registration, 2026-10-14).
 # * **Map referendum (progressive = NO = reject HB 1): 46 / 53 / 60.** The
 #   2020 Clean Missouri repeal — the legislature's last redistricting power
 #   play — passed 51.0% on a presidential electorate. A referendum on a
@@ -573,14 +577,14 @@ SLATE = [
         "Amendment 3 — repeal 2024 reproductive-freedom amendment",
         "no",
         ["abortion_2024"],
-        (0.515, 0.550, 0.590),
+        (0.485, 0.550, 0.590),
     ),
     (
         "mo_20261103_amendment_6",
         "Amendment 6 — Respect Missouri Voters (initiative protection)",
         "yes",
         ["cleanmo_2018", "init_restrict_2026p"],
-        (0.55, 0.62, 0.70),
+        (0.50, 0.62, 0.70),
     ),
     (
         "mo_20261103_map_referendum",

@@ -1,0 +1,3 @@
+# Registered prediction files are hashed by the freeze guard: identical bytes on every platform
+data/predictions/*.csv text eol=lf
+data/predictions/sealed/*.csv text eol=lf
