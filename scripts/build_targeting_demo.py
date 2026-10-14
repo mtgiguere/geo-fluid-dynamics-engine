@@ -374,6 +374,10 @@ _TEMPLATE = r"""<!doctype html>
       other too (correlation 0.62, holding partisanship constant). Persuadability is a
       <b>stable trait of a place</b> — not a one-issue fluke. That makes this a prediction,
       not a coincidence.</p>
+      <p>Missouri later confirmed it on 21 measures: a social question and an economic one on
+      the same ballot (0.52), and the same question six years apart (0.68). And the whole method
+      is now registered against a vote that hasn't happened: see
+      <a href="forecast.html" style="color:var(--ember)">the November receipt</a>.</p>
     </div>
   </div>
 </section>
@@ -422,6 +426,18 @@ _TEMPLATE = r"""<!doctype html>
   </div>
 </div></section>
 
+<section class="wave"><div class="wrap">
+  <div class="act"><span class="n">+</span>Where this page fits</div>
+  <div class="col2">
+    <p class="thesis">This is the volunteer's view: one state, one measure, one weekend, with
+    the gas money in mind.</p>
+    <p>The organization's view, the same idea priced in votes for a vote that hasn't happened
+    yet, is <a href="forecast.html">the November receipt</a>. How we got from a question about
+    forests to either page, with the research and the two results that said no, is
+    <a href="blueprint.html">the blueprint</a>.</p>
+  </div>
+</div></section>
+
 <footer><div class="wrap">
   Every number here is computed by <b>tested code</b> from public records — the Kansas
   Secretary of State's certified canvass and county presidential returns. The classifications,
@@ -432,7 +448,9 @@ _TEMPLATE = r"""<!doctype html>
     <span class="chip h">{n_hard} hard ground</span>
     <span class="chip">{n_total} counties ranked</span>
   </div>
-  <p style="margin-top:22px"><a class="backlink" href="./">&larr; Back to the live map</a></p>
+  <p style="margin-top:22px"><a class="backlink" href="./">&larr; Back to the live map</a>
+  &nbsp;·&nbsp; <a class="backlink" href="forecast.html">The November receipt &rarr;</a>
+  &nbsp;·&nbsp; <a class="backlink" href="blueprint.html">The blueprint &rarr;</a></p>
 </div></footer>
 
 <script>
