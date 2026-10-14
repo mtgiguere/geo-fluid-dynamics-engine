@@ -88,13 +88,15 @@ def main() -> int:
     for src, dst in renames:
         src.rename(dst)
     manifest = sha256_manifest([dst for _s, dst in renames], root=PRED_DIR)
-    manifest.to_csv(PRED_DIR / f"SEALED_MANIFEST_REGISTERED_{r}.csv", index=False)
+    manifest.to_csv(
+        PRED_DIR / f"SEALED_MANIFEST_REGISTERED_{r}.csv", index=False, lineterminator="\n"
+    )
     # The freeze guard's input: digests of every public REGISTERED file (the
     # sealed manifest included), verified by tests/unit/test_registration_frozen.py
     # on every pytest run from now on.
     public = [dst for _s, dst in copies] + [PRED_DIR / f"SEALED_MANIFEST_REGISTERED_{r}.csv"]
     sha256_manifest(public, root=PRED_DIR).to_csv(
-        PRED_DIR / f"REGISTERED_SHA256_{r}.csv", index=False
+        PRED_DIR / f"REGISTERED_SHA256_{r}.csv", index=False, lineterminator="\n"
     )
     print("registered. Commit data/predictions/*_REGISTERED_* and never edit them again.")
     return 0
