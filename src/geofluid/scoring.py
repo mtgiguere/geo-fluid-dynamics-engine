@@ -14,6 +14,8 @@ by the loaders' orientation convention; the grade does not care which side
 that is.
 """
 
+import math
+
 import numpy as np
 import pandas as pd
 
@@ -107,3 +109,22 @@ def classify_coupling(slope: float, *, reference: float, tolerance: float) -> st
     if slope < reference - tolerance:
         return "RELAX"
     return "HOLD"
+
+
+def bracket_odds(
+    *, low: float, central: float, high: float, shift: float = 0.01
+) -> tuple[float, float, float]:
+    """The chance the tracked side is above 50, read off a registered bracket.
+
+    The bracket is treated as a 90% interval around the central call with
+    roughly normal error: sd = (high - low) / (2 * 1.645). Returns the chance
+    as things stand, the chance if the state moves `shift` the tracked side's
+    way (one point by default - the "does my money change the odds?" lever),
+    and the sd. A derived reading of the frozen numbers, not a new prediction.
+    """
+    sd = (high - low) / (2 * 1.645)
+
+    def phi(z: float) -> float:
+        return 0.5 * (1 + math.erf(z / math.sqrt(2)))
+
+    return phi((central - 0.5) / sd), phi((central + shift - 0.5) / sd), sd

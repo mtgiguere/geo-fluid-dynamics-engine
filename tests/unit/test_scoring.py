@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 
 from geofluid.scoring import (
+    bracket_odds,
     classify_coupling,
     coupling_slope,
     relevel,
@@ -134,3 +135,25 @@ def test_classify_coupling_against_a_reference_with_tolerance() -> None:
     assert classify_coupling(0.80, reference=0.797, tolerance=0.05) == "HOLD"
     assert classify_coupling(0.70, reference=0.797, tolerance=0.05) == "RELAX"
     assert classify_coupling(0.847, reference=0.797, tolerance=0.05) == "HOLD"
+
+
+def test_bracket_odds_reads_the_bracket_as_a_90_percent_interval() -> None:
+    """The receipt page's "chance the tracked side is ahead". The bracket is
+    read as a 90% interval around the central call: sd = (high - low) /
+    (2 * 1.645). Construct it backwards from sd = 0.05 and central 0.55:
+    low = 0.55 - 1.645 * 0.05 = 0.46775, high = 0.63225. Then
+    z = (0.55 - 0.50) / 0.05 = 1 -> Phi(1) = 0.841344746; one point the
+    tracked side's way makes z = 1.2 -> Phi(1.2) = 0.884930330."""
+    now, plus_one, sd = bracket_odds(low=0.46775, central=0.55, high=0.63225)
+
+    assert abs(sd - 0.05) < 1e-12
+    assert abs(now - 0.841344746) < 1e-8
+    assert abs(plus_one - 0.884930330) < 1e-8
+
+
+def test_bracket_odds_is_exactly_even_at_fifty() -> None:
+    """A central call of exactly 0.50 is a coin flip whatever the width:
+    Phi(0) = 0.5 exactly. Invariance, not a tolerance."""
+    now, _plus_one, _sd = bracket_odds(low=0.40, central=0.50, high=0.60)
+
+    assert now == 0.5
