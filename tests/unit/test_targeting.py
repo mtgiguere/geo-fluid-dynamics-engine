@@ -352,3 +352,36 @@ def test_playbook_rejects_an_unknown_side_loudly() -> None:
 
     with pytest.raises(ValueError, match="progresive"):
         build_playbook(record, votes, side="progresive")
+
+
+def test_itinerary_can_rank_on_the_partisanship_controlled_residual() -> None:
+    """The raw gap (progressive - partisan) is biased: the real relationship
+    is flatter than 1:1, so every red county in a measure that ran ahead of
+    party everywhere looks "persuadable" (the Kansas demo called 81 of 104
+    counties targets). With residualize=True the dissonance is the OLS
+    residual of progressive on partisan (dissonance.issue_resistance), i.e.
+    how far a county ran ahead of its PEERS.
+    Construction: progressive = 0.30 + 0.5 * partisan + e for partisan
+    0.2, 0.3, 0.4, 0.5 and e = +0.05, -0.05, -0.05, +0.05 (e sums to zero
+    and is orthogonal to partisan, so OLS recovers the line exactly):
+    progressive = 0.45, 0.40, 0.45, 0.60. Raw gaps would be 0.25, 0.10,
+    0.05, 0.10; residuals are +0.05, -0.05, -0.05, +0.05. With the base
+    line at 0.45 (D is base) and a residual target line of 0.03: A is the
+    only target, B and C are hard. Home is elsewhere."""
+    counties = _counties(
+        [
+            {"fips": "A", "name": "A", "progressive_share": 0.45, "partisan_share": 0.2},
+            {"fips": "B", "name": "B", "progressive_share": 0.40, "partisan_share": 0.3},
+            {"fips": "C", "name": "C", "progressive_share": 0.45, "partisan_share": 0.4},
+            {"fips": "D", "name": "D", "progressive_share": 0.60, "partisan_share": 0.5},
+        ]
+    )
+    distances = {"A": 10.0, "B": 20.0, "C": 30.0, "D": 40.0}
+
+    out = build_itinerary(
+        counties, distances, home_fips="Z", target_dissonance_min=0.03, residualize=True
+    ).set_index("fips")
+
+    assert abs(float(out["dissonance"].loc["A"]) - 0.05) < 1e-9
+    assert abs(float(out["dissonance"].loc["B"]) - (-0.05)) < 1e-9
+    assert list(out.loc[["A", "B", "C", "D"], "category"]) == ["target", "hard", "hard", "base"]

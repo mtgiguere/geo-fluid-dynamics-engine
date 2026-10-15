@@ -157,3 +157,28 @@ def test_bracket_odds_is_exactly_even_at_fifty() -> None:
     now, _plus_one, _sd = bracket_odds(low=0.40, central=0.50, high=0.60)
 
     assert now == 0.5
+
+
+def test_bracket_odds_uses_the_tail_that_faces_fifty_when_the_bracket_is_asymmetric() -> None:
+    """A registered bracket can be deliberately lopsided (Amendment 3:
+    48.5 / 55 / 59 gives the ban side a fatter lower tail). The question
+    "is the tracked side above 50?" is decided by the tail that faces 50,
+    so a central call above 50 uses the LOWER half-width:
+    sd_low = (0.55 - 0.485) / 1.645 = 0.039514; z = 0.05 / 0.039514 = 1.2654
+    -> Phi(1.2654) = 0.8971 (not 0.94 from the full width). One point the
+    tracked side's way: z = 0.06 / 0.039514 = 1.5185 -> Phi = 0.9355."""
+    now, plus_one, sd = bracket_odds(low=0.485, central=0.55, high=0.59)
+
+    assert abs(sd - 0.039514) < 1e-6
+    assert abs(now - 0.8971) < 5e-4
+    assert abs(plus_one - 0.9355) < 5e-4
+
+
+def test_bracket_odds_uses_the_upper_tail_when_the_central_call_is_below_fifty() -> None:
+    """Amendment 8 is tracked on the losing side (28 / 36 / 45). The tail
+    facing 50 is the UPPER one: sd_high = (0.45 - 0.36) / 1.645 = 0.054711;
+    z = (0.36 - 0.50) / 0.054711 = -2.5589 -> Phi = 0.0053."""
+    now, _plus_one, sd = bracket_odds(low=0.28, central=0.36, high=0.45)
+
+    assert abs(sd - 0.054711) < 1e-6
+    assert abs(now - 0.0053) < 3e-4

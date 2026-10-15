@@ -67,9 +67,10 @@ Open the live map. While it paints:
 
 > "August 2022 — Kansas, a deep-red state, votes to *protect* abortion rights
 > and shocks everyone. This layer isn't the result; it's the **gap** between how
-> each county votes its *party* and how it voted its *conscience*. Blue = voted
-> more pro-choice than its partisanship predicts. We call those **False
-> Bastions** — red on the surface, persuadable underneath."
+> each county voted on the question and how its *party* vote predicted it would.
+> Blue = voted more pro-choice than its partisanship predicts. We call those
+> **False Bastions** — red on the surface, more movable than they look. A
+> statement about places, not about any one voter."
 
 That's the diagnostic. Now the turn.
 
@@ -90,10 +91,11 @@ side**:
 - **The map:** amber counties = go here (persuadable), slate = your base, grey =
   skip. The pulsing dot is "you" (Kansas City).
 - **The list = marching orders.** Read a couple aloud:
-  - *"Leavenworth County — **14 miles** away — voted 59% to protect rights in a
-    county only 39% Democratic. **+20 points** of conscience over party. That's
-    your easy first stop."*
-  - *"Osage County — **+29 points**, the strongest persuadable county in range."*
+  - *"Miami County — **37 miles** away — voted 53% to protect rights in a
+    county only 30% Democratic, **4 points ahead** of counties with the same
+    politics. That's your easy first stop."*
+  - *"Osage County — **10 points ahead of its peers**, the strongest persuadable
+    county in range."*
 - **Hover a row or a county** — they're **linked**: the county lights up on the
   map and everything else dims. *"Hover any stop and it shows you where to
   drive."*
@@ -101,9 +103,10 @@ side**:
   with you. The tool tells you NOT to waste a Saturday there. Knowing where not
   to go is half the value."*
 
-> "So instead of a map I have to interpret, I have a route: start in Leavenworth,
-> then work the ring south and west. Ranked by persuadability, ordered by drive
-> time, with the reason in plain English."
+> "So instead of a map I have to interpret, I have a route: start in Miami
+> County, then Franklin and Osage to the south-west. Ranked by how far a county
+> runs ahead of its peers, ordered by drive time, with the reason in plain
+> English."
 
 **Then the proof it's predictive** (scroll to the Act 2 callout if you skipped
 it, or just say it):
@@ -134,23 +137,27 @@ it, or just say it):
 side won ~59% — our panel matches the certified Secretary-of-State canvass to
 the vote. Home county: **Wyandotte (Kansas City, KS)**.
 
-The ranked itinerary the page shows (target counties, by persuasion leverage):
+The ranked itinerary the page shows (the eight nearest target counties, ordered
+by how far each ran ahead of counties with the same partisan lean — the
+partisanship-controlled residual, not the raw gap; updated 2026-10-15 after an
+outside review found the raw gap called 81 of 104 counties persuadable):
 
-| Stop | County | Drive | Conscience-over-party |
-|-----:|--------|------:|----------------------:|
-| 1 | Osage | 61 mi | **+29 pts** |
-| 2 | Franklin | 47 mi | +26 pts |
-| 3 | Jackson | 61 mi | +23 pts |
-| 4 | Miami | 37 mi | +23 pts |
-| 5 | Jefferson | 35 mi | +22 pts |
-| 6 | **Leavenworth** | **14 mi** | +20 pts |
-| 7 | Doniphan | 53 mi | +18 pts |
-| 8 | Atchison | 41 mi | +17 pts |
+| Stop | County | Drive | Ahead of its peers |
+|-----:|--------|------:|-------------------:|
+| 1 | Osage | 61 mi | **+10 pts** |
+| 2 | Franklin | 47 mi | +7 pts |
+| 3 | Coffey | 80 mi | +7 pts |
+| 4 | Chase | 114 mi | +6 pts |
+| 5 | Morris | 106 mi | +6 pts |
+| 6 | Jackson | 61 mi | +5 pts |
+| 7 | **Miami** | **37 mi** | +4 pts |
+| 8 | Allen | 89 mi | +4 pts |
 
 **Skip (your base):** Johnson (69% pro-choice), Douglas (82%), Shawnee (66%).
 
-**Classification across Kansas:** 81 persuadable targets · 4 base · 19 hard
-ground (of 105 counties; your home county is excluded).
+**Classification across Kansas:** 22 persuadable targets · 4 base · 78 hard
+ground (of 104 counties ranked; your home county is excluded). The cutoff is
+four points ahead of peers (about 0.8 standard deviations of the residual).
 
 **The predictive proof:** Ohio Nov-2023, abortion (Issue 1) vs cannabis
 (Issue 2), same 88 counties, same ballot — partial correlation **r ≈ 0.62**
@@ -205,7 +212,7 @@ ground (of 105 counties; your home county is excluded).
 Open `…/demo.html`, scroll to **Act 3**, and say:
 
 > "Same public election data behind any map — but turned into a route. It hands
-> a Kansas City volunteer a weekend plan — drive to Leavenworth first, 14 miles,
-> these folks vote their conscience over their party; skip Johnson County, they're
-> already with you. Ranked, reasoned, and it's proven to generalize across issues.
+> a Kansas City volunteer a weekend plan — drive to Miami County first, 37 miles,
+> a place that runs ahead of counties with the same politics; skip Johnson County,
+> they're already with you. Ranked, reasoned, and it's proven to generalize across issues.
 > That's the leap from *what happened* to *what to do* — and it's stage one."

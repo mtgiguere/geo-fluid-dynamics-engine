@@ -339,8 +339,11 @@ _TEMPLATE = r"""<!doctype html>
         alt="Ten minimum-wage measures: economic dissonance against state partisan lean">
         <figcaption><b>Ten minimum-wage measures, 2006–2020.</b> Every one passed above its
         state's Democratic share, and the gap grows as the state gets redder (correlation
-        −0.82). Self-interest crossing party, the opposite direction from abortion.
-        </figcaption></figure>
+        −0.82). Self-interest crossing party, the opposite direction from abortion. A caveat
+        we owe: when a measure passes broadly, the raw gap above the Democratic share grows
+        almost automatically as that share falls, so part of this correlation is mechanical;
+        the partisanship-controlled residual is the honest version, and it is what the
+        Missouri work uses.</figcaption></figure>
     </div>
 
     <div class="finding">
@@ -426,7 +429,10 @@ _TEMPLATE = r"""<!doctype html>
       <figure><img src="{populist}"
         alt="1892 Populist share against the 1932 trend break, by county">
         <figcaption><b>The reservoir.</b> 1892 People's Party share against each county's 1932
-        surprise from its own trend, outside the South.</figcaption></figure>
+        surprise from its own trend, outside the South. The 1892 map was paired with four later
+        elections, not searched across all of them: 1912, 1932, 1936 and 2016; 1932 is the
+        one that held strongly.
+        </figcaption></figure>
     </div>
   </div>
 </section>
@@ -524,8 +530,11 @@ _TEMPLATE = r"""<!doctype html>
       someone acts on it.</p>
       <h3>Which is the offer</h3>
       <p>The first organization to run the plan becomes the measurement: the plan in half of
-      a matched set of counties, nothing different in the other half, the effort logged by
-      county, and the difference read in the certified results. That campaign learns what its
+      a matched set of places, nothing different in the other half, the effort logged by
+      county, and the difference read in the certified results. The halves must be whole
+      media markets or non-adjacent county pairs, because neighbors move together and ads
+      don't stop at county lines; expect modest statistical power either way. That campaign
+      learns what its
       effort bought, in votes, by county, for the first time. Every campaign after it gets that
       number with a receipt. We price the ground; the first client tells us all what the plow
       is worth.</p>

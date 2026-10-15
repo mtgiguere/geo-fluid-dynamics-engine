@@ -26,6 +26,8 @@ from collections.abc import Mapping
 
 import pandas as pd
 
+from geofluid.dissonance import issue_resistance
+
 # Itinerary order: persuadable targets first, then your base, then hard ground.
 _CATEGORY_RANK = {"target": 0, "base": 1, "hard": 2}
 # Playbook order: persuade (the argument decides it), turnout (show up), hard.
@@ -39,15 +41,33 @@ def build_itinerary(
     *,
     base_partisan_min: float = 0.45,
     target_dissonance_min: float = 0.15,
+    residualize: bool = False,
 ) -> pd.DataFrame:
     """Rank and classify counties into a campaign itinerary.
 
     `counties` carries fips, name, progressive_share, partisan_share.
     `distances_mi` maps fips to miles from the organizer's home county.
     Returns the itinerary with a category, the dissonance, and the distance.
+
+    `residualize=False` keeps the original raw gap (progressive - partisan).
+    `residualize=True` uses dissonance.issue_resistance instead - the OLS
+    residual of progressive on partisan across the supplied counties, i.e.
+    how far a county runs ahead of its similarly-partisan PEERS. The raw gap
+    is biased (the true relationship is flatter than 1:1), so on a measure
+    that ran ahead of party everywhere it calls nearly every red county a
+    target; the residual is the selective, rigorous version, and
+    target_dissonance_min is then in residual units.
     """
+    if residualize:
+        residual = issue_resistance(
+            counties.set_index("fips")["progressive_share"],
+            counties.set_index("fips")["partisan_share"],
+        )
     out = counties[counties["fips"] != home_fips].copy()  # you don't drive to yourself
-    out["dissonance"] = out["progressive_share"] - out["partisan_share"]
+    if residualize:
+        out["dissonance"] = out["fips"].map(residual)
+    else:
+        out["dissonance"] = out["progressive_share"] - out["partisan_share"]
     out["distance_mi"] = out["fips"].map(dict(distances_mi))
 
     # A county with no defined dissonance (missing issue or partisan baseline)

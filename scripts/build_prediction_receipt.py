@@ -621,10 +621,13 @@ _TEMPLATE = r"""<!doctype html>
       <tbody>{odds_html}</tbody>
     </table>
   </div>
-  <p class="fine">The chance reads our registered range as a 90% interval around the middle call.
-  It is a statement about where things stand, not a promise that effort buys a point: how many
-  points a campaign actually produces is the campaign's own experience, and no election file
-  contains that experiment.</p>
+  <p class="fine">The chance reads our registered range as a 90% interval around the middle call,
+  keeping the range's lopsidedness: where we gave one side a fatter tail on purpose, the chance
+  uses that tail (a split normal, decided by the side of the range that faces 50). It is a
+  statement about where things stand, not a promise that effort buys a point: how many points a
+  campaign actually produces is the campaign's own experience, and no election file contains
+  that experiment. Amendments 7 and 8 rest on the loosest analogs we hold, which is why their
+  ranges are the widest; treat their chances as the softest numbers on this page.</p>
   <div class="col2">
     <div>
       <h3>1. Where a conversation buys the most</h3>
@@ -695,9 +698,11 @@ _TEMPLATE = r"""<!doctype html>
     </ul>
     <p class="fine">What it is not: a replacement for the voter file, or a promise of a lift.
     How many points a plan actually produces is measurable only by running it. The first
-    campaign that follows this plan in half of a matched set of counties, and not the other
+    campaign that follows this plan in half of a matched set of places, and not the other
     half, becomes that measurement, and every campaign after it gets the answer with a
-    receipt.</p>
+    receipt. Because neighboring counties move together and advertising is bought by media
+    market, the halves have to be whole media markets or pairs of counties that don't touch,
+    or the treatment leaks into the control and the comparison is lost.</p>
   </div>
 </section>
 
