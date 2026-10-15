@@ -82,7 +82,13 @@ for a raise 20–30 points beyond their presidential Democratic share; blue Colo
 crossing party, the opposite ideological direction from the abortion result, and
 strong evidence the False-Bastion pattern is about *disposition vs. label*, not a
 one-sided artifact. *Caveat:* N=10 verified subset, state-level/ecological,
-selection bias (minimum wage is on the ballot mostly where it can win).
+selection bias (minimum wage is on the ballot mostly where it can win), and a
+mechanical component: when a measure passes broadly, the raw gap above the
+Democratic share grows almost automatically as that share falls, so the −0.82
+overstates the effect. The partisanship-controlled residual
+(`dissonance.issue_resistance`) is the honest version and is what the Missouri
+work (Finding 6) uses; the raw gap is kept here as the historical headline
+with this caveat attached (outside review, 2026-10-15).
 *(Notebook: `minimum_wage_economic_bastions`.)*
 
 **Why this matters together:** disposition is multi-dimensional. A place can be
@@ -213,7 +219,9 @@ outside the two-party system, so `dem_share_2p` is blind to it):
   our ballot measures unbundle (minimum wage far above partisan lean, social
   measures at or below it).
 
-*Caveats:* 1892 "other" includes small Prohibition-party totals; Southern
+*Caveats:* the 1892 map was paired with four later elections, not searched
+across all of them: 1912, 1932 (plus a 1928-free variant), 1936 and 2016; 1932 is
+the one that held strongly; 1892 "other" includes small Prohibition-party totals; Southern
 returns after 1890 are disenfranchisement-contaminated (reported separately,
 weaker throughout, as they should be); counties are aggregates — persistence of
 *places* is consistent with, but cannot prove, family transmission.

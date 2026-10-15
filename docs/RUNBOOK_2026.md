@@ -71,9 +71,20 @@ py:percent, TDD-exempt EDA) that leans on `geofluid.scoring`:
    - turnout-composition diagnostic: Pearson r between the relevelled
      Amendment 3 error and (2026 votes cast / 2018 votes cast) by
      jurisdiction (2018 totals from the Clean Missouri canvass contest).
-7. Roll-off per measure: votes cast on the measure versus the top of the
+7. The 2026-10-15 supplement (`propositions_2026-11-03_SUPPLEMENT_REGISTERED_2026-10-15.csv`):
+   - county-blocked bootstrap of the skill score: resample the 116
+     jurisdictions with replacement (all five measures travel with a
+     jurisdiction), 10,000 draws, report the point estimate, the 95%
+     percentile interval and the share of draws at or below zero; plus
+     per-measure one-sided Wilcoxon tests (116 rows each, Holm-adjusted).
+     Report the registered 580-row Wilcoxon too, labelled anti-conservative;
+   - relevelled calibration: share of rows inside relevelled prediction
+     ± 1.645 × 0.147 on the logit scale, against the 0.85–0.95 band; report
+     the registered unconditional coverage beside it with where the
+     statewide result landed.
+8. Roll-off per measure: votes cast on the measure versus the top of the
    ticket, as the confusion measurement named in the known weaknesses.
-8. Playbook grade: did the counties the sealed plans flagged as persuasion
+9. Playbook grade: did the counties the sealed plans flagged as persuasion
    ground with positive headroom over-perform the partisanship baseline in
    the predicted direction?
 

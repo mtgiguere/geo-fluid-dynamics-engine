@@ -74,6 +74,18 @@ Draft files are no longer tracked.
   side), `expected_share`, `mean_gap`, `expected_votes`, `votes_per_point`,
   `margin_votes`, `headroom_votes`, `votes_at_risk_midterm`, `priority`.
 
+- `propositions_2026-11-03_SUPPLEMENT_REGISTERED_2026-10-15.csv` — a dated
+  supplement (the protocol's "new information yields a new dated file"),
+  registered one day after the freeze following an outside review, with its
+  own `REGISTERED_SHA256_2026-10-15.csv` covered by the freeze guard. Two
+  rows: the preferred pattern-skill test (a county-blocked bootstrap of the
+  skill score, because the 580 rows are not independent and the registered
+  Wilcoxon is anti-conservative) and the preferred calibration measure
+  (coverage of the relevelled prediction inside the pattern band alone,
+  because the registered unconditional intervals mostly re-grade the level
+  call). The 2026-10-14 registration is untouched and still scored as
+  written.
+
 ## Columns
 
 | column | meaning |

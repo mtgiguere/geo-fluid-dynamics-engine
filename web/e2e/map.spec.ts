@@ -182,7 +182,7 @@ test("the Demo button opens the public prescriptive demo page", async ({ page })
   // itinerary names actual nearby Kansas targets and the inline map renders.
   // (Scope to the itinerary list — the county name also appears in an invisible
   // SVG <title> tooltip earlier in the DOM.)
-  await expect(page.locator("ol.itin")).toContainText("Leavenworth County");
+  await expect(page.locator("ol.itin")).toContainText("Miami County");
   await expect(page.locator("svg.map path.county").first()).toBeVisible();
   // The back-link returns to the live map.
   await expect(page.locator("a.backlink").first()).toHaveAttribute("href", "./");

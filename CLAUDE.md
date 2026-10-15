@@ -234,7 +234,8 @@ watchdog for hollow tests. (mutmut only runs on Linux CI — it refuses on Windo
   (`web/public/forecast.html`) from `data/predictions/` (REGISTERED files if present, else
   the latest DRAFT): the lay + technical explainer of the 2026 pre-registration with a
   measure-switching inline Missouri choropleth; `scripts/register_predictions.py` — the
-  DRAFT -> REGISTERED freeze;
+  DRAFT -> REGISTERED freeze; `scripts/fetch_inputs.py` — downloads the SoS canvass PDFs and verifies every raw
+  input against the registered inputs manifest (says how to get the two it cannot fetch);
   `scripts/build_blueprint.py` — renders the public deep-dive page (`web/public/blueprint.html`):
   brainstorm -> modules -> data/machinery -> eight findings with the notebooks' own figures
   embedded -> the November plan -> the lock-in -> so what

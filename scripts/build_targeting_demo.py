@@ -88,7 +88,16 @@ def main() -> None:
     ]
     counties = pd.DataFrame(rows)
     distances = {fid: haversine_miles(centers[HOME_FIPS], centers[fid]) for fid in counties["fips"]}
-    itinerary = build_itinerary(counties, distances_mi=distances, home_fips=HOME_FIPS)
+    # Residualized dissonance (how far a county ran ahead of its similarly-partisan
+    # peers), not the raw gap: on a measure that ran ahead of party everywhere the raw
+    # gap called 81 of 104 counties persuadable. 0.04 = about four points ahead of peers.
+    itinerary = build_itinerary(
+        counties,
+        distances_mi=distances,
+        home_fips=HOME_FIPS,
+        target_dissonance_min=0.04,
+        residualize=True,
+    )
 
     _print_talking_points(itinerary, names[HOME_FIPS])
     HTML_OUT.write_text(_render_html(itinerary, rings, names), encoding="utf-8")
@@ -145,7 +154,7 @@ def _render_html(itinerary: pd.DataFrame, rings: dict[str, list], names: dict[st
           <span class="tmiles">{r["distance_mi"]:.0f} mi</span>
           <span class="twhy">voted <b>{r["progressive_share"] * 100:.0f}%</b> to protect rights —
             a county only <b>{r["partisan_share"] * 100:.0f}%</b> voted Democratic.
-            <span class="tgap">+{r["dissonance"] * 100:.0f} pts conscience over party</span></span>
+            <span class="tgap">+{r["dissonance"] * 100:.0f} pts ahead of its peers</span></span>
         </li>"""
         for i, r in enumerate(near)
     )
@@ -317,9 +326,12 @@ _TEMPLATE = r"""<!doctype html>
     <div>
       <p>Take Miami County, just south of the city. Only about <b>30%</b> of it voted
       Democratic for president — solidly Republican turf. Yet a <b>majority</b> voted to
-      protect abortion rights. That gap, between how a place votes its <em>party</em> and how
-      it votes its <em>conscience</em>, is what we call <b>dissonance</b>. A high-dissonance
-      county is a <b>False Bastion</b>: red on the surface, movable underneath.</p>
+      protect abortion rights. Nearly every Kansas county ran ahead of its party that day, so
+      the raw gap alone would flag almost all of them. What we measure instead is how far a
+      county ran ahead of <em>counties like it</em>, the ones with the same partisan lean;
+      we call that <b>dissonance</b>. A county well ahead of its peers is a <b>False
+      Bastion</b>: red on the surface, more movable than its neighbors underneath. It is a
+      statement about the county's vote, not about any one voter's mind.</p>
       <p>That's the signal worth driving toward — not the deepest-red county (unmovable) and
       not your own backyard (already with you), but the places quietly voting ahead of their
       party.</p>

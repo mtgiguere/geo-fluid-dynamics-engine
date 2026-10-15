@@ -116,13 +116,19 @@ def bracket_odds(
 ) -> tuple[float, float, float]:
     """The chance the tracked side is above 50, read off a registered bracket.
 
-    The bracket is treated as a 90% interval around the central call with
-    roughly normal error: sd = (high - low) / (2 * 1.645). Returns the chance
-    as things stand, the chance if the state moves `shift` the tracked side's
-    way (one point by default - the "does my money change the odds?" lever),
-    and the sd. A derived reading of the frozen numbers, not a new prediction.
+    The bracket is read as a 90% interval around the central call, with a
+    SPLIT normal so a deliberately lopsided bracket keeps its lopsidedness:
+    the half-width on each side is 1.645 sd for that side. Whether the
+    tracked side is above 50 is decided by the tail that faces 50, so a
+    central call above 50 uses the lower half-width and one below uses the
+    upper. Returns the chance as things stand, the chance if the state moves
+    `shift` the tracked side's way (one point by default - the "does my money
+    change the odds?" lever), and the sd used. A derived reading of the
+    frozen numbers, not a new prediction.
     """
-    sd = (high - low) / (2 * 1.645)
+    sd_low = (central - low) / 1.645
+    sd_high = (high - central) / 1.645
+    sd = sd_low if central >= 0.5 else sd_high
 
     def phi(z: float) -> float:
         return 0.5 * (1 + math.erf(z / math.sqrt(2)))
