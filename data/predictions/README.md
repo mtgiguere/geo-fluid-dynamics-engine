@@ -85,6 +85,20 @@ Draft files are no longer tracked.
   because the registered unconditional intervals mostly re-grade the level
   call). The 2026-10-14 registration is untouched and still scored as
   written.
+- `propositions_2026-11-03_SUPPLEMENT_REGISTERED_2026-11-02.csv` — a second
+  dated supplement, registered the day before the election: an **external
+  benchmark** against On Point Politics' published county forecasts for the
+  same five measures. Three rows: county-pattern skill against theirs
+  (county-blocked bootstrap over 115 jurisdictions; Kansas City folded into
+  Jackson because they do not split it), the disagreement test (Amendment 3
+  jurisdictions where the two models differ by 5+ points — does the result
+  land nearer ours or theirs?), and the statewide level calls side by side
+  (descriptive). `onpoint_benchmark_evidence_2026-11-02.csv` holds the
+  SHA-256 of every captured file (their raw pages, full-page screenshots and
+  the extracted county table, kept off-repo because they are third-party
+  content) plus the five Wayback Machine copies. Both are covered by
+  `REGISTERED_SHA256_2026-11-02.csv` and the freeze guard. Secondary to the
+  2026-10-14 H1, which it does not replace.
 
 ## Columns
 
