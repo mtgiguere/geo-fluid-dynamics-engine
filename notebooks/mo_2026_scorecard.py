@@ -35,7 +35,7 @@
 # "Unofficial Results" on election night makes this a **PROVISIONAL**
 # scorecard; once the Board of State Canvassers certifies, re-fetch, re-run,
 # and the label flips to **CERTIFIED** on its own. The certified run is the one
-# that goes into `docs/FINDINGS.md` and unseals the playbooks (§9).
+# that goes into `docs/FINDINGS.md` and unseals the playbooks (§10).
 #
 # ---
 #
@@ -603,7 +603,107 @@ print(
 # point to confusion, not opinion, as the driver of those misses.
 
 # %% [markdown]
-# ## 9. The sealed playbooks (certified pass only)
+# ## 9. Did the False Bastions hold?
+#
+# The idea the project stands on: some red counties vote well to the left of
+# their party on an issue (a "False Bastion"), and that gap is a lasting trait
+# of the county, not a one-off. Amendment 3 is the first chance to test it on
+# a vote that had not happened when we wrote the forecast: the same issue two
+# years later, in a different kind of election.
+#
+# Measure: `dissonance.issue_resistance`, each county's distance from the line
+# fitted through counties of the same partisanship (2024 Dem two-party
+# share), for the 2024 abortion vote (YES = progressive) and for 2026
+# Amendment 3 (NO = progressive). Not a registered test: the registered
+# version of this question is the disagreement test in the appendix. This is
+# the descriptive picture behind it.
+#
+# * **Survival slope:** regress the 2026 gap on the 2024 gap. 1 = the whole
+#   gap carried over, 0 = every county fell back to its party label.
+# * **Bastions:** red counties (Dem < 35%) in the top quarter of the 2024 gap;
+#   how many stayed above their party peers in 2026.
+# * **Context:** how well gaps line up between *different* Missouri measures
+#   (general elections, 2018-2024), to tell an issue-specific trait from a
+#   general one.
+
+# %%
+from geofluid.dissonance import issue_resistance  # noqa: E402
+
+receipts = pd.read_csv(PRED / "county_receipts_mo_REGISTERED_2026-10-14.csv", dtype={"fips": str})
+gaps = pd.DataFrame(
+    {
+        "county": pd.Series(county_name),
+        "dem": dem24,
+        "gap_2024": issue_resistance(
+            receipts[receipts["measure"] == "abortion_2024"].set_index("fips")["county_share"],
+            dem24,
+        ),
+        "gap_2026": issue_resistance(actual[a3], dem24),
+    }
+).dropna()
+survival = float(np.polyfit(gaps["gap_2024"], gaps["gap_2026"], 1)[0])
+print(
+    f"{len(gaps)} jurisdictions; r(2024 gap, 2026 gap) = {gaps.gap_2024.corr(gaps.gap_2026):.2f}; "
+    f"survival slope = {survival:.2f}"
+)
+red = gaps[gaps["dem"] < 0.35]
+bastions = red[red["gap_2024"] >= red["gap_2024"].quantile(0.75)]
+hard = red[red["gap_2024"] <= red["gap_2024"].quantile(0.25)]
+held = int((bastions["gap_2026"] > 0).sum())
+print(
+    f"red counties: {len(red)}; 2024 bastions (top quarter): {len(bastions)}, "
+    f"still above their party peers in 2026: {held}"
+)
+print(
+    f"  bastions' average gap: {100 * bastions.gap_2024.mean():+.1f} -> "
+    f"{100 * bastions.gap_2026.mean():+.1f} points; hardest red quarter: "
+    f"{100 * hard.gap_2024.mean():+.1f} -> {100 * hard.gap_2026.mean():+.1f}"
+)
+print(
+    bastions.sort_values("gap_2024", ascending=False)
+    .set_index("county")[["dem", "gap_2024", "gap_2026"]]
+    .mul(100)
+    .round(1)
+    .to_string()
+)
+general = receipts[receipts["electorate"] != "primary"]
+cross = pd.DataFrame(
+    {
+        m: issue_resistance(g.set_index("fips")["county_share"], dem24)
+        for m, g in general.groupby("measure")
+    }
+).corr()
+off_diag = cross.where(~np.eye(len(cross), dtype=bool)).stack()
+print(
+    f"context: gaps on DIFFERENT Missouri measures line up at median r = {off_diag.median():.2f}; "
+    f"abortion 2024 with the others: {cross['abortion_2024'].drop('abortion_2024').median():.2f}"
+)
+
+# %% [markdown]
+# **For the field — what you just saw.** In 2024, some deep-red counties
+# voted noticeably more pro-abortion-rights than other counties just as red.
+# The question was whether that was a one-time thing or who those counties
+# are. The survival slope says how much of the gap was still there two years
+# later (0.8 would mean about 80%). The bastion line counts how many of the
+# strongest red bastions stayed ahead of their party peers.
+#
+# Two things to take from the table. First, as a group the bastions held,
+# which is why a campaign can plan around them. Second, single counties can
+# still flip: a county with the biggest gap in 2024 is not guaranteed to
+# keep it. **Spread effort across the group; don't bet everything on the one
+# county with the biggest number.**
+#
+# The context line is a caution. Gaps on *unrelated* Missouri measures barely
+# line up with each other, so a county that crosses party on abortion is not
+# a county that crosses party on everything. The trait is mostly tied to the
+# issue. Use a county's record on the *same* issue when you have it.
+#
+# *For the decision-maker:* this is the evidence that the targeting labels
+# (persuade / turn out / skip) built from a county's own record are worth
+# acting on for the same issue, and less so for a different one.
+
+# %% [markdown]
+# ## 10. The sealed playbooks (certified pass only)
 #
 # RUNBOOK §4: the ten playbooks sealed on 2026-10-14 are unsealed only after
 # certification, verified byte-for-byte against
@@ -619,7 +719,7 @@ else:
     print("PROVISIONAL: playbook grading waits for certification.")
 
 # %% [markdown]
-# ## 10. The scorecard in five sentences (for the field)
+# ## 11. The scorecard in six sentences (for the field)
 #
 # Our forecast against what Missouri actually did. Printed from the numbers
 # above so it can never drift from them.
@@ -657,6 +757,11 @@ print(
         if i_obs > 0 and p_perm < 0.05
         else "no shared local factor left over."
     )
+)
+print(
+    f"6. The False Bastions held as a group: {held} of {len(bastions)} red bastions stayed ahead "
+    f"of their party peers, keeping about {survival:.0%} of their 2024 gap; single counties "
+    f"still flipped."
 )
 
 
