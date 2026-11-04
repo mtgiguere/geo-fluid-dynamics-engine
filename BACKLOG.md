@@ -53,6 +53,27 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
 
 > The narrative across these findings is consolidated in `docs/FINDINGS.md`.
 
+- **LITERATURE CHECK before MPSA (2026-11-04).** Before the April 2027 talk
+  claims anything about False Bastions, issue resistance or ballot-measure
+  targeting, survey what is already published so nothing is presented as new
+  that is not:
+  - candidate-vs-measure divergence and ticket-splitting;
+  - state- and county-level opinion vs policy "incongruence";
+  - ballot-measure ideal-point and scaling work;
+  - post-2022 abortion-measure studies (KS, KY, OH, MI, MO);
+  - county forecasting methods (partisanship + demographics);
+  - spatial diffusion (Hui & Cho 2017 and what cites it).
+  Output: a short related-work note in `docs/` (citations, not copies; no
+  copyrighted PDFs committed) and an honest one-line positioning for the talk.
+  Expected positioning, to be confirmed or corrected by the check: the gap is
+  well known; what may be less common is treating it as a lasting county trait
+  that is forecast, turned into persuade / turn out / skip labels, and graded
+  in public before the vote. Provisional 2026 evidence for "lasting": about 80%
+  of the 2024 Amendment 3 county gap survived into 2026, and 25 of 27 red
+  bastions held. It is mostly issue-specific in Missouri (cross-measure median
+  r 0.09; `notebooks/mo_2026_scorecard.py` §9). Trigger: after the certified
+  scorecard, well before April.
+
 - **ENGINE METHOD BAKE-OFF: analogs vs averages vs trendlines (2026-11-04,
   after the provisional 2026 scorecard).** Goal (Matt): learn how to make the
   engine as good as it can be, choosing the method by honest backtest before the
