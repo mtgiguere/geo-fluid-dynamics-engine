@@ -53,6 +53,59 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
 
 > The narrative across these findings is consolidated in `docs/FINDINGS.md`.
 
+- **INFORMATION-ENVIRONMENT LAYER: heat, explanation, wording (Matt,
+  2026-11-04).** The engine's missing variable may be what voters knew when
+  they reached the question. Three parts:
+  1. **Heat (salience).** Hot, identity-linked issues (abortion) bring settled
+     opinions and single-issue voters, so a county's past vote carries forward.
+     Low-stakes issues ("should sheriffs be a constitutional office?") are
+     decided in the booth, so there is no stable county trait to carry.
+  2. **Explanation.** Was the meaning of YES/NO campaigned on? (Matt, as a
+     voter: Amendment 3's meaning was heavily advertised, the others' not.)
+  3. **Wording.** Double negatives, "YES keeps the law" referendums,
+     politician-written summaries. When voters are unsure, they tend to vote
+     No rather than skip (2026 roll-off was under 1% on every measure, yet NO
+     beat our calls on all five).
+  First evidence (provisional, 3 pairs, mixed electorates and time gaps):
+  share of the county gap that carried over between two votes on the same
+  issue in Missouri:
+
+  | Issue | Gap carried over | r |
+  |---|---|---|
+  | abortion 2024 -> 2026 | 79% | 0.74 |
+  | minimum wage 2018 -> 2024 | 62% | 0.68 |
+  | Clean Missouri 2018 -> 2020 repeal | 30% | 0.44 |
+  | unrelated pair, for reference | 34% | 0.31 |
+
+  The Clean Missouri repeal is also the wording case: its 2020 summary led
+  with a gift ban and buried the redistricting change, and a court ordered it
+  rewritten. Data to collect:
+  - Official ballot text (MO SoS fair-ballot language; catalog measures where
+    available).
+  - Committee spending (Missouri Ethics Commission; other states' finance
+    portals).
+  - News volume per measure per week (GDELT, see the NLP section).
+  - Search interest by media market (Google Trends).
+  Measures to build:
+  - Simple wording features: reading level, negation count, YES = change vs
+    keep, length, loaded words.
+  - A meaning-similarity embedding of the ballot text (the first NLP task,
+    PyTorch + HF).
+  Tests:
+  - (a) Does gap persistence rise with heat across the catalog's repeated
+    issues (many more pairs than Missouri's three)?
+  - (b) Do quiet or confusingly worded measures drift toward No from their
+    partisan expectation?
+  - (c) Does picking past votes by text similarity beat the hand topic labels
+    in the method bake-off?
+  Payoff: the engine knows in advance how far to trust itself (tight ranges
+  and county history on hot, explained measures; party plus a No lean and wide
+  ranges on quiet ones; it would likely have caught Amdt 8 and Prop A). For a
+  campaign: on a quiet measure, explaining what YES means may be worth more
+  than persuading. Trigger: alongside the method bake-off; Missouri 2026 is
+  the first case study (results in hand; spending and coverage still to
+  collect).
+
 - **LITERATURE CHECK before MPSA (2026-11-04).** Before the April 2027 talk
   claims anything about False Bastions, issue resistance or ballot-measure
   targeting, survey what is already published so nothing is presented as new
