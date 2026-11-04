@@ -53,6 +53,49 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
 
 > The narrative across these findings is consolidated in `docs/FINDINGS.md`.
 
+- **ENGINE METHOD BAKE-OFF: analogs vs averages vs trendlines (2026-11-04,
+  after the provisional 2026 scorecard).** Goal (Matt): learn how to make the
+  engine as good as it can be, choosing the method by honest backtest before the
+  next registration, never by tuning on the answer key. Provisional 2026 lessons
+  that motivate it: Amendment 3 (one close same-issue analog, abortion 2024) was
+  near-exact on level and 23% better than partisanship on pattern; the two level
+  misses (Amdt 8, Prop A) had weak/no precedent yet got brackets as narrow as
+  Amdt 3's; every measure shifted toward NO vs our call (incl. Amdt 6, whose
+  progressive side is YES, so not a pure Democratic wave); on Amdt 6 our analog
+  added ~0 over partisanship and On Point's demographic model beat our pattern.
+  Candidates, all fit on the ~21 certified MO measures 2018-2026
+  (`county_receipts_mo`):
+    1. **Single best analog** (the 2026 registered method), as the control.
+    2. **Flat average** of all past gaps. Already known not to beat
+       partisanship when pooled across issues; kept as a reference.
+    3. **Similarity-weighted ensemble**: every past measure, weighted by
+       closeness to the new question (topic, severity, electorate).
+    4. **County trendlines**: each county's gap over time, projected forward
+       (`realignment.trend_surprise` pointed at measure gaps instead of
+       presidential swing). Midterm and presidential electorates fit apart
+       (`history_buckets` already splits them); topic families fit apart or
+       topic-adjusted first; slopes shrunk toward neighbours' and the state's
+       (few points per county, so a raw 13-point slope is noise; the
+       neighbour pull is also the geo-fluid test). Pure vs DAMPED trend:
+       FINDINGS says realignments flicker rather than ratchet, so expect the
+       damped one to win; either result is a finding.
+    5. **Demographic fallback** (age, education, race, density) when no close
+       analog exists: the Amdt 6 lesson.
+    6. **Bracket width from history**: size each level range by how far past
+       Missouri results landed from their precedent, widening with analog
+       distance, and test for a standing "when in doubt, vote No" offset
+       (cross-check with roll-off, RUNBOOK step 8).
+  Protocol: rolling-origin backtest (data through 2022 -> forecast 2024; data
+  through 2024 -> forecast 2026), scored with the same `geofluid.scoring`
+  relevel-then-RMSE plus bracket coverage. Measure-level n is small (~5 per
+  origin), so report it as method selection, not proof. The winner is
+  registered for the next scored election and graded there. Also the densest
+  series we have (Aug + Nov, nearly every year), so it doubles as the first
+  look for a wave that four-year presidential snapshots alias away (see Module
+  2 notes). Trigger: certified 2026 results (December), which become the
+  second backtest origin's answer key; can start on the 2024 origin now. New
+  library code (damped trend, shrinkage, similarity weights) is test-first.
+
 - **2026 PRE-REGISTERED PREDICTION EXPERIMENT — COMMITTED, CLOCK RUNNING
   (2026-08-10).** Full protocol in `docs/MEASUREMENT_DESIGN.md` §7; researched
   ballot landscape in `data/catalog/upcoming_2026.json`. Predict county-level
