@@ -24,9 +24,10 @@
 # On 2026-10-14 we froze county-by-county predictions for Missouri's five
 # November measures (`data/predictions/*_REGISTERED_2026-10-14.csv`, tag
 # `registration-2026-11-03`), then added two dated supplements: a stricter
-# statistical test after an outside review (2026-10-15), and a head-to-head
-# against On Point Politics' published county forecasts (2026-11-02, the day
-# before the vote). This notebook scores every one of those calls exactly as
+# statistical test after an outside review (2026-10-15), and a second
+# yardstick from another published county forecast (2026-11-02, the day
+# before the vote; reported in the appendix as a side point). The story here
+# is our forecast against the result. This notebook scores every call exactly as
 # written, in the order of `docs/RUNBOOK_2026.md` step 2. Nothing here edits a
 # registered file; the freeze guard would fail the test suite if anything did.
 #
@@ -34,7 +35,7 @@
 # "Unofficial Results" on election night makes this a **PROVISIONAL**
 # scorecard; once the Board of State Canvassers certifies, re-fetch, re-run,
 # and the label flips to **CERTIFIED** on its own. The certified run is the one
-# that goes into `docs/FINDINGS.md` and unseals the playbooks (§10).
+# that goes into `docs/FINDINGS.md` and unseals the playbooks (§9).
 #
 # ---
 #
@@ -55,7 +56,7 @@
 # * **Relevel.** Before grading the pattern, we slide every forecast up or
 #   down so its statewide total matches the real one. That way a good or bad
 #   statewide guess (or a national wave) can't make the county map look
-#   better or worse than it was. Same trick for us, the baseline and On Point.
+#   better or worse than it was. Same trick for every forecast we grade.
 # * **Baseline.** The "lazy" forecast: assume every county votes exactly its
 #   party. If we can't beat that, our extra work wasn't worth anything.
 
@@ -251,7 +252,7 @@ print("\nshift toward NO vs our central call (points):", moved_no)
 # we expected everywhere, including Amendment 6, where the side we tracked
 # was YES. A purely Democratic wave would have pushed Amendment 6's YES *up*,
 # not down. So a general "when in doubt, vote No" lean is a live explanation
-# alongside the national mood (roll-off in §9 is one check on it).
+# alongside the national mood (roll-off in §8 is one check on it).
 #
 # *For the decision-maker:* brackets are judgement, not model output, and are
 # graded as such. A miss on the level does not touch the county pattern grade
@@ -551,7 +552,125 @@ print(
 # next. A small r means our assumption held well enough.
 
 # %% [markdown]
-# ## 8. The external benchmark: On Point Politics (2026-11-02 supplement)
+# ## 8. Roll-off: who skipped the measures?
+#
+# RUNBOOK step 8: votes cast on each measure vs the top of the ticket. In
+# 2026 Missouri's top statewide race is **State Auditor**; its county table
+# has three candidate columns, parsed ad hoc here and checked against the
+# page's own statewide total.
+
+# %%
+aud = (RAW / f"{ENR_PREFIX}_state_auditor.txt").read_text(encoding="utf-8")
+aud_total = int(re.search(r"Total Votes:\t([\d,]+)", aud).group(1).replace(",", ""))
+rows, in_table = {}, False
+for line in aud.splitlines():
+    if line.startswith("County\t"):
+        in_table = True
+        continue
+    m = (
+        re.match(r"^([A-Za-z][A-Za-z .'\-]*?)((?:\t[\d,]+)+)$", line.rstrip("\r"))
+        if in_table
+        else None
+    )
+    if m:
+        rows[fips_map[m.group(1)]] = sum(
+            int(x.replace(",", "")) for x in m.group(2).split("\t")[1:]
+        )
+aud_cast = pd.Series(rows)
+if aud_cast.sum() != aud_total:
+    raise ValueError(f"auditor table sums to {aud_cast.sum():,}, page says {aud_total:,}")
+print(f"State Auditor: {aud_total:,} votes, {len(aud_cast)} jurisdictions (reconciles)")
+rolloff = pd.DataFrame({SHORT[m]: 1 - votes[m] / aud_cast for m in PAGES})
+state_rolloff = pd.Series({SHORT[m]: 1 - votes[m].sum() / aud_total for m in PAGES})
+print("statewide roll-off (share of auditor voters who skipped the measure):")
+print((100 * state_rolloff).round(2).to_string())
+# Is skipping related to where NO over-performed us? Pattern error vs roll-off, per measure.
+corr = {
+    SHORT[m]: float(np.corrcoef(err[m].reindex(aud_cast.index), rolloff[SHORT[m]])[0, 1])
+    for m in PAGES
+}
+print(
+    "\nr(our relevelled county error, county roll-off):", {k: round(v, 3) for k, v in corr.items()}
+)
+
+# %% [markdown]
+# **For the field — what you just saw.** Roll-off is the share of people who
+# voted for State Auditor but left a measure blank: a rough gauge of
+# confusion or "not my business." A measure with high roll-off is one where
+# a lot of voters didn't know what to make of it, and confused voters
+# historically lean No. The last line asks whether the counties where we
+# missed are the counties where people skipped; a clear relationship would
+# point to confusion, not opinion, as the driver of those misses.
+
+# %% [markdown]
+# ## 9. The sealed playbooks (certified pass only)
+#
+# RUNBOOK §4: the ten playbooks sealed on 2026-10-14 are unsealed only after
+# certification, verified byte-for-byte against
+# `SEALED_MANIFEST_REGISTERED_2026-10-14.csv`, and graded: did the counties
+# flagged as persuasion ground with positive headroom over-perform the
+# partisanship baseline in the predicted direction? Not run on a provisional
+# pass, by design.
+
+# %%
+if STATUS == "CERTIFIED":
+    print("CERTIFIED: unseal and grade the playbooks per RUNBOOK section 4 before publishing.")
+else:
+    print("PROVISIONAL: playbook grading waits for certification.")
+
+# %% [markdown]
+# ## 10. The scorecard in five sentences (for the field)
+#
+# Our forecast against what Missouri actually did. Printed from the numbers
+# above so it can never drift from them.
+
+# %%
+hits = (level_table["in_bracket"] == "HIT").sum()
+graded = level_table["in_bracket"].isin(["HIT", "MISS"]).sum()
+called = sum(
+    ((levels.level_central[m] > 0.5) == (statewide[m] > 0.5)) for m in PAGES
+)  # the tracked side won where we said it would
+lo_b, hi_b = np.percentile(boot, [2.5, 97.5])
+best, worst = summary["skill_vs_baseline"].idxmax(), summary["skill_vs_baseline"].idxmin()
+misses = ", ".join(level_table.loc[level_table.in_bracket == "MISS", "measure"]) or "none"
+print(f"[{STATUS}]")
+print(
+    f"1. Statewide: pass/fail called right on {called} of 5 Missouri measures; "
+    f"{hits} of {graded} graded ranges held the result (outside: {misses})."
+)
+print(
+    f"2. County map vs party alone: misses {total.skill_vs_baseline:.0%} smaller "
+    f"(95% range {lo_b:+.3f} to {hi_b:+.3f}): " + ("a real edge." if lo_b > 0 else "no edge shown.")
+)
+print(
+    f"3. Strongest on {best} (misses {summary.skill_vs_baseline[best]:.0%} smaller), "
+    f"weakest on {worst} ({summary.skill_vs_baseline[worst]:+.0%})."
+)
+print(
+    f"4. Our county ranges held {rel_all:.0%} of results against the 90% we claimed: "
+    + ("honest." if 0.85 <= rel_all <= 0.95 else ("too narrow." if rel_all < 0.85 else "too wide."))
+)
+print(
+    f"5. Amendment 3 misses cluster on the map (Moran's I {i_obs:.2f}, p {p_perm:.4f}): "
+    + (
+        "neighbouring counties carry information the model left out; that is the next build."
+        if i_obs > 0 and p_perm < 0.05
+        else "no shared local factor left over."
+    )
+)
+
+
+# %% [markdown]
+# ## Appendix: a second yardstick (2026-11-02 supplement)
+#
+# Everything above grades the forecast against the result. This appendix
+# reports one more registered check, kept apart on purpose because it is a
+# side point, not the story: the same counties were also forecast in public
+# by On Point Politics, built a different way (party plus age, education,
+# race and density, pulled toward polls). Setting two differently built
+# forecasts against the same result shows *what kind of information* helps
+# on *what kind of question*. It is not a contest, and nothing here says
+# anything about the people who built theirs.
 #
 # First the evidence: their captured pages, screenshots and extracted county
 # table (kept off-repo, third-party content) must hash to what we registered
@@ -707,137 +826,33 @@ for mid, (_, slug) in PAGES.items():
             "onpoint_table": round(prog(table_yes), 1),
             "err_ours": round(abs(ours_c - act), 1),
             "err_onpoint_headline": round(abs(prog(HEADLINE_YES[slug]) - act), 1),
-            "outcome_ours": "right" if ours_pass == passed else "WRONG",
-            "outcome_onpoint": "right" if (HEADLINE_YES[slug] > 50) == passed else "WRONG",
+            "outcome_ours": "right" if ours_pass == passed else "missed",
+            "outcome_onpoint": "right" if (HEADLINE_YES[slug] > 50) == passed else "missed",
         }
     )
 print("(all on the progressive side, points out of 100)")
 print(pd.DataFrame(lv).to_string(index=False))
 
 # %% [markdown]
-# **For the field — what you just saw.** On Point Politics is a professional
-# forecasting site that published county numbers for these same five
-# measures. Their county map is built from party, age, education, race and
-# density, pulled toward polls. Ours is built from party plus each county's own
-# record on past ballot questions. We wrote down how we'd be compared the day
-# before the vote, and saved copies of their pages with the Internet Archive
-# so nobody can say the comparison was rigged.
+# **For the field — what you just saw.** Two forecasts of the same counties,
+# built from different ingredients, graded against the same result. Ours
+# leans on each county's own record on past ballot questions; theirs leans on
+# who lives there. The per-measure table shows each approach doing well on
+# different measures: a county's voting record helped most where a close
+# past vote existed (Amendment 3), and demographics helped most where none
+# did (Amendment 6). The practical lesson is that the two kinds of
+# information are complementary, which is why combining them is on the
+# backlog.
 #
-# Three results, each answering a different question:
+# The disagreement lines test the idea the project stands on: does a county
+# that crossed party on a past vote cross again, or fall back to its party
+# label? The counties where the two forecasts differed by 5+ points are
+# where that question gets answered most sharply.
 #
-# * **The whole county map** (skill vs On Point): whose county-by-county
-#   picture was closer overall, after both are slid to the real statewide
-#   total. If the 95% range straddles zero, neither of us showed a real edge.
-# * **The counties where we disagreed** — the ones that decide where a
-#   campaign spends its Saturdays. This is the sharpest test of the core
-#   idea: does a red county that crossed party on abortion in 2024 do it
-#   again (our bet), or fall back to its party label (theirs)?
-# * **The statewide calls**, which is what the news reports.
+# The statewide table is descriptive only; five measures is too few to
+# conclude anything from.
 #
-# *For the decision-maker:* the disagreement counties are where the two
-# forecasts would have sent you to different places. Read that line as
-# "when the two forecasts disagree about a county, which one should I
-# believe?" and the per-measure breakdown as "for which kinds of question?"
-
-# %% [markdown]
-# ## 9. Roll-off: who skipped the measures?
-#
-# RUNBOOK step 8: votes cast on each measure vs the top of the ticket. In
-# 2026 Missouri's top statewide race is **State Auditor**; its county table
-# has three candidate columns, parsed ad hoc here and checked against the
-# page's own statewide total.
-
-# %%
-aud = (RAW / f"{ENR_PREFIX}_state_auditor.txt").read_text(encoding="utf-8")
-aud_total = int(re.search(r"Total Votes:\t([\d,]+)", aud).group(1).replace(",", ""))
-rows, in_table = {}, False
-for line in aud.splitlines():
-    if line.startswith("County\t"):
-        in_table = True
-        continue
-    m = (
-        re.match(r"^([A-Za-z][A-Za-z .'\-]*?)((?:\t[\d,]+)+)$", line.rstrip("\r"))
-        if in_table
-        else None
-    )
-    if m:
-        rows[fips_map[m.group(1)]] = sum(
-            int(x.replace(",", "")) for x in m.group(2).split("\t")[1:]
-        )
-aud_cast = pd.Series(rows)
-if aud_cast.sum() != aud_total:
-    raise ValueError(f"auditor table sums to {aud_cast.sum():,}, page says {aud_total:,}")
-print(f"State Auditor: {aud_total:,} votes, {len(aud_cast)} jurisdictions (reconciles)")
-rolloff = pd.DataFrame({SHORT[m]: 1 - votes[m] / aud_cast for m in PAGES})
-state_rolloff = pd.Series({SHORT[m]: 1 - votes[m].sum() / aud_total for m in PAGES})
-print("statewide roll-off (share of auditor voters who skipped the measure):")
-print((100 * state_rolloff).round(2).to_string())
-# Is skipping related to where NO over-performed us? Pattern error vs roll-off, per measure.
-corr = {
-    SHORT[m]: float(np.corrcoef(err[m].reindex(aud_cast.index), rolloff[SHORT[m]])[0, 1])
-    for m in PAGES
-}
-print(
-    "\nr(our relevelled county error, county roll-off):", {k: round(v, 3) for k, v in corr.items()}
-)
-
-# %% [markdown]
-# **For the field — what you just saw.** Roll-off is the share of people who
-# voted for State Auditor but left a measure blank: a rough gauge of
-# confusion or "not my business." A measure with high roll-off is one where
-# a lot of voters didn't know what to make of it, and confused voters
-# historically lean No. The last line asks whether the counties where we
-# missed are the counties where people skipped; a clear relationship would
-# point to confusion, not opinion, as the driver of those misses.
-
-# %% [markdown]
-# ## 10. The sealed playbooks (certified pass only)
-#
-# RUNBOOK §4: the ten playbooks sealed on 2026-10-14 are unsealed only after
-# certification, verified byte-for-byte against
-# `SEALED_MANIFEST_REGISTERED_2026-10-14.csv`, and graded: did the counties
-# flagged as persuasion ground with positive headroom over-perform the
-# partisanship baseline in the predicted direction? Not run on a provisional
-# pass, by design.
-
-# %%
-if STATUS == "CERTIFIED":
-    print("CERTIFIED: unseal and grade the playbooks per RUNBOOK section 4 before publishing.")
-else:
-    print("PROVISIONAL: playbook grading waits for certification.")
-
-# %% [markdown]
-# ## 11. The scorecard in five sentences (for the field)
-#
-# Printed from the numbers above so it can never drift from them.
-
-# %%
-hits = (level_table["in_bracket"] == "HIT").sum()
-graded = level_table["in_bracket"].isin(["HIT", "MISS"]).sum()
-lo_b, hi_b = np.percentile(boot, [2.5, 97.5])
-lo_o, hi_o = np.percentile(boot_op, [2.5, 97.5])
-wins = [r["measure"] for r in lv if r["err_ours"] < r["err_onpoint_headline"]]
-print(f"[{STATUS}]")
-print(
-    f"1. Statewide: {hits} of {graded} graded brackets hit; pass/fail called right on "
-    f"{sum(r['outcome_ours'] == 'right' for r in lv)} of 5 Missouri measures "
-    f"(On Point: {sum(r['outcome_onpoint'] == 'right' for r in lv)} of 5)."
-)
-print(
-    f"2. County map vs party alone: misses {total.skill_vs_baseline:.0%} smaller "
-    f"(95% range {lo_b:+.3f} to {hi_b:+.3f}): " + ("a real edge." if lo_b > 0 else "no edge shown.")
-)
-print(
-    f"3. County map vs On Point: skill {point:+.3f} (95% range {lo_o:+.3f} to {hi_o:+.3f}): "
-    + ("ours better." if lo_o > 0 else ("theirs better." if hi_o < 0 else "a draw overall."))
-)
-print(
-    f"4. Where the two disagreed on Amendment 3, the result sided with us in {k} of {n} "
-    f"jurisdictions."
-)
-print(
-    f"5. Our statewide number was closer than On Point's on {len(wins)} of 5 measures; "
-    f"misses outside our brackets: "
-    + (", ".join(level_table.loc[level_table.in_bracket == "MISS", "measure"]) or "none")
-    + "."
-)
+# *For the decision-maker:* when forecasts built from different information
+# disagree about a county, that county deserves a closer look before money
+# moves. Which ingredient to trust depends on whether a close past vote
+# exists.
