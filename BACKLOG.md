@@ -546,6 +546,34 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
 
 ## NLP / text (future phase)
 
+- **GDELT as the media/sentiment source for Module 4 (Chaos & Anomaly)
+  (Matt, 2026-11-04).** The GDELT Project (https://gdeltproject.org/) publishes
+  a free, worldwide catalog of web news: events, the Global Knowledge Graph
+  (people, organisations, places, themes per article) and a tone score per
+  article, updated every 15 minutes, queryable in Google BigQuery. Not
+  exhaustive, but one free place to mine. Why it fits:
+  - **Module 4:** a daily media-attention / tone series per place and theme is
+    a candidate input to the surprise-field monitor (does coverage or tone
+    shift before a county's vote surprises?).
+  - **The aliasing hypothesis (Module 2 notes):** a daily series is the
+    opposite of four-year snapshots; it may be fast enough to see a wave move.
+  - **Portability:** worldwide coverage, so the same source works for the
+    Mexico demo and beyond.
+  Caveats to check before trusting it:
+  - Coverage of an issue is not public opinion, and national outlets
+    dominate.
+  - Tone is a dictionary-based score, and non-English text is machine
+    translated.
+  - Place names are geocoded automatically, often only to city or state
+    level, so county resolution needs an acceptance test against known
+    events (the Bugs #10-12 rule applies to any ingest).
+  - BigQuery's free tier has a monthly query limit and GDELT's tables are
+    huge, so queries must be partition-filtered and the cost checked before
+    any run.
+  The PyTorch/HF decision below still applies if we compute our own tone
+  instead of using GDELT's. Trigger: when Module 4's live surprise-field
+  monitor is scoped.
+
 - **NLP stack decision — PyTorch + Hugging Face `transformers` (agreed
   2026-06-15).** When the project reaches a text/NLP phase, default to PyTorch +
   HF rather than alternatives (Matt's call; it's the right modern NLP stack and a
