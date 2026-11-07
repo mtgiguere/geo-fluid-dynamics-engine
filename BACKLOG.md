@@ -53,6 +53,27 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
 
 > The narrative across these findings is consolidated in `docs/FINDINGS.md`.
 
+- **PROVE A WAVE ON A KNOWN WAVE: rooftop solar (Matt, 2026-11-07).** Ideas
+  spread person to person; our election data says "the whole state moves at
+  once" because the clock is too slow (one snapshot per election) and because
+  we only looked along county borders. Test the engine on an idea that is
+  known to spread: home solar (Berkeley Lab *Tracking the Sun*, free, one
+  row per install with install date and ZIP code; peer effects shown by
+  Bollinger & Gillingham). Steps:
+  1. **Ingest** (TDD; acceptance against Berkeley Lab's own published install
+     counts): installs per county per quarter, per 1,000 households (ACS).
+  2. **The timing model** (the long-planned survival/hazard piece): when does
+     each county "take off", and did its neighbours take off first?
+  3. **The roads**: borders vs Census commuting flows vs IRS migration flows vs
+     TV media markets. Which one does the wave travel along? (No Facebook data.)
+  4. **The clock test**: sample the same solar data once every four years, as
+     elections do. If the wave disappears, that is direct evidence that
+     elections are too far apart to show a wave, which explains the abstract's
+     "no obvious first domino" finding.
+  5. **Bring it back to politics**: the same detector on GDELT's daily county
+     coverage (fast clock) and dated local-option adoptions (slow clock).
+  JIT trigger: now (Matt's pick for the MPSA paper).
+
 - **INFORMATION-ENVIRONMENT LAYER: heat, explanation, wording (Matt,
   2026-11-04).** The engine's missing variable may be what voters knew when
   they reached the question. Three parts:
