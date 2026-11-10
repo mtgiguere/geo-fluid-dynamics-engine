@@ -68,6 +68,37 @@ Jurisdiction naming decisions that a new reader needs to know:
 - An unmapped jurisdiction name makes every Missouri loader raise. Silent
   drops are forbidden by design.
 
+## The known wave: rooftop solar (and the ZIP-to-county bridge)
+
+Solar is the engine's test bed for a wave: an idea known to spread person to
+person, recorded install by install with a date and a ZIP code.
+
+| File | `data/raw/us_lbnl_dss2026_20261109/LBNL_distributed_solar_dataset_public.zip` (→ `TTS_LBNL_public_file_28-Jul-2026_all.csv`, 2.4 GB) plus the user guide (8.07.26) |
+|---|---|
+| Source | Lawrence Berkeley National Laboratory, *Tracking the Sun* / Distributed Solar public data file, 2026 edition (installs through year-end 2025). Free. The 2025 edition is kept beside it in `us_lbnl_tts2025_20261109/`. |
+| How to get it | Browser download only (emp.lbl.gov blocks scripts). The zip uses **Deflate64**, which Python's `zipfile` and Windows `tar` cannot read; stream it with `unzip -p` (Git for Windows and Linux both ship it). Read the CSV with `dtype=str, encoding="latin-1"`. |
+| Consumed by | `geofluid.ingest.solar.load_solar_installs` (ZIP quirks, each with a test: float text `93004.0` in ~2.2M California rows, ZIP+4 hyphenated or run together, lost leading zeros `6033`, padding and non-breaking spaces, junk `-1`/`redacted`/`Multiple` → missing) and `county_adoption_panel` (household installs per county per quarter, quiet quarters zero-filled). |
+| Acceptance | 3,995,665 rows (the guide: "about 4.0 million PV systems installed through year-end 2025"); residential 3,872,115 = RES + RES_SF + RES_MF exactly; panel total 3,643,662 equals an independent count of household installs matched to a same-state county; 1,119 counties × 112 quarters (1998–2025). |
+| Known gaps | Missouri is not in the file (27 states + DC). Texas and Maryland have ZIPs on only ~25% of rows, Rhode Island none. 0.056% of matched installs (mostly DC-labelled installs on Maryland-majority ZIPs) land in another state's county and are dropped. |
+
+| File | `data/raw/us_census_zcta_county2020_20261110/tab20_zcta520_county20_natl.txt` |
+|---|---|
+| Source | US Census Bureau, 2020 ZCTA-to-county relationship file (www2.census.gov/geo/docs/maps-data/data/rel2020/zcta520/). Pipe-delimited, UTF-8 with a byte-order mark (`encoding="utf-8-sig"`). |
+| Consumed by | `geofluid.ingest.zcta_county.zip_to_county`: one county per ZIP, the county holding most of the ZIP's land (about 10,000 ZIPs cross a county line); blank-ZCTA rows (county land in no ZIP) dropped. |
+| Acceptance | 33,791 ZIPs, the 2020 Census count; 99.81% of solar installs with a ZIP find a county. |
+
+## The roads: commuting and migration between counties
+
+| File | `data/raw/us_census_commuting2020_20261110/table1.xlsx` |
+|---|---|
+| Source | US Census Bureau, ACS 2016–2020 county-to-county commuting flows (www2.census.gov/programs-surveys/demo/tables/metro-micro/2020/commuting-flows-2020/). |
+| Consumed by | Not yet: the "which road does the wave travel" comparison. |
+
+| File | `data/raw/us_irs_migration2223_20261110/countyinflow2223.csv`, `countyoutflow2223.csv` |
+|---|---|
+| Source | IRS Statistics of Income, county-to-county migration, tax years 2022–2023 (www.irs.gov/pub/irs-soi/). Earlier years follow the same naming. |
+| Consumed by | Not yet: the "which road" comparison. |
+
 ## Catalogs (committed, not raw)
 
 - `data/catalog/ballot_measures.csv` — 271 statewide measures, 1996–2025,
