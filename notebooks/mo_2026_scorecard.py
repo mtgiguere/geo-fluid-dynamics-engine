@@ -187,13 +187,19 @@ print(
 #
 # Five Missouri brackets from the registered file, plus the two statewide-only
 # calls (Nevada Question 6, Massachusetts Question 8). Those two have no county
-# file; their certified shares are typed in below from each state's election
-# office when available (`None` = not yet in).
+# file; their shares are typed in below (`None` = not yet in). Until each state
+# certifies, these are the most complete reported counts, with the source and
+# share counted in the comment; in December they are replaced by the certified
+# figures from each state's election office (Nevada certifies on Nov 24).
 
 # %%
-OTHER_STATES = {  # measure_id -> certified progressive share (source in the comment)
-    "nv_20261103_question_6": None,  # Nevada SoS — pending
-    "ma_20261103_question_8": None,  # MA Secretary of the Commonwealth — pending
+OTHER_STATES = {  # measure_id -> progressive share (source in the comment)
+    # PROVISIONAL: Yes 671,565 / No 386,076, 98.3% counted (NBC News, 2026-11-04,
+    # as reported by Wikipedia's "2026 Nevada Question 6").
+    "nv_20261103_question_6": 671_565 / (671_565 + 386_076),
+    # PROVISIONAL: No 75.8%, about 80% counted (Axios Boston, 2026-11-04). MA
+    # posts results to PD43 (electionstats.state.ma.us) only after certification.
+    "ma_20261103_question_8": 0.758,
 }
 levels = reg.groupby("measure_id")[["level_low", "level_central", "level_high"]].first()
 level_rows = []
@@ -226,7 +232,7 @@ for mid, row in so.iterrows():
             "measure": mid,
             "bracket": f"{row.level_low:.3f} - {row.level_high:.3f}",
             "central": row.level_central,
-            "actual": a,
+            "actual": None if a is None else round(a, 4),
             "miss_points": None if g is None else round(100 * g.level_error, 1),
             "in_bracket": "pending" if g is None else ("HIT" if g.in_bracket else "MISS"),
         }
@@ -253,6 +259,17 @@ print("\nshift toward NO vs our central call (points):", moved_no)
 # was YES. A purely Democratic wave would have pushed Amendment 6's YES *up*,
 # not down. So a general "when in doubt, vote No" lean is a live explanation
 # alongside the national mood (roll-off in §8 is one check on it).
+#
+# Nevada and Massachusetts (provisional counts) add a second angle. Nevada's
+# abortion-rights YES came in 0.5 points above our middle guess, inside the
+# range. Massachusetts' NO on ending legal marijuana sales came in at about
+# 76%, nearly 11 points above our middle and outside the range we published
+# (58-72%): we anchored on the narrow 2016 legalization vote (53.7%), but
+# keeping something people already have is a much easier sell than starting
+# it. Across all seven calls, the side we tracked beat our middle guess six
+# times (Amendment 6 is the exception). Nevada's YES beating us too says the
+# lean was not purely "vote No"; the national mood shows up on both sides of
+# the ballot.
 #
 # *For the decision-maker:* brackets are judgement, not model output, and are
 # graded as such. A miss on the level does not touch the county pattern grade
@@ -730,12 +747,15 @@ graded = level_table["in_bracket"].isin(["HIT", "MISS"]).sum()
 called = sum(
     ((levels.level_central[m] > 0.5) == (statewide[m] > 0.5)) for m in PAGES
 )  # the tracked side won where we said it would
+other_in = {m: a for m, a in OTHER_STATES.items() if a is not None}
+called_other = sum((so.level_central[m] > 0.5) == (a > 0.5) for m, a in other_in.items())
 lo_b, hi_b = np.percentile(boot, [2.5, 97.5])
 best, worst = summary["skill_vs_baseline"].idxmax(), summary["skill_vs_baseline"].idxmin()
 misses = ", ".join(level_table.loc[level_table.in_bracket == "MISS", "measure"]) or "none"
 print(f"[{STATUS}]")
 print(
-    f"1. Statewide: pass/fail called right on {called} of 5 Missouri measures; "
+    f"1. Statewide: pass/fail called right on {called} of 5 Missouri measures "
+    f"({called + called_other} of {5 + len(other_in)} with Nevada and Massachusetts); "
     f"{hits} of {graded} graded ranges held the result (outside: {misses})."
 )
 print(
