@@ -641,6 +641,64 @@ Limits:
 - The county-level version is the next test: in Missouri, lay solar
   alongside FEC donations by ZIP.
 
+### Sixth look, 2026-11-11: can we predict where a wave goes next?
+
+**Q (Matt): for MPSA we need to show this can be used by an organization.**
+An organization does not ask "is there a wave?". It asks: "it has caught
+here and here, so where next, and where should we send people?"
+
+**Set-up: out-of-sample.**
+- Train on waves that began before 1980; test on waves that began in 1980
+  or later. Nothing about a test wave is used except what was known that
+  year.
+- Each test wave, each year: rank the states still waiting.
+- **Score 1 (pairs):** pick one waiting state that adopted that year and one
+  that did not. How often is the adopter ranked higher? 50% is a coin flip.
+  95% intervals come from resampling test waves.
+- **Score 2 (send people to 5 states):** of the top 5 waiting states, the
+  share that adopt within the next 3 years, against all waiting states
+  (counted only in years the wave is moving).
+
+Contenders:
+- **Usual leaders:** how early each state went in the training waves.
+- **Biggest first:** births 1980-2025, as a stand-in for population.
+- **The wave:** the share of neighbours already adopted.
+- **Combined:** wave + usual leaders, weighted by a hazard model fitted on
+  the training waves only.
+
+| Ranking by | Names: pairs | Names: top 5 hit | Laws: pairs | Laws: top 5 hit |
+|---|---|---|---|---|
+| Coin flip / random | 50.0% | 35.8% | 50.0% | 20.1% |
+| Biggest first | 50.0% [48.6, 51.6] | 43.3% | 52.2% [51.2, 53.3] | 24.0% |
+| Usual leaders | 60.3% [59.2, 61.6] | 53.9% | 54.0% [52.6, 55.3] | 23.9% |
+| The wave | 64.0% [63.4, 64.7] | 54.7% | 54.6% [53.8, 55.3] | **27.3%** |
+| Wave + usual leaders | **66.8%** [65.9, 67.8] | **56.9%** | **56.3%** [55.0, 57.6] | 26.3% |
+| Adding size | 67.0% | | 56.4% | |
+
+What it says:
+
+1. **Waves can be forecast, out of sample.**
+   - Names: picking 5 states with the model, 57% adopt within 3 years,
+     against 36% at random (1.6x).
+   - Laws: 27% against 20% (1.35x).
+2. **The wave adds to "the usual leaders"**: +6.5 points for names [+5.8,
+   +7.2] and +2.3 points for laws [+1.8, +2.8]. Knowing where the idea
+   already is beats knowing only who usually goes first.
+3. **Size barely matters**, once the wave and the usual leaders are known.
+4. **Laws are much harder to call than names**: about 56% against 67%. That
+   matches the earlier finding that laws travel less by learning and more by
+   "alike". An idea that is mostly regional character is harder to call from
+   its neighbours. How much a topic's wave can be trusted is itself something
+   to measure, and that measurement is the specialist's job.
+
+Caveats:
+- Scratch EDA; the pick-5 score is one run.
+- "Usual leaders" uses the same family's training waves (names for names,
+  laws for laws), which is the "each idea has its own roads" lesson applied.
+- A single 1980 split.
+- When this goes on the public page, the scoring moves into the tested
+  library.
+
 ### Political twins, and the bridge back to politics
 
 Each alternative explanation has a political twin: state programmes ↔ state
@@ -692,3 +750,4 @@ Candidate dated political "adoptions", to run through the solar pipeline:
 14. Bootstrap intervals by wave (law, name) for the era tables: DONE 2026-11-11 (fifth look)
 15. County-level shared roads in Missouri: solar vs FEC donations by ZIP (does I-70 carry both?)
 16. Hot-topic actions vs beliefs: FEC abortion-rights giving, Dobbs to the Kansas vote, through the joint model
+17. Wave prediction test (Nov 25 TODO): DONE 2026-11-11 (sixth look). Next: other split years; move the scoring into the tested library for the public page
