@@ -699,6 +699,65 @@ Caveats:
 - When this goes on the public page, the scoring moves into the tested
   library.
 
+### Seventh look, 2026-11-11: the first political run (FEC giving, 2022)
+
+**Q: do political actions spread from neighbour to neighbour, even if
+beliefs only sort?**
+
+Data: FEC individual contributions, 2021-22 cycle (ingest
+`geofluid.ingest.fec`, tested). Two surprises came before any analysis:
+
+1. **The main file in FEC's zip is truncated.** `itcont.txt` (4.5 GB) stops
+   mid-row and is missing most of 2022, including June-July, the Dobbs
+   window. The `by_date/` files in the same zip are complete: 63.9M rows.
+2. **The bulk file leaves out small, one-off donors.** FEC's own file
+   description: since 2015 a gift is included only once that donor's total
+   to the committee passes $200 (cycle-to-date for candidates, year-to-date
+   for PACs and parties). That is why our sums fall short of FEC's
+   published totals: ActBlue $1.14B of $2.19B, WinRed $0.87B of $1.10B.
+   ActBlue reports no unitemized money, so every gift is in its raw filings.
+   The bulk file therefore shows **committed donors**, not newcomers.
+
+Abortion-specific giving is thin in FEC. Of 87 committees chosen by a name
+rule (`data/catalog/fec_abortion_committees_2022.csv`), EMILY's List took
+76,001 of 78,682 gifts in the truncated file; anti-abortion PACs took 833.
+Ballot committees (Kansas 2022) file with the state, not FEC.
+
+**The test: the activation wave after the leaked Dobbs draft (2022-05-02).**
+- **Take-off:** the first week from 2022-05-02 on in which a county's
+  ActBlue (or WinRed) gifts reach 2x (or 3x) its own weekly average for
+  Jan-Apr 2022.
+- **Units:** counties averaging at least 5 gifts a week: 695 for ActBlue,
+  1,866 for WinRed.
+- **Window:** past and next 2 weeks.
+
+| | Bar | Counties | Took off the leak week | Any-past (state clock) | Joint past / next (state clock) | Within-state shuffle (past / next) |
+|---|---|---|---|---|---|---|
+| ActBlue | 2x | 695 | 327 | 0.79 | 0.96 / 2.10 | 0.74-1.31 / 1.55-1.67 |
+| ActBlue | 3x | 695 | | 0.84 | 0.66 / 1.07 | 0.86-1.57 / 1.12-1.67 |
+| WinRed | 2x | 1,866 | 212 | 1.23 | 1.39 / 1.44 | 0.99-1.18 / 0.93-1.29 |
+| WinRed | 3x | 1,866 | | 0.95 | 1.10 / 1.40 | 0.75-0.87 / 0.92-1.03 |
+
+What it says:
+
+1. **No neighbour wave among committed donors.** It jumped everywhere at
+   once: half the ActBlue counties surged in the leak week itself. The
+   neighbour odds ratio is ~1, indistinguishable from a scrambled map, on
+   both sides and at both bars.
+2. **That fits "broadcast, not contagion" for people who are already
+   engaged.** A $200+ donor hears the news directly; they do not need a
+   neighbour to show them.
+3. **What it does not test is the newcomers**, the people who "catch" the
+   idea, who are exactly the ones the bulk file hides. That needs the raw
+   ActBlue / WinRed filings, which itemize every gift (open item 18).
+
+Caveats:
+- WinRed refunds (type 22Y, ~6% of its rows) are counted in the weekly
+  totals.
+- Counties under 5 gifts a week (mostly rural) are left out.
+- The FEC end-of-quarter deadline (June 30) is a national spike; the clocks
+  absorb it.
+
 ### Political twins, and the bridge back to politics
 
 Each alternative explanation has a political twin: state programmes ↔ state
@@ -751,3 +810,5 @@ Candidate dated political "adoptions", to run through the solar pipeline:
 15. County-level shared roads in Missouri: solar vs FEC donations by ZIP (does I-70 carry both?)
 16. Hot-topic actions vs beliefs: FEC abortion-rights giving, Dobbs to the Kansas vote, through the joint model
 17. Wave prediction test (Nov 25 TODO): DONE 2026-11-11 (sixth look). Next: other split years; move the scoring into the tested library for the public page
+18. Newcomer donors: the raw ActBlue / WinRed filings (every gift, any size), May-Nov 2022. Does the wave show among people giving for the first time?
+19. Kansas 2022 ballot-committee giving (state ethics commission), if a bulk export exists

@@ -119,6 +119,15 @@ Related, not yet downloaded: the researchers' own estimated state-to-state diffu
 | Acceptance | 6,696,687 rows, 51 states, 1910-2025, no duplicates, minimum count 5, names 2-15 characters. Summed state counts give SSA's published national #1s: Mary/John 1910, Linda/James 1950, Emily/Jacob 2000, Olivia/Liam 2024. |
 | Quirks | Headerless lines `state,sex,year,name,count`. Names under 5 in a state-year are suppressed, so state sums fall short of the national file, most in small states. **Read with `keep_default_na=False`:** pandas would otherwise turn the names "Nan" and "Na" into missing values. |
 
+## Political giving: FEC individual contributions (2021-22 cycle)
+
+| File | `data/raw/us_fec_2022_20261111/indiv22.zip` (plus `cm22.zip`, the committee master, and FEC's header files; `SHA256SUMS`). Extracts written beside it: `gifts_zip_week_group_2022.csv.gz` (gifts and dollars per ZIP per week for ActBlue, WinRed and other) and `abortion_gifts_2022.csv.gz`. |
+|---|---|
+| Source | Federal Election Commission bulk data (fec.gov/data/browse-data/?tab=bulk-data), downloaded 2026-11-11. Public. |
+| Consumed by | `geofluid.ingest.fec.load_contributions`: individuals only, 5-digit ZIP, date, amount; undated rows dropped. Committee selection: `data/catalog/fec_abortion_committees_2022.csv`. |
+| Acceptance | 63,885,802 rows in `by_date/`; 63,850,655 individual and dated. ActBlue's and WinRed's own rows sum to $1.14B and $0.87B, against FEC's published 2022 totals of $2.19B and $1.10B (`/committee/{id}/totals`). The gap is the documented $200 inclusion rule, not lost data. No month is missing. |
+| Quirks | **`itcont.txt` in the zip is truncated** (4.5 GB, ends mid-row, missing most of 2022). Read the `by_date/` files instead (12 GB, complete). **Small, one-off donors are left out:** since 2015 a gift is included only once the donor's total to that committee passes $200 (cycle-to-date for candidates, year-to-date for PACs and parties). The bulk file is committed donors; every gift of any size is only in the raw electronic filings (ActBlue and WinRed itemize everything). ActBlue's own rows are one per gift: `24T` (passed on, earmarked) or `15` (a tip to ActBlue). The receiving committee reports the same gift again as `15E` with OTHER_ID = ActBlue, so count one side, not both. WinRed also files refunds as `22Y`. Headerless and pipe-delimited; read as latin-1 with quoting off. |
+
 ## Catalogs (committed, not raw)
 
 - `data/catalog/ballot_measures.csv` — 271 statewide measures, 1996–2025,

@@ -193,7 +193,8 @@ watchdog for hollow tests. (mutmut only runs on Linux CI — it refuses on Windo
   `solar` (LBNL rooftop installs -> county-quarter adoption panel, the known wave) + `zcta_county`
   (ZIP -> one county by largest land share), `spid` (State Policy Innovation and Diffusion v1.2:
   724 policies x 50 states adoption years, 1691-2017; do wave roads change over time?),
-  `names` (SSA baby names by state 1910-2025: each new name a mass-behaviour wave))
+  `names` (SSA baby names by state 1910-2025: each new name a mass-behaviour wave),
+  `fec` (FEC individual contributions: giving by ZIP and day; the bulk file omits donors under $200))
 - `src/geofluid/panel/master` — joins returns + demographics into the master panel
   (FIPS-harmonized; adds swing); `panel/spine` — joins historical + MIT returns into
   the 1868–2024 panel; `panel/measures` — stacks per-measure referendum panels into
