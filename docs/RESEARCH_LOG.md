@@ -223,6 +223,54 @@ its effect on the vote. So "a salesperson speeds up turning out people who
 already agree, more than changing minds" is a hypothesis solar can test
 with dated, located sales.
 
+### Q: Do waves themselves change over time? Is there an older parallel to check?
+
+Matt's point: solar is recent. Suppose we show waves running east from Kansas
+City and west from St. Louis, meeting in the middle. That might hold now and
+for a few years, maybe a decade, but people and places change, so the roads
+waves travel may change too. Is there an older wave (the 80s, the 90s: cable,
+DirecTV, the internet) to check whether a wave pattern repeats closely, or
+not at all?
+
+**What we already have:** FINDINGS #8, where the 1892 Populist map predicts
+1932. Some geographic structure lasted 40 years. Whether the ROADS (direction,
+leaders, followers) last is a separate question.
+
+**The test:** many waves over the same ground across decades. For each wave,
+build a "who goes early" map (each county's take-off relative to its state),
+then correlate the maps across eras. High correlation means the roads are
+stable. Correlation that decays with time means the roads drift; measure how
+fast, and that is the shelf life of a targeting map ("good for about N
+years"). No correlation means each wave makes its own roads.
+
+**Candidate historical waves** (availability from memory, not yet checked
+except where noted):
+
+| Era | Wave | Geography / timing | Free? |
+|---|---|---|---|
+| 1690s-2017 | State policy adoptions, ~700 policies (SPID, Boehmke et al.) | State, year | Yes (Harvard Dataverse) |
+| 1910-now | Baby names: thousands of separate dated waves | State, year | Yes (Social Security) |
+| 1952-2020 | Religion: congregations and members by denomination (RCMS) | County, ~10 yrs | Yes (ARDA) |
+| 1869-2004 | Newspapers opening and closing (Gentzkow-Shapiro-Sinkinson) | County, year | Yes (ICPSR, free account) |
+| 1920s-60s | Farm electrification, tractors, radios (1930), TV sets (1950/60) | County, 5-10 yr censuses | Yes (Haines county data, ICPSR) |
+| 1940s-50s | TV stations arriving (Gentzkow's TV and turnout paper) | Market, dated | Replication data, likely |
+| 1962-2006 | Walmart store openings (Holmes): a company wave | Store, month | Believed yes; to verify |
+| 1999-2008 | Broadband: FCC high-speed providers per ZIP | ZIP, every 6 months | Likely; archive to verify |
+| 1980s-90s | Cable / DirecTV | Cable launch dates in the TV & Cable Factbook | Not free as far as we know; DirecTV never published subscriber geography |
+
+Notes:
+
+- Baby names and state policies answer "do waves change?" most directly:
+  hundreds to thousands of waves across a century.
+- Religion and newspapers give county-level detail over 50+ years.
+- Broadband and Walmart are mostly supply (a company arriving): twins of
+  the salesperson question rather than of ideas.
+
+**Literature head start:** Desmarais, Harden & Boehmke (2015, "Persistent
+Policy Pathways") estimated which states follow which, era by era. They found
+the pathways fairly persistent but changing over time, which supports the
+scepticism.
+
 ### Political twins, and the bridge back to politics
 
 Each alternative explanation has a political twin: state programmes ↔ state
@@ -269,3 +317,4 @@ Candidate dated political "adoptions", to run through the solar pipeline:
 9. The clock test: rerun the hazard model with solar sampled every 4 years
 10. ZIP-level panel
 11. First political run: FEC donations through the same pipeline
+12. Do waves change over time? "Who goes early" maps correlated across eras: baby names / SPID first (many waves), then RCMS religion and newspapers (county level)
