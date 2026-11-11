@@ -19,7 +19,12 @@ Three steps, each tested here:
 import pandas as pd
 import pytest
 
-from geofluid.spatial.timing import at_risk_table, fit_neighbour_hazard, takeoff_quarters
+from geofluid.spatial.timing import (
+    at_risk_table,
+    fit_hazard,
+    fit_neighbour_hazard,
+    takeoff_quarters,
+)
 
 TAKEOFF_COLUMNS = ["fips", "takeoff"]
 AT_RISK_COLUMNS = ["fips", "period", "event", "neighbour_share"]
@@ -324,3 +329,39 @@ def test_each_wave_in_a_pooled_table_keeps_its_own_clock() -> None:
     assert fit_neighbour_hazard(pooled, clock="national") == pytest.approx(1.0, rel=1e-9)
     unlabelled = pooled.drop(columns="wave")
     assert fit_neighbour_hazard(unlabelled, clock="national") == pytest.approx(5 / 3, rel=1e-9)
+
+
+def test_hazard_fit_recovers_two_odds_ratios_at_once() -> None:
+    """The placebo needs two shares in ONE model. A state adopts once, so a
+    neighbour adopting in the next few years is by construction one that
+    has not adopted yet: fitted alone, the future share is dragged below 1
+    by the past share it is tangled with. Fitted together, each is read
+    holding the other fixed: past share = learning from a neighbour who went
+    first; future share = neighbours being alike (they cannot be learned from).
+
+    A noise-free world with odds ratio 4 on the past share and 2 on the
+    future share, one quarter (baseline odds 1/4):
+      past 0, future 0: 5 rows, 1 takes off -> odds 1/4
+      past 1, future 0: 2 rows, 1 takes off -> odds 1     (x4)
+      past 0, future 1: 3 rows, 1 takes off -> odds 1/2   (x2)
+      past 1, future 1: 3 rows, 2 take off  -> odds 2     (x4 x2)
+    Every cell fits the additive model exactly, so the maximum-likelihood
+    odds ratios are 4 and 2."""
+    cells = [(0.0, 0.0, 5, 1), (1.0, 0.0, 2, 1), (0.0, 1.0, 3, 1), (1.0, 1.0, 3, 2)]
+    table = pd.DataFrame(
+        [
+            {
+                "fips": f"06{past:.0f}{future:.0f}{i}",
+                "period": _QUARTERS[0],
+                "event": int(i < events),
+                "past_share": past,
+                "future_share": future,
+            }
+            for past, future, n, events in cells
+            for i in range(n)
+        ]
+    )
+
+    odds_ratios = fit_hazard(table, ["past_share", "future_share"], clock="national")
+
+    assert odds_ratios == pytest.approx({"past_share": 4.0, "future_share": 2.0}, rel=1e-9)

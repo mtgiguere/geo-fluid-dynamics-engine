@@ -111,6 +111,20 @@ def fit_neighbour_hazard(table: pd.DataFrame, clock: Literal["national", "state"
     the odds of taking off this quarter are multiplied for a county whose
     neighbours have ALL taken off, against one whose neighbours have none.
     """
+    return fit_hazard(table, ["neighbour_share"], clock)["neighbour_share"]
+
+
+def fit_hazard(
+    table: pd.DataFrame, covariates: list[str], clock: Literal["national", "state"]
+) -> dict[str, float]:
+    """`fit_neighbour_hazard` with several columns fitted together: one odds
+    ratio per column in `covariates`, each read holding the others fixed.
+
+    The use it was built for is the clean placebo: the share of neighbours
+    that adopted in the PAST few years (could be learned from) and in the
+    NEXT few years (cannot be; it measures neighbours being alike), in one
+    model, so neither borrows the other's signal.
+    """
     # The quarter dummies are the nationwide clock: a tax credit, a price
     # drop, a statewide policy, anything that lifts every county in the same
     # quarter. Only what is left after the clock is credited to neighbours,
@@ -136,29 +150,33 @@ def fit_neighbour_hazard(table: pd.DataFrame, clock: Literal["national", "state"
     informative = (events_in_baseline > 0) & (events_in_baseline < 1)
     table, baseline = table[informative], baseline[informative]
     group, _ = pd.factorize(baseline)
-    x = table["neighbour_share"].to_numpy(dtype=float)
+    x = table.loc[:, covariates].to_numpy(dtype=float)
     event = table["event"].to_numpy(dtype=float)
     n_groups = int(group.max()) + 1
     alpha = np.zeros(n_groups)
-    beta = 0.0
+    beta = np.zeros(len(covariates))
     # Newton's method on (one intercept per baseline, beta). There can be
     # thousands of baselines (724 policies x their years), too many for a
     # dense matrix, but each intercept touches only its own rows, so the
-    # Hessian is a diagonal block plus one row and column for beta. Solving
+    # Hessian is a diagonal block plus a few rows and columns for beta. Solving
     # through that block (a Schur complement) takes exactly the same Newton
     # step as the dense solve, in time proportional to the number of rows.
     for _ in range(_MAX_NEWTON_STEPS):
-        p = 1.0 / (1.0 + np.exp(-(alpha[group] + beta * x)))
+        p = 1.0 / (1.0 + np.exp(-(alpha[group] + x @ beta)))
         w = p * (1.0 - p)
         g_alpha = np.bincount(group, event - p, n_groups)
-        g_beta = float(np.sum((event - p) * x))
+        g_beta = x.T @ (event - p)
         d = np.bincount(group, w, n_groups)
-        c = np.bincount(group, w * x, n_groups)
-        schur = float(np.sum(w * x * x)) - float(np.sum(c * c / d))
-        step_beta = (g_beta - float(np.sum(c * g_alpha / d))) / schur
-        step_alpha = (g_alpha - c * step_beta) / d
+        # c[g, k]: the Hessian's cross term between intercept g and slope k.
+        c = np.stack([np.bincount(group, w * x[:, k], n_groups) for k in range(x.shape[1])], 1)
+        schur = (x.T * w) @ x - (c.T / d) @ c
+        step_beta = np.linalg.solve(schur, g_beta - c.T @ (g_alpha / d))
+        step_alpha = (g_alpha - c @ step_beta) / d
         alpha += step_alpha
         beta += step_beta
-        if max(abs(step_beta), float(np.max(np.abs(step_alpha)))) < _NEWTON_TOLERANCE:
+        if (
+            max(float(np.max(np.abs(step_beta))), float(np.max(np.abs(step_alpha))))
+            < _NEWTON_TOLERANCE
+        ):
             break
-    return float(np.exp(beta))
+    return {name: float(np.exp(b)) for name, b in zip(covariates, beta, strict=True)}

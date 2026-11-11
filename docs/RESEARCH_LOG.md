@@ -447,6 +447,65 @@ Other caveats: one run per setting, no confidence intervals; national clock
 per name, not per region; the take-off is defined on the share of births
 listed (names under 5 are suppressed, which affects small states most).
 
+### Fourth look, 2026-11-11: learning vs alike in ONE model (solar, laws, names)
+
+`fit_hazard` (tested: a noise-free world returns odds ratios 4 and 2
+exactly) fits several neighbour shares together.
+
+Each row is a unit at risk in one period. Three shares go in, all counted
+among its known neighbours:
+- **past k:** share that took off in the k periods before. These could be
+  learned from.
+- **next k:** share that will take off in the k periods after. These cannot
+  be learned from.
+- **past any:** share that took off at any time before.
+
+Rows are kept only up to the end minus k, so every "next k" window is fully
+observed. Scratch EDA, one run each, no confidence intervals.
+
+The table compares the shares fitted alone with past k and next k fitted
+together:
+
+| Wave | Clock | Past k alone | Next k alone | Joint: past k | Joint: next k | Past ÷ next (joint) |
+|---|---|---|---|---|---|---|
+| Solar, k = 1 yr | state | 6.26 | 2.30 | 9.70 | 3.97 | 2.4 |
+| Solar, k = 2 yr | state | 5.12 | 1.29 | 8.03 | 2.69 | 3.0 |
+| Laws, k = 2 yr | per law | 2.85 | 2.08 | 3.18 | 2.38 | 1.3 |
+| Laws, k = 5 yr | per law | 3.01 | 1.80 | 3.60 | 2.30 | 1.6 |
+| Laws first adopted before 1960, k = 5 | per law | 3.81 | 1.66 | 4.48 | 2.20 | 2.0 |
+| Laws first adopted 1960+, k = 5 | per law | 2.69 | 1.87 | 3.24 | 2.35 | 1.4 |
+| Names, k = 2 yr | per name | 11.78 | 1.37 | 14.16 | 2.19 | 6.5 |
+| Names, k = 5 yr | per name | 13.19 | 0.60 | 16.68 | 1.62 | 10 |
+| Names first before 1960, k = 5 | per name | 18.19 | 0.75 | 24.99 | 2.06 | 12 |
+| Names first 1960+, k = 5 | per name | 10.59 | 0.51 | 12.29 | 1.34 | 9 |
+
+(For solar, the national clock gives 30-57x past. That is the "everyone at
+once" inflation the state clock exists to remove, so the state clock is the
+one to read.)
+
+What it says:
+
+1. **The drag was real.** Fitted together, every "next" odds ratio rises
+   (names at 5 years: 0.60 alone → 1.62 jointly), and every "past" rises
+   too. The single-share placebos understated both parts.
+2. **"Next" is also not pure "alike".** If I adopt now and my neighbour then
+   copies me, my neighbour's future adoption is contagion running the other
+   way. So the joint "next" is an upper bound on "alike". The learning part
+   is at least past ÷ next.
+3. **Learning wins in all three.**
+   - Names: past beats next ~6-12x.
+   - Solar: ~2.4-3x, after each state's own clock.
+   - Laws: ~1.3-2x. Laws are the most "alike" and the least "learned".
+4. **The fade over time, corrected.**
+   - Laws: the learning ratio falls from ~2.0 (before 1960) to ~1.4 (1960+).
+     The direction is the same as the second look, but the fade is smaller
+     than the single-share placebo suggested (that read 2.4 → 1.3-1.7).
+   - Names: ~12 → ~9. Weaker, still large.
+5. **For the political run:** the forward-in-time signal survives the
+   fairest test we have, in a market product, a law, and a mass cultural
+   choice. The question for politics is now just whether dated data is fine
+   enough to see it.
+
 ### Political twins, and the bridge back to politics
 
 Each alternative explanation has a political twin: state programmes ↔ state
@@ -483,7 +542,7 @@ Candidate dated political "adoptions", to run through the solar pipeline:
 ### Open, in rough order (Dec 6 solar notebook)
 
 1. Placebo shuffle within states (is 3.9-7.4x more than chance?)
-2. Future-neighbour placebo
+2. Future-neighbour placebo: DONE 2026-11-11 (fourth look; past ÷ next ~2.4-3x on the state clock). Next: within-state shuffle, bootstrap
 3. Provider and utility baselines
 4. Delay-pattern test (which lag predicts best)
 5. Drop leases / new construction; self-installs
@@ -494,5 +553,5 @@ Candidate dated political "adoptions", to run through the solar pipeline:
 10. ZIP-level panel
 11. First political run: FEC donations through the same pipeline
 12. Do waves change over time? "Who goes early" maps correlated across eras: baby names / SPID first (many waves), then RCMS religion and newspapers (county level)
-13. Joint past + future neighbour model (the fitter takes several covariates), for a clean "learning vs alike" split on solar, laws, and names
+13. Joint past + future neighbour model: DONE 2026-11-11 (`fit_hazard`, fourth look). The window shares are computed in scratch code; promote them into `at_risk_table` (tested) when the Dec 6 notebook needs them
 14. Bootstrap intervals by wave (law, name) for the era tables

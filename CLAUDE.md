@@ -205,7 +205,7 @@ watchdog for hollow tests. (mutmut only runs on Linux CI — it refuses on Windo
   classification falsified on real data; see BACKLOG.md), `leadlag` (`lead_lag`:
   Module 2 temporal retry — tested, also falsified on real data; see BACKLOG.md),
   `distance` (`haversine_miles` + `bounding_box_center`: drive-distance for targeting);
-  `timing` (`takeoff_quarters` / `at_risk_table` / `fit_neighbour_hazard`: Module 1 timing
+  `timing` (`takeoff_quarters` / `at_risk_table` / `fit_neighbour_hazard` / `fit_hazard` (several shares at once, e.g. past vs next neighbours): Module 1 timing
   model, does an idea reach a county after its neighbours, net of the national/state clock);
   `weights.attribute_knn_adjacency` (a non-geographic similarity network — drop-in
   to Moran/lag; horse-race found geography still wins but education > urbanicity,
