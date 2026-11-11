@@ -14,6 +14,54 @@ says so.
 
 ## 2026-11-07 to 2026-11-11: Is there a wave? Proving it on a known one (rooftop solar)
 
+### Where we stand (end of 2026-11-11)
+
+Plain version: **ideas do travel from neighbour to neighbour, and we can
+measure it, as long as the data is dated finely enough.** Elections photograph
+the wave too rarely to see it move. All numbers below are quick looks (scratch
+EDA, one run, no confidence intervals yet), built on tested modules.
+
+| Wave | Data | Border effect | Learning ÷ alike | Over time |
+|---|---|---|---|---|
+| Rooftop solar | 3.6M installs, by county and quarter, ~2000-2025 | 4-7x after each state's own clock | ~2.4-3x | (25 years only) |
+| State laws | 563 laws x 50 states, 1691-2017 | ~3.4x | ~1.3-2x | Learning fell from ~2.0 before 1960 to ~1.4 since |
+| Baby names | 838-1,350 names x 51 states, 1910-2025 | ~12x | ~6-10x | ~16x before 1950, ~8-10x since 2000 |
+
+- **Border effect:** how much more likely a place is to adopt once its
+  neighbours have. A shuffled map gives ~1 in every case.
+- **Learning ÷ alike:** past neighbours against future neighbours, in one
+  model. Future neighbours cannot be learned from, so their pull is the
+  ceiling on "neighbours are alike".
+
+What we have learned:
+
+1. **Waves are real in all three**, and mostly forward in time (learning),
+   not just look-alike neighbours.
+2. **The wave is fast.** Solar neighbours are about 9 months apart, and a
+   state is crossed in about 3 years. Sampling every 4 years makes about 69%
+   of neighbour pairs look simultaneous. That alone explains why election
+   swings looked like "everyone moves at once".
+3. **Waves change over time.** They weaken but do not vanish as national media
+   grows. The roads of the 1950s are not quite today's.
+4. **Pushed ideas spread differently.** Model laws from a national drafting
+   shop spread less along borders (2.3x against 3.6x). The salesperson and
+   canvasser question has a measurable twin.
+
+What is built (tested): `ingest.solar`, `ingest.zcta_county`, `ingest.spid`,
+`ingest.names`, and the timing model `spatial.timing` (take-off, at-risk table
+with yearly or quarterly steps and never-adopters, and a hazard fit with any
+number of shares, a clock per wave, national or state).
+
+Branches: `feat/solar-adoption` → `feat/spid-policy-diffusion` →
+`feat/names-diffusion`, stacked, none merged. The merge waits for the
+December certified pass.
+
+Next:
+- confidence intervals by resampling waves
+- a within-state shuffle for solar
+- the Dec 6 notebook (open list below)
+- then the first political run: FEC donations, dated by day and ZIP
+
 ### The starting question
 
 Our election data says a whole state moves at once. Ohio and Missouri counties
