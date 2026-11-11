@@ -110,6 +110,15 @@ person, recorded install by install with a date and a ZIP code.
 
 Related, not yet downloaded: the researchers' own estimated state-to-state diffusion ties for each year 1960–2017 (doi:10.7910/DVN/1QJCDJ, CC0), an answer key for the era-by-era comparison. Also the replication data for "From Borders to Networks: The Changing Channels of Education Policy Diffusion" (doi:10.7910/DVN/VHAH07, 2026). Its description reports the main channel shifting from bordering states to policy networks.
 
+## Waves over time, a mass behaviour: baby names by state (SSA)
+
+| File | `data/raw/us_ssa_namesbystate_20261111/namesbystate.zip` (51 `XX.TXT` files + `StateReadMe.pdf`; extracted alongside, `SHA256SUMS` covers all) |
+|---|---|
+| Source | Social Security Administration, "Popular baby names by state" (ssa.gov/oact/babynames/limits.html), tabulated from SSN records as of 2026-03-01. Public domain. |
+| Consumed by | `geofluid.ingest.names.load_state_names`. Each new name is a wave across 50 states + DC, 1910-2025. |
+| Acceptance | 6,696,687 rows, 51 states, 1910-2025, no duplicates, minimum count 5, names 2-15 characters. Summed state counts give SSA's published national #1s: Mary/John 1910, Linda/James 1950, Emily/Jacob 2000, Olivia/Liam 2024. |
+| Quirks | Headerless lines `state,sex,year,name,count`. Names under 5 in a state-year are suppressed, so state sums fall short of the national file, most in small states. **Read with `keep_default_na=False`:** pandas would otherwise turn the names "Nan" and "Na" into missing values. |
+
 ## Catalogs (committed, not raw)
 
 - `data/catalog/ballot_measures.csv` — 271 statewide measures, 1996–2025,

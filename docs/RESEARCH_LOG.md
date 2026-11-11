@@ -382,6 +382,71 @@ Caveats: no confidence intervals yet (bootstrap by law next); the clock is
 per law per year, but not per region; statehood dates not yet handled; and
 the policy mix still changes by era.
 
+### Third look, 2026-11-11: baby names, a mass behaviour (SSA, scratch EDA)
+
+**Q (Matt): should we try baby names too?** Yes. A law is chosen by a few
+hundred legislators; a name by millions of parents copying what they see and
+hear. That is closer to how a vote moves.
+
+Ingest `geofluid.ingest.names` (tested). Acceptance: 6,696,687 rows, 51 files
+(50 states + DC), 1910-2025, no duplicates, no count under 5. The state counts
+summed give SSA's published #1 names: Mary/John 1910, Linda/James 1950,
+Emily/Jacob 2000, Olivia/Liam 2024.
+
+**Set-up:**
+- **Wave:** each name and sex counts as one wave. The name must have been rare
+  in 1910-14 (under 2% of its later peak), so we see it arrive. It must also
+  peak in 1925 or later, and reach a national peak share of at least 0.1%
+  (run 1) or 0.05% (run 2).
+- **Take-off:** the first year the name's share of a state's births reaches
+  25% (run 1) or 50% (run 2) of its national peak share. States that never
+  reach that bar stay in as "not yet" through 2025.
+- **Model:** same state borders, same per-wave clock, same placebos as the
+  laws.
+
+| | Run 1 (838 names) | Run 2 (1,350 names) |
+|---|---|---|
+| Years from the 10th to 90th percentile state reaching the bar (median name) | 10 | 10 |
+| Mean gap between neighbours / any two states | 4.30 / 6.13 yrs | 4.31 / 6.02 yrs |
+| Real borders, all eras | **12.7** | **11.8** |
+| 1910-49 / 1950-79 / 1980-99 / 2000-25 | 15.6 / 14.1 / 10.4 / 8.0 | 16.6 / 12.1 / 10.2 / 9.6 |
+| Shuffled map (3 runs) | 0.68-1.48 | 0.79-1.42 |
+| Past 5 years | 12.8 | 12.5 |
+| Next 5 years (placebo) | 0.60 | 0.96 |
+| Past 2 / next 2 years | 11.7 / 1.36 | not run |
+
+What it says:
+
+1. **Names travel by border far more strongly than laws:** ~12x against
+   ~3.4x. A shuffled map gives ~1.
+2. **The forward part dominates.** Neighbours in the next 5 years predict
+   nothing (0.6-1.0), against ~1.8 for laws. Once each name's clock is taken
+   out, the border effect for names is almost all "a neighbour went first".
+   It is not "neighbours are alike".
+3. **It has weakened, but it is still strong:** ~16x before 1950, ~8-10x
+   since 2000. National media (radio, TV, then the internet) plausibly
+   flattened it without erasing it. This matches Matt's hunch: waves change
+   over time.
+4. **The bridge to politics:** a choice made by millions of ordinary people
+   still crosses state lines like a wave in the 2000s. A wave in mass political
+   behaviour is plausible. We just need dated data fine enough to see it (the
+   aliasing problem).
+
+**Caveat on the placebo (applies to the laws too).** A state adopts only once.
+So a neighbour that adopts in the NEXT k years is, by construction, one that
+has not adopted yet. That pushes the future-neighbour odds ratio below 1
+mechanically, so the placebo understates "alike".
+
+- For laws, the ~1.8 is therefore a floor on "alike". The reading stands, and
+  if anything the "alike" share is larger.
+- For names, the 0.6-1.0 means little "alike" beyond that pull. The clean
+  split needs past and future shares fitted together in one model. The fitter
+  takes one covariate today, so that is a tested extension (open item 13).
+
+Other caveats: one run per setting, no confidence intervals; national clock
+per name, not per region; the take-off is defined on the share of births
+listed (names under 5 are suppressed, which affects small states most).
+
 ### Political twins, and the bridge back to politics
 
 Each alternative explanation has a political twin: state programmes ↔ state
@@ -429,3 +494,5 @@ Candidate dated political "adoptions", to run through the solar pipeline:
 10. ZIP-level panel
 11. First political run: FEC donations through the same pipeline
 12. Do waves change over time? "Who goes early" maps correlated across eras: baby names / SPID first (many waves), then RCMS religion and newspapers (county level)
+13. Joint past + future neighbour model (the fitter takes several covariates), for a clean "learning vs alike" split on solar, laws, and names
+14. Bootstrap intervals by wave (law, name) for the era tables
