@@ -271,6 +271,68 @@ Policy Pathways") estimated which states follow which, era by era. They found
 the pathways fairly persistent but changing over time, which supports the
 scepticism.
 
+### First look, 2026-11-11: state policies (SPID v1.2, scratch EDA)
+
+Matt picked state policies to stay close to the political theme. Ingest is
+tested (`ingest/spid.py`), and acceptance equals the codebook (17,823
+adoptions, 724 policies). This is a quick look, not the hazard model. Each
+policy's adoption order is turned into a timing percentile per state (a
+non-adopter counts as last). Policies adopted by at least 10 states. Eras by
+the policy's first adoption year.
+
+**1. The border wave is real in every era, and it fades.** Bordering states
+adopt closer together in time than non-bordering states:
+
+| Era (policy first adopted) | Policies | Neighbours closer in timing by |
+|---|---|---|
+| 1691-1929 | 74 | 17.5% |
+| 1930-1959 | 68 | 14.6% |
+| 1960-1979 | 113 | 10.5% |
+| 1980-1999 | 175 | 8.8% |
+| 2000-2017 | 28 | 15.1% (few policies; noisy) |
+
+(Alaska and Hawaii dropped: they were not states before 1959. Uniform Law
+model acts excluded, see 3.) This matches the 2026 "From Borders to Networks"
+paper: borders mattered more a century ago.
+
+**2. The leaders persist, but they drift.** Each state's average timing per
+era, correlated across eras:
+
+| | 1691-1929 | 1930-59 | 1960-79 | 1980-99 | 2000-17 |
+|---|---|---|---|---|---|
+| 1691-1929 | 1 | 0.75 | 0.66 | 0.51 | 0.38 |
+| 1930-59 | | 1 | 0.69 | 0.50 | 0.39 |
+| 1960-79 | | | 1 | 0.66 | 0.42 |
+| 1980-99 | | | | 1 | 0.59 |
+
+Neighbouring eras (~25-30 years apart) correlate ~0.6-0.75; eras ~90 years
+apart, ~0.4. **Matt's hunch holds: the map of who goes first changes, slowly.**
+It never fully resets. California and New York are early in almost every
+era; Mississippi and Wyoming are late in almost every era. A rough shelf
+life: a "who goes early" map keeps most of its value for a generation, and
+about half after a lifetime.
+
+**3. Pushed policies spread less along borders.** Uniform Law Commission
+model acts are neighbours-closer by 7.4%, the rest by 12.5% (all eras,
+first run, AK/HI included). A model-law shop sends the same text to every
+legislature, a network rather than a border. This is the salesperson twin
+again.
+
+Caveats, to fix in the real analysis:
+- Timing percentiles, not the hazard model with a clock.
+- Era is set by each policy's first year.
+- The mix of policies changes by era: 75 of the ~120 policies first adopted
+  after 2000 are Uniform Law acts. With them included, the 2000-17 leaders
+  look unrelated to the early eras (r near 0). That is a composition
+  artefact, which is why the table above excludes them.
+- Policy direction (liberal vs conservative laws) changes who "leads", and
+  is not yet separated.
+- States not yet admitted (Arizona 1912 and others) count as late.
+
+Next: the hazard model on SPID, with each policy's own clock and right
+censoring (states not adopting by 2017). Compare against the researchers'
+yearly diffusion ties, 1960-2017 (doi:10.7910/DVN/1QJCDJ).
+
 ### Political twins, and the bridge back to politics
 
 Each alternative explanation has a political twin: state programmes ↔ state
