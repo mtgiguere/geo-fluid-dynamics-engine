@@ -128,6 +128,14 @@ Related, not yet downloaded: the researchers' own estimated state-to-state diffu
 | Acceptance | 63,885,802 rows in `by_date/`; 63,850,655 individual and dated. ActBlue's and WinRed's own rows sum to $1.14B and $0.87B, against FEC's published 2022 totals of $2.19B and $1.10B (`/committee/{id}/totals`). The gap is the documented $200 inclusion rule, not lost data. No month is missing. |
 | Quirks | **`itcont.txt` in the zip is truncated** (4.5 GB, ends mid-row, missing most of 2022). Read the `by_date/` files instead (12 GB, complete). **Small, one-off donors are left out:** since 2015 a gift is included only once the donor's total to that committee passes $200 (cycle-to-date for candidates, year-to-date for PACs and parties). The bulk file is committed donors; every gift of any size is only in the raw electronic filings (ActBlue and WinRed itemize everything). ActBlue's own rows are one per gift: `24T` (passed on, earmarked) or `15` (a tip to ActBlue). The receiving committee reports the same gift again as `15E` with OTHER_ID = ActBlue, so count one side, not both. WinRed also files refunds as `22Y`. Headerless and pipe-delimited; read as latin-1 with quoting off. |
 
+### Every gift, any size: ActBlue's raw electronic filings
+
+| File | `data/raw/us_fec_actblue_raw_20261111/*.fec`: ActBlue's Form 3X monthly reports M2-M9 2022 (file numbers 1571224, 1575938, 1589733, 1597432, 1604622, 1618546, 1626598, 1631900), 12 GB, `SHA256SUMS`. Extracts: `actblue_zip_week_newcomers_2022.csv.gz`, `actblue_zip_day_newcomers_2022.csv.gz` (counts only; no names written). |
+|---|---|
+| Source | `https://docquery.fec.gov/dcdev/posted/{file_number}.fec`. Report list from the FEC API (`/v1/filings/?committee_id=C00401224`). Public. |
+| Acceptance | 28,791,997 individual gifts with valid dates and 2,943,318 distinct name + ZIP donors, Jan-Aug 2022. A dollar check against each report's own summary line (F3XN) is still to do. |
+| Quirks | FEC electronic format v8.4: fields separated by the ASCII file separator (0x1C), one record type per line (`HDR`, `F3XN`, `SA11AI` for individual receipts, `TEXT`, ...). In `SA11AI`, zero-based fields: 7 last name, 8 first name, 16 ZIP, 19 date (YYYYMMDD), 20 amount. ActBlue leaves the aggregate (field 21) at 0.00, so "first gift ever" cannot be read from the file; a newcomer is defined from the data itself. Contains personal names and addresses (public record): extracts keep counts only. |
+
 ## Catalogs (committed, not raw)
 
 - `data/catalog/ballot_measures.csv` — 271 statewide measures, 1996–2025,

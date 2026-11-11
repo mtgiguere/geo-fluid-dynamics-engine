@@ -26,6 +26,7 @@ EDA, one run, no confidence intervals yet), built on tested modules.
 | Rooftop solar | 3.6M installs, by county and quarter, ~2000-2025 | 4-7x after each state's own clock | ~2.4-3x | (25 years only) |
 | State laws | 563 laws x 50 states, 1691-2017 | ~3.4x | ~1.3-2x | Learning fell from ~2.0 before 1960 to ~1.4 since |
 | Baby names | 838-1,350 names x 51 states, 1910-2025 | ~12x | ~6-10x | ~16x before 1950, ~8-10x since 2000 |
+| Political giving after a news shock (ActBlue, WinRed, 2022) | 28.8M ActBlue gifts by ZIP and day; FEC bulk | ~1x (same as a shuffled map) | none | Almost every county surged the same day (Dobbs: 735 of 797) |
 
 - **Border effect:** how much more likely a place is to adopt once its
   neighbours have. A shuffled map gives ~1 in every case.
@@ -758,6 +759,69 @@ Caveats:
 - The FEC end-of-quarter deadline (June 30) is a national spike; the clocks
   absorb it.
 
+### Eighth look, 2026-11-11: newcomers, from the raw ActBlue filings
+
+The bulk file hides donors under $200, so we read ActBlue's raw electronic
+filings instead: 8 monthly reports, Jan-Aug 2022, 12 GB, every gift of any
+size. They hold **28.8M gifts from 2.9M donors** in eight months, against
+14M rows in the bulk file for the whole cycle.
+
+A **newcomer** is a name + ZIP whose first gift in the data comes on or
+after 2022-05-02. That means "new this year", not new ever: ActBlue leaves
+the aggregate field blank, so 2021 givers who came back count as new. Names
+are used in memory only, to match repeat gifts; only counts per ZIP and
+day were written.
+
+Nationally, newcomers jump in the leak week (128k, against 45-70k in a
+normal week) and in the Dobbs week (117k).
+
+**Weekly**, take-off = first week at 2x or 3x the county's own Mar-Apr
+average, state clock:
+
+| Bar, minimum baseline | Counties | Past 2 wks | Next 2 wks | Past ÷ next (95%, resampling states) |
+|---|---|---|---|---|
+| 2x, 1/wk | 1,981 | 2.89 [1.53, 5.45] | 2.44 [1.08, 4.74] | 1.19 [0.68, 2.23] |
+| 2x, 3/wk | 1,270 | 2.95 [0.80, 7.37] | 1.33 [0.26, 6.45] | 2.22 [0.19, 9.17] |
+| 3x, 3/wk | 1,270 (138 surge) | 8.24 | 1.16 | unbounded (128 events; shuffles reach 4.8) |
+
+The strict-bar surges cluster by state and week, around known events:
+- NC and PA primaries (May 17)
+- the WI primary (Aug 9)
+- the Dobbs week
+
+Kansas barely registers: 1 of 12 measurable counties surged before its
+Aug 2 vote. That money went through the state ballot committee.
+
+**Daily**, to rule out aliasing (does a fast wave hide inside a week?):
+
+| Event | Counties | Surged on day one |
+|---|---|---|
+| Leak (2022-05-02, evening) | 752 took off at 3x | **556 on May 3** |
+| Dobbs (2022-06-24) | 797 took off at 3x | **735 on June 24** |
+
+The neighbour estimates are unstable (bootstrap intervals from ~0 to
+~100x) and look like shuffled maps.
+
+What it says:
+
+1. **Political action set off by national news is a broadcast, not a wave.**
+   It is not aliasing: at daily resolution, almost every county moves on
+   the same day, newcomers included. There is nothing left for neighbours to
+   pass on.
+2. **Waves are for slow-burning ideas**: a product you can see (solar), a
+   name you hear (names), a policy one state copies from another (laws).
+   They are not for news everyone hears at once.
+3. **For an organization:**
+   - When a shock hits, geography does not set the order; readiness does.
+     Have the ask ready everywhere on day one.
+   - Sequencing by neighbour matters for slow ideas (a new candidate, a
+     local fight, a union drive), where people learn from people.
+4. **The next political test should be a slow-burning idea**, not a news
+   shock. Best candidate: a new candidate's donor base spreading county by
+   county over months. For example the 2019 Democratic primary newcomers
+   (Buttigieg, Yang), from raw ActBlue filings. That is the political twin
+   of a new baby name (open item 20).
+
 ### Political twins, and the bridge back to politics
 
 Each alternative explanation has a political twin: state programmes ↔ state
@@ -810,5 +874,6 @@ Candidate dated political "adoptions", to run through the solar pipeline:
 15. County-level shared roads in Missouri: solar vs FEC donations by ZIP (does I-70 carry both?)
 16. Hot-topic actions vs beliefs: FEC abortion-rights giving, Dobbs to the Kansas vote, through the joint model
 17. Wave prediction test (Nov 25 TODO): DONE 2026-11-11 (sixth look). Next: other split years; move the scoring into the tested library for the public page
-18. Newcomer donors: the raw ActBlue / WinRed filings (every gift, any size), May-Nov 2022. Does the wave show among people giving for the first time?
+18. DONE 2026-11-11 (eighth look: broadcast, not a wave; same-day surge at daily resolution). Newcomer donors: the raw ActBlue / WinRed filings (every gift, any size), May-Nov 2022. Does the wave show among people giving for the first time?
 19. Kansas 2022 ballot-committee giving (state ethics commission), if a bulk export exists
+20. A slow-burning political idea: a new candidate's donor base spreading county by county over months (2019 primary, raw ActBlue filings); the political twin of a new baby name
