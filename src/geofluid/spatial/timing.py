@@ -42,6 +42,7 @@ def takeoff_quarters(panel: pd.DataFrame, share: float, min_installs: int) -> pd
 
 
 AT_RISK_COLUMNS = ["fips", "period", "event", "neighbour_share"]
+WINDOW_COLUMNS = ["past_window_share", "next_window_share"]
 
 
 def at_risk_table(
@@ -50,6 +51,7 @@ def at_risk_table(
     freq: str = "QS",
     never: Iterable[str] = (),
     end: pd.Timestamp | None = None,
+    window: int = 0,
 ) -> pd.DataFrame:
     """One row per unit per period while it waits to take off.
 
@@ -58,6 +60,8 @@ def at_risk_table(
     (`geofluid.spatial.weights.county_adjacency`). `freq` is the period:
     "QS" (quarter, the solar panel's step) or "YS" (year, for laws).
     `never` lists units observed to `end` that had not taken off by then.
+    With `window` > 0, each row also gets the share of neighbours that took
+    off in the last `window` periods and in the next `window` periods.
     """
     when = dict(zip(takeoffs["fips"], takeoffs["takeoff"], strict=True))
     last = takeoffs["takeoff"].max() if end is None else max(end, takeoffs["takeoff"].max())
@@ -68,6 +72,15 @@ def at_risk_table(
     # period, never has an event, and counts as "not yet" next door.
     for fips in never:
         when[fips] = pd.Timestamp.max
+    # The learning-vs-alike split. A neighbour that went first in the last
+    # few periods could have been learned from; one that goes in the next few
+    # could not, so its pull is the ceiling on "neighbours are alike". Fitted
+    # together (`fit_hazard`), each is read holding the other fixed. Rows stop
+    # where the next window would run past the data: a neighbour's take-off
+    # after the end would be missed and miscounted as "not yet".
+    step = pd.tseries.frequencies.to_offset(freq) * window
+    if window:
+        span = span[span + step <= last]
     rows = []
     for fips in sorted(when):
         # A neighbour with no take-off (too few installs, or outside the
@@ -80,17 +93,24 @@ def at_risk_table(
         # The survival layout: a county is at risk every quarter up to and
         # including the one it takes off in, and leaves the table after.
         for quarter in span[span <= when[fips]]:
-            rows.append(
-                {
-                    "fips": fips,
-                    "period": quarter,
-                    "event": int(quarter == when[fips]),
-                    # Strictly earlier: a neighbour taking off this same
-                    # quarter cannot yet have been seen next door.
-                    "neighbour_share": sum(t < quarter for t in neighbours) / len(neighbours),
-                }
-            )
-    return pd.DataFrame(rows, columns=AT_RISK_COLUMNS)
+            row = {
+                "fips": fips,
+                "period": quarter,
+                "event": int(quarter == when[fips]),
+                # Strictly earlier: a neighbour taking off this same
+                # quarter cannot yet have been seen next door.
+                "neighbour_share": sum(t < quarter for t in neighbours) / len(neighbours),
+            }
+            if window:
+                row["past_window_share"] = sum(
+                    quarter - step <= t < quarter for t in neighbours
+                ) / len(neighbours)
+                row["next_window_share"] = sum(
+                    quarter < t <= quarter + step for t in neighbours
+                ) / len(neighbours)
+            rows.append(row)
+    columns = AT_RISK_COLUMNS + (WINDOW_COLUMNS if window else [])
+    return pd.DataFrame(rows, columns=columns)
 
 
 # Newton's method for the hazard fit: a logistic likelihood is concave, so

@@ -365,3 +365,31 @@ def test_hazard_fit_recovers_two_odds_ratios_at_once() -> None:
     odds_ratios = fit_hazard(table, ["past_share", "future_share"], clock="national")
 
     assert odds_ratios == pytest.approx({"past_share": 4.0, "future_share": 2.0}, rel=1e-9)
+
+
+def test_at_risk_table_can_split_neighbours_into_the_last_and_next_few_periods() -> None:
+    """The learning-vs-alike test needs two more shares per row: the share of
+    neighbours that took off in the last `window` periods (could have been
+    learned from) and in the next `window` periods (could not; their pull is
+    the ceiling on "neighbours are alike"). A row is kept only while its next
+    window is fully observed (period + window <= end); otherwise a
+    neighbour's future take-off could be missed and read as "not yet".
+
+    A line A - B - C, yearly, window 2, observed to 2005, so rows run to 2003.
+    A takes off 2002, B 2003, C 2004.
+      A 2002: event 1; last 2 yrs [2000, 2002): B no -> 0; next 2 (2002, 2004]: B -> 1
+      B 2002: event 0; last: none -> 0; next (2002, 2004]: C yes, A no -> 1/2
+      B 2003: event 1; last [2001, 2003): A yes -> 1/2; next (2003, 2005]: C -> 1/2
+      C 2002: event 0; last: none -> 0; next: B (2003) -> 1
+      C 2003: event 0; last: B is not BEFORE 2003 -> 0; next (2003, 2005]: none -> 0
+    C's take-off in 2004 falls after the cut, so it has no event row."""
+    takeoffs = _takeoffs({"A": "2002-01-01", "B": "2003-01-01", "C": "2004-01-01"})
+    adjacency = {"A": frozenset({"B"}), "B": frozenset({"A", "C"}), "C": frozenset({"B"})}
+
+    table = at_risk_table(takeoffs, adjacency, freq="YS", end=pd.Timestamp("2005-01-01"), window=2)
+
+    assert table["fips"].tolist() == ["A", "B", "B", "C", "C"]
+    assert table["period"].dt.year.tolist() == [2002, 2002, 2003, 2002, 2003]
+    assert table["event"].tolist() == [1, 0, 1, 0, 0]
+    assert table["past_window_share"].tolist() == [0.0, 0.0, 0.5, 0.0, 0.0]
+    assert table["next_window_share"].tolist() == [1.0, 0.5, 0.5, 1.0, 0.0]
