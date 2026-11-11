@@ -10,7 +10,7 @@ after the nationwide clock is taken out. It is proved first on rooftop solar
 before it is pointed back at politics.
 """
 
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from typing import Literal
 
 import numpy as np
@@ -41,17 +41,33 @@ def takeoff_quarters(panel: pd.DataFrame, share: float, min_installs: int) -> pd
     return takeoffs.loc[:, TAKEOFF_COLUMNS]
 
 
-AT_RISK_COLUMNS = ["fips", "quarter", "event", "neighbour_share"]
+AT_RISK_COLUMNS = ["fips", "period", "event", "neighbour_share"]
 
 
-def at_risk_table(takeoffs: pd.DataFrame, adjacency: Mapping[str, frozenset[str]]) -> pd.DataFrame:
-    """One row per county per quarter while it waits to take off.
+def at_risk_table(
+    takeoffs: pd.DataFrame,
+    adjacency: Mapping[str, frozenset[str]],
+    freq: str = "QS",
+    never: Iterable[str] = (),
+    end: pd.Timestamp | None = None,
+) -> pd.DataFrame:
+    """One row per unit per period while it waits to take off.
 
-    `takeoffs` is `takeoff_quarters` output; `adjacency` maps each fips to the
-    fips it borders (`geofluid.spatial.weights.county_adjacency`).
+    `takeoffs` is `takeoff_quarters` output (or any fips -> takeoff table);
+    `adjacency` maps each fips to the fips it borders
+    (`geofluid.spatial.weights.county_adjacency`). `freq` is the period:
+    "QS" (quarter, the solar panel's step) or "YS" (year, for laws).
+    `never` lists units observed to `end` that had not taken off by then.
     """
     when = dict(zip(takeoffs["fips"], takeoffs["takeoff"], strict=True))
-    span = pd.date_range(takeoffs["takeoff"].min(), takeoffs["takeoff"].max(), freq="QS")
+    last = takeoffs["takeoff"].max() if end is None else max(end, takeoffs["takeoff"].max())
+    span = pd.date_range(takeoffs["takeoff"].min(), last, freq=freq)
+    # A unit that had not taken off by the end of the data (a state that never
+    # passed the law by 2017) is "not yet", not unknown: right-censored. It is
+    # given a take-off after the last period, so it is at risk in every
+    # period, never has an event, and counts as "not yet" next door.
+    for fips in never:
+        when[fips] = pd.Timestamp.max
     rows = []
     for fips in sorted(when):
         # A neighbour with no take-off (too few installs, or outside the
@@ -67,7 +83,7 @@ def at_risk_table(takeoffs: pd.DataFrame, adjacency: Mapping[str, frozenset[str]
             rows.append(
                 {
                     "fips": fips,
-                    "quarter": quarter,
+                    "period": quarter,
                     "event": int(quarter == when[fips]),
                     # Strictly earlier: a neighbour taking off this same
                     # quarter cannot yet have been seen next door.
@@ -88,7 +104,8 @@ def fit_neighbour_hazard(table: pd.DataFrame, clock: Literal["national", "state"
     discrete-time hazard model with one baseline per quarter (clock
     "national") or per state per quarter (clock "state").
 
-    `table` is `at_risk_table` output. The model is a logistic regression of
+    `table` is `at_risk_table` output, or several stacked with a `wave`
+    column naming each (each wave then has its own baselines). The model is a logistic regression of
     `event` on a dummy per baseline plus `neighbour_share`, fitted by maximum
     likelihood (Newton's method). The returned odds ratio is how many times
     the odds of taking off this quarter are multiplied for a county whose
@@ -102,9 +119,15 @@ def fit_neighbour_hazard(table: pd.DataFrame, clock: Literal["national", "state"
     # Maryland 2021) lifts all its counties at once, and most neighbours share
     # a state, so only what spreads beyond the state's own clock is a wave.
     # The state is the first two digits of the county fips.
-    baseline = table["quarter"].astype(str)
+    baseline = table["period"].astype(str)
     if clock == "state":
         baseline = table["fips"].str[:2] + " " + baseline
+    # A table pooling several waves (724 laws) carries a `wave` column, and
+    # each wave keeps its own clock: a court ruling or a federal grant pushes
+    # one law, so one law's busy year must not be credited to neighbours
+    # adopting another.
+    if "wave" in table.columns:
+        baseline = table["wave"].astype(str) + " " + baseline
     # A quarter (or state-quarter) in which nobody takes off (the early
     # years), or everybody still at risk does (the last one), says nothing
     # about neighbours: its baseline would run off toward odds 0 or
@@ -112,16 +135,30 @@ def fit_neighbour_hazard(table: pd.DataFrame, clock: Literal["national", "state"
     events_in_baseline = table.groupby(baseline)["event"].transform("mean")
     informative = (events_in_baseline > 0) & (events_in_baseline < 1)
     table, baseline = table[informative], baseline[informative]
-    dummies = pd.get_dummies(baseline).to_numpy(dtype=float)
-    design = np.column_stack([dummies, table["neighbour_share"].to_numpy(dtype=float)])
+    group, _ = pd.factorize(baseline)
+    x = table["neighbour_share"].to_numpy(dtype=float)
     event = table["event"].to_numpy(dtype=float)
-    coef = np.zeros(design.shape[1])
+    n_groups = int(group.max()) + 1
+    alpha = np.zeros(n_groups)
+    beta = 0.0
+    # Newton's method on (one intercept per baseline, beta). There can be
+    # thousands of baselines (724 policies x their years), too many for a
+    # dense matrix, but each intercept touches only its own rows, so the
+    # Hessian is a diagonal block plus one row and column for beta. Solving
+    # through that block (a Schur complement) takes exactly the same Newton
+    # step as the dense solve, in time proportional to the number of rows.
     for _ in range(_MAX_NEWTON_STEPS):
-        p = 1.0 / (1.0 + np.exp(-design @ coef))
-        gradient = design.T @ (event - p)
-        hessian = design.T @ (design * (p * (1.0 - p))[:, None])
-        step = np.linalg.solve(hessian, gradient)
-        coef += step
-        if np.max(np.abs(step)) < _NEWTON_TOLERANCE:
+        p = 1.0 / (1.0 + np.exp(-(alpha[group] + beta * x)))
+        w = p * (1.0 - p)
+        g_alpha = np.bincount(group, event - p, n_groups)
+        g_beta = float(np.sum((event - p) * x))
+        d = np.bincount(group, w, n_groups)
+        c = np.bincount(group, w * x, n_groups)
+        schur = float(np.sum(w * x * x)) - float(np.sum(c * c / d))
+        step_beta = (g_beta - float(np.sum(c * g_alpha / d))) / schur
+        step_alpha = (g_alpha - c * step_beta) / d
+        alpha += step_alpha
+        beta += step_beta
+        if max(abs(step_beta), float(np.max(np.abs(step_alpha)))) < _NEWTON_TOLERANCE:
             break
-    return float(np.exp(coef[-1]))
+    return float(np.exp(beta))

@@ -22,7 +22,7 @@ import pytest
 from geofluid.spatial.timing import at_risk_table, fit_neighbour_hazard, takeoff_quarters
 
 TAKEOFF_COLUMNS = ["fips", "takeoff"]
-AT_RISK_COLUMNS = ["fips", "quarter", "event", "neighbour_share"]
+AT_RISK_COLUMNS = ["fips", "period", "event", "neighbour_share"]
 
 _QUARTERS = [pd.Timestamp(q) for q in ["2015-01-01", "2015-04-01", "2015-07-01", "2015-10-01"]]
 
@@ -100,7 +100,7 @@ def test_at_risk_table_has_a_row_per_county_quarter_until_takeoff() -> None:
 
     assert list(table.columns) == AT_RISK_COLUMNS
     assert table["fips"].tolist() == ["A", "B", "B", "C", "C", "C", "C"]
-    assert table["quarter"].tolist() == [_QUARTERS[0], _QUARTERS[0], _QUARTERS[1], *_QUARTERS]
+    assert table["period"].tolist() == [_QUARTERS[0], _QUARTERS[0], _QUARTERS[1], *_QUARTERS]
     assert table["event"].tolist() == [1, 0, 1, 0, 0, 0, 1]
     assert table["neighbour_share"].tolist() == [0.0, 0.0, 0.5, 0.0, 0.0, 1.0, 1.0]
 
@@ -145,7 +145,7 @@ def _cells(cells: list[tuple[int, float, int, int]], state: str = "06") -> pd.Da
     rows = [
         {
             "fips": f"{state}{q}{x}{i}",
-            "quarter": _QUARTERS[q],
+            "period": _QUARTERS[q],
             "event": int(i < events),
             "neighbour_share": x,
         }
@@ -251,3 +251,76 @@ def test_a_state_clock_alone_is_not_read_as_a_wave() -> None:
 
     assert fit_neighbour_hazard(table, clock="national") == pytest.approx(5 / 3, rel=1e-9)
     assert fit_neighbour_hazard(table, clock="state") == pytest.approx(1.0, rel=1e-9)
+
+
+def test_at_risk_table_can_step_by_year() -> None:
+    """Laws are dated by year, not quarter. With freq="YS" (year start) the
+    table steps one year at a time. A adopts in 2001, B in 2003; they border.
+      A: 2001 event 1, B not yet           -> share 0
+      B: 2001 event 0, A not yet earlier   -> 0
+         2002 event 0, A (2001) yes        -> 1
+         2003 event 1                      -> 1"""
+    takeoffs = _takeoffs({"A": "2001-01-01", "B": "2003-01-01"})
+    adjacency = {"A": frozenset({"B"}), "B": frozenset({"A"})}
+
+    table = at_risk_table(takeoffs, adjacency, freq="YS")
+
+    assert table["period"].dt.year.tolist() == [2001, 2001, 2002, 2003]
+    assert table["event"].tolist() == [1, 0, 0, 1]
+    assert table["neighbour_share"].tolist() == [0.0, 0.0, 1.0, 1.0]
+
+
+def test_a_unit_that_never_takes_off_stays_at_risk_to_the_end_and_counts_as_not_yet() -> None:
+    """Solar timed only counties that took off. A law is different: a state
+    that has not adopted by the data's last year (2017 in SPID) is not
+    unknown, it is "not yet". It stays at risk every period to `end` with no
+    event (right-censored, in survival terms), and as a neighbour it counts
+    in the share's denominator, as not yet adopted.
+
+    A line A - B - C, observed to 2003. A adopts 2001, C 2002, B never.
+      A: 2001 event 1, B not yet                  -> share 0
+      B: 2001 event 0, neither A nor C yet         -> 0
+         2002 event 0, A (2001) yes, C no          -> 1/2
+         2003 event 0, A and C both earlier        -> 1
+      C: 2001 event 0, B not yet                   -> 0
+         2002 event 1, B not yet                   -> 0
+    Six rows, sorted by unit, then period."""
+    takeoffs = _takeoffs({"A": "2001-01-01", "C": "2002-01-01"})
+    adjacency = {"A": frozenset({"B"}), "B": frozenset({"A", "C"}), "C": frozenset({"B"})}
+
+    table = at_risk_table(
+        takeoffs, adjacency, freq="YS", never=["B"], end=pd.Timestamp("2003-01-01")
+    )
+
+    assert table["fips"].tolist() == ["A", "B", "B", "B", "C", "C"]
+    assert table["period"].dt.year.tolist() == [2001, 2001, 2002, 2003, 2001, 2002]
+    assert table["event"].tolist() == [1, 0, 0, 0, 0, 1]
+    assert table["neighbour_share"].tolist() == [0.0, 0.0, 0.5, 1.0, 0.0, 0.0]
+
+
+def test_each_wave_in_a_pooled_table_keeps_its_own_clock() -> None:
+    """Pooling 724 laws into one table: each law has its own clock (a
+    Supreme Court ruling or a federal grant pushes one law, not the others).
+    A table that pools waves carries a `wave` column, and the baselines are
+    per wave per period, so one law's busy year is not credited to
+    neighbours adopting a different law.
+
+    One year, one state, two laws, and within each law neighbours do not
+    matter:
+      law p1, share 0: 2 rows, 1 adopts -> p 1/2
+      law p1, share 1: 8 rows, 4 adopt  -> p 1/2
+      law p2, share 0: 8 rows, 2 adopt  -> p 1/4
+      law p2, share 1: 4 rows, 1 adopts -> p 1/4
+    Without the wave column the year pools to 3 of 10 vs 5 of 12: odds ratio
+    (5/7) / (3/7) = 5/3, a false wave. With it, exactly 1."""
+    pooled = pd.concat(
+        [
+            _cells([(0, 0.0, 2, 1), (0, 1.0, 8, 4)]).assign(wave="p1"),
+            _cells([(0, 0.0, 8, 2), (0, 1.0, 4, 1)]).assign(wave="p2"),
+        ],
+        ignore_index=True,
+    )
+
+    assert fit_neighbour_hazard(pooled, clock="national") == pytest.approx(1.0, rel=1e-9)
+    unlabelled = pooled.drop(columns="wave")
+    assert fit_neighbour_hazard(unlabelled, clock="national") == pytest.approx(5 / 3, rel=1e-9)
