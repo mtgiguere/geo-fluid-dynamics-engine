@@ -554,6 +554,93 @@ What it says:
    choice. The question for politics is now just whether dated data is fine
    enough to see it.
 
+### Fifth look, 2026-11-11: error bars, hot-topic laws, and shared roads
+
+**95% intervals for the joint model**, from resampling whole waves (laws,
+names; 200 reps) or whole states (solar, 1,000 reps). Windows are 5 years for
+laws and names, and 1 or 2 years for solar.
+
+| Wave | Past | Next | Past ÷ next |
+|---|---|---|---|
+| Solar, 1 yr, state clock | 9.7 [4.6, 25] | 4.0 [2.1, 8.8] | 2.4 [1.1, 5.9] |
+| Solar, 2 yr, state clock | 8.0 [3.2, 25] | 2.7 [1.5, 5.4] | 3.0 [1.4, 6.5] |
+| Laws, all | 3.60 [3.17, 4.14] | 2.30 [2.05, 2.62] | 1.56 [1.42, 1.72] |
+| Laws first adopted before 1960 | 4.48 [3.43, 5.99] | 2.20 [1.75, 2.94] | 2.03 [1.66, 2.37] |
+| Laws first adopted 1960+ | 3.24 [2.73, 3.83] | 2.35 [2.00, 2.72] | 1.38 [1.24, 1.54] |
+| Names, all | 16.7 [14.9, 18.2] | 1.62 [1.47, 1.80] | 10.3 [9.4, 11.2] |
+| Names first before 1960 | 25.0 [21.1, 29.7] | 2.06 [1.75, 2.41] | 12.2 [10.4, 14.0] |
+| Names first 1960+ | 12.3 [10.7, 13.8] | 1.34 [1.16, 1.52] | 9.2 [8.2, 10.2] |
+
+- **Learning beats alike everywhere.** Every past ÷ next interval is above 1.
+  Solar's lower bound at 1 year is close to 1, because there are only ~48
+  states to resample.
+- **The fade in laws is real:** the before-1960 and 1960+ intervals do not
+  overlap. The fade in names only just clears that bar.
+- **Within-state shuffle for solar** (borders kept, counties scrambled inside
+  each state, 10 runs): ~1x (0.6-1.5), against 4-7x on the real map. The wave
+  runs along real neighbours, not just shared state membership.
+
+**Q (Matt): how does "catching" solar compare with "catching" a hot-topic
+idea?** The first cut is the hot-topic laws in SPID (one run, no CIs):
+
+| Group | Laws | Past | Next | Past ÷ next |
+|---|---|---|---|---|
+| Abortion laws | 33 | 4.88 | 3.85 | 1.27 |
+| Culture-war laws (abortion, LGBT, drugs, guns, death penalty) | 50 | 4.04 | 3.42 | 1.18 |
+| All other laws | 509 | 3.56 | 2.24 | 1.59 |
+
+Hot-topic laws cluster by region more strongly than other laws, but mostly
+because neighbours are alike, not because one learns from the other. This
+fits the ballot-measure findings: a broad, even offset, and a stable county
+trait. Working hypothesis: **beliefs sort; actions spread.** The dated acts
+that express a belief should travel like a wave: registering, giving,
+volunteering, yard signs. The test is FEC donations to abortion-rights
+committees from Dobbs (2022-06-24) to the Kansas vote (2022-08-02).
+
+**Q (Matt): if solar moves St. Louis → I-70 → west, does ANY idea move the
+same way?** In other words, do the roads belong to the land, or to the idea?
+
+Test: for each pair of bordering states, the share of waves in which A went
+before B. Then check whether that direction agrees across families of ideas.
+Spearman correlations, 107 border pairs:
+
+| Comparison | Agreement |
+|---|---|
+| Names vs names (split half: the ceiling) | 0.98 |
+| Laws vs laws (split half) | 0.81 |
+| Laws vs names, all years | 0.33 |
+| Laws vs names, since 1960 | 0.15 |
+| Names before 1960 vs after | 0.60 |
+| Laws before 1960 vs after | 0.49 |
+| Law topics, within one topic (split half; 6 topics with 30+ laws) | 0.25-0.52 |
+| Law topics, between topics | mean 0.30 (-0.06 to 0.46) |
+
+Who goes early differs too:
+- Names: OR, WA, UT, KS, CO, ID.
+- Laws: CA, MN, CT, WA, OR, IL.
+- Earliness rank, laws vs names: 0.36.
+
+What it says:
+
+1. **Each kind of idea has very steady roads of its own.**
+2. **A weak road is shared by all ideas (~0.3), and it has weakened since
+   1960.**
+3. **Similar ideas share roads modestly more than different ones.**
+4. **Roads drift over time**, even within one family.
+
+So solar proves the method can see a wave, but it is not the map for
+politics. The best guide to how a political idea will travel is how recent
+ideas of the same kind travelled.
+
+Limits:
+- This is at state level only. County roads (I-70, commuting, media
+  markets) may be shared more, being physical.
+- Solar could not take part. Only ~25 states have enough timed counties, and
+  its take-off is relative to each county's own final count, so it is not
+  comparable at state level.
+- The county-level version is the next test: in Missouri, lay solar
+  alongside FEC donations by ZIP.
+
 ### Political twins, and the bridge back to politics
 
 Each alternative explanation has a political twin: state programmes ↔ state
@@ -589,7 +676,7 @@ Candidate dated political "adoptions", to run through the solar pipeline:
 
 ### Open, in rough order (Dec 6 solar notebook)
 
-1. Placebo shuffle within states (is 3.9-7.4x more than chance?)
+1. Placebo shuffle within states: DONE 2026-11-11 (~1x against 4-7x real; fifth look)
 2. Future-neighbour placebo: DONE 2026-11-11 (fourth look; past ÷ next ~2.4-3x on the state clock). Next: within-state shuffle, bootstrap
 3. Provider and utility baselines
 4. Delay-pattern test (which lag predicts best)
@@ -602,4 +689,6 @@ Candidate dated political "adoptions", to run through the solar pipeline:
 11. First political run: FEC donations through the same pipeline
 12. Do waves change over time? "Who goes early" maps correlated across eras: baby names / SPID first (many waves), then RCMS religion and newspapers (county level)
 13. Joint past + future neighbour model: DONE 2026-11-11 (`fit_hazard`, fourth look). The window shares are computed in scratch code; promote them into `at_risk_table` (tested) when the Dec 6 notebook needs them
-14. Bootstrap intervals by wave (law, name) for the era tables
+14. Bootstrap intervals by wave (law, name) for the era tables: DONE 2026-11-11 (fifth look)
+15. County-level shared roads in Missouri: solar vs FEC donations by ZIP (does I-70 carry both?)
+16. Hot-topic actions vs beliefs: FEC abortion-rights giving, Dobbs to the Kansas vote, through the joint model
