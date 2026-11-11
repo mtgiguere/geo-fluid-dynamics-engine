@@ -333,6 +333,55 @@ Next: the hazard model on SPID, with each policy's own clock and right
 censoring (states not adopting by 2017). Compare against the researchers'
 yearly diffusion ties, 1960-2017 (doi:10.7910/DVN/1QJCDJ).
 
+### Second look, 2026-11-11: state policies through the hazard model
+
+The timing model was extended for laws (tested): yearly steps; states that
+never adopt stay in as "not yet" through 2017; and each law has its own
+clock (baselines per law per year). The table covers 563 laws adopted by at
+least 10 states: 686,126 state-years, 16,660 adoptions. Alaska and Hawaii
+drop out automatically, having no land border. Scratch EDA, one run, no
+confidence intervals yet.
+
+**Odds ratio for "a bordering state has already adopted":**
+
+| | All | 1691-1929 | 1930-59 | 1960-79 | 1980-99 | 2000-17 |
+|---|---|---|---|---|---|---|
+| Real borders (any time before) | 3.36 | 4.30 | 3.83 | 2.76 | 3.07 | 3.48 |
+| Organic laws only | 3.57 | 4.37 | 4.03 | 2.94 | 3.29 | 4.06 |
+| Uniform Law model acts only | 2.27 | 1.78 | 1.90 | 1.71 | 2.19 | 3.13 |
+| Placebo: shuffled map (5 runs) | 0.94-1.10 | | | | | |
+
+**Placebo, the fair fight:** neighbours adopting in the PAST k years (could
+be learned from) against the NEXT k years (cannot be):
+
+| Window | All | 1691-1929 | 1930-59 | 1960-79 | 1980-99 | 2000-17 |
+|---|---|---|---|---|---|---|
+| Past 5 years | 3.05 | 4.01 | 3.58 | 2.35 | 2.94 | 3.32 |
+| Next 5 years (placebo) | 1.81 | 1.70 | 1.63 | 1.83 | 1.89 | 1.97 |
+| Past 2 years | 2.84 | 4.45 | 3.15 | 2.32 | 2.59 | 2.75 |
+| Next 2 years (placebo) | 2.08 | 2.26 | 1.54 | 2.18 | 2.07 | 2.44 |
+
+What it says:
+
+1. **Geography is real.** A shuffled map gives ~1. Real borders give ~3.
+2. **The border effect has two parts.**
+   - A **"neighbours are alike"** part: the future-neighbour placebo is
+     ~1.6-2.4, not 1. It is steady across all eras.
+   - A **forward-in-time** part, consistent with learning from neighbours:
+     past beats next in every era.
+3. **The forward part is what faded.** Past-to-next ratio at 5 years:
+   ~2.4 before 1930, ~2.2 in 1930-59, ~1.3 in 1960-79, ~1.6 in 1980-99,
+   ~1.7 in 2000-17. At 2 years: ~2.0, ~2.0, ~1.1, ~1.3, ~1.1. States
+   learned from their neighbours far more before 1960; since then the
+   border signal is mostly shared regional character. This fits "From
+   Borders to Networks", and Matt's hunch that waves change over time.
+4. **Pushed laws (model acts) spread less along borders**, confirmed in the
+   hazard model: 2.27 against 3.57.
+
+Caveats: no confidence intervals yet (bootstrap by law next); the clock is
+per law per year, but not per region; statehood dates not yet handled; and
+the policy mix still changes by era.
+
 ### Political twins, and the bridge back to politics
 
 Each alternative explanation has a political twin: state programmes ↔ state
