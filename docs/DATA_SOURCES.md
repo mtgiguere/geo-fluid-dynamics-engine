@@ -99,6 +99,17 @@ person, recorded install by install with a date and a ZIP code.
 | Source | IRS Statistics of Income, county-to-county migration, tax years 2022–2023 (www.irs.gov/pub/irs-soi/). Earlier years follow the same naming. |
 | Consumed by | Not yet: the "which road" comparison. |
 
+## Waves over time: state policy adoptions (SPID)
+
+| File | `data/raw/us_spid_v12_20261111/SPID_v1.2.dta`, `SPID_v1.2_policies.dta` (in `dataverse_files.zip`, with the codebook and the v1.2 changes list) |
+|---|---|
+| Source | State Policy Innovation and Diffusion database v1.2 (Boehmke, LaCombe, Brockway; Harvard Dataverse doi:10.7910/DVN/CVYSR7). CC0. The year each state first adopted each of 724 policies, 1691–2017. |
+| Consumed by | `geofluid.ingest.spid.load_spid_adoptions`. The "do the roads a wave travels change over time?" question. |
+| Acceptance | 17,823 adoptions, 724 policies, 50 states, mean 24.6 states per policy, 1691–2017, no blanks: equal to the codebook. |
+| Quirks | Dataverse's "Download ZIP" serves its re-exported `.dta`, not the original upload. The files are about 3x the listed size, and the adoptions file has only `policy`, `statenam`, `adopt_year`; the codebook's other state identifiers are absent. The state name is enough: the loader maps it to FIPS and stops on any name it cannot map. A state that never adopted a policy has no row; it is "not yet" through 2017, not missing. 194 policies come from the Uniform Law Commission, a model-law shop: a natural "pushed" group to set against the rest. |
+
+Related, not yet downloaded: the researchers' own estimated state-to-state diffusion ties for each year 1960–2017 (doi:10.7910/DVN/1QJCDJ, CC0), an answer key for the era-by-era comparison. Also the replication data for "From Borders to Networks: The Changing Channels of Education Policy Diffusion" (doi:10.7910/DVN/VHAH07, 2026). Its description reports the main channel shifting from bordering states to policy networks.
+
 ## Catalogs (committed, not raw)
 
 - `data/catalog/ballot_measures.csv` — 271 statewide measures, 1996–2025,

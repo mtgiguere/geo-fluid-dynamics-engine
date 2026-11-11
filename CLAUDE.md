@@ -191,7 +191,8 @@ watchdog for hollow tests. (mutmut only runs on Linux CI — it refuses on Windo
   `county_demographics`, `county_geometry`, `referendum` (incl. `parse_mo_canvass` for SoS canvass PDFs and
   `parse_mo_enr_results` for the SoS Election Night Results portal), `historical_returns`,
   `solar` (LBNL rooftop installs -> county-quarter adoption panel, the known wave) + `zcta_county`
-  (ZIP -> one county by largest land share))
+  (ZIP -> one county by largest land share), `spid` (State Policy Innovation and Diffusion v1.2:
+  724 policies x 50 states adoption years, 1691-2017; do wave roads change over time?))
 - `src/geofluid/panel/master` — joins returns + demographics into the master panel
   (FIPS-harmonized; adds swing); `panel/spine` — joins historical + MIT returns into
   the 1868–2024 panel; `panel/measures` — stacks per-measure referendum panels into
