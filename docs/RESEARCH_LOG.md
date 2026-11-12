@@ -27,6 +27,7 @@ EDA, one run, no confidence intervals yet), built on tested modules.
 | State laws | 563 laws x 50 states, 1691-2017 | ~3.4x | ~1.3-2x | Learning fell from ~2.0 before 1960 to ~1.4 since |
 | Baby names | 838-1,350 names x 51 states, 1910-2025 | ~12x | ~6-10x | ~16x before 1950, ~8-10x since 2000 |
 | Political giving after a news shock (ActBlue, WinRed, 2022) | 28.8M ActBlue gifts by ZIP and day; FEC bulk | ~1x (same as a shuffled map) | none | Almost every county surged the same day (Dobbs: 735 of 797) |
+| A candidate's donor base (ActBlue, 2019 primary) | 18.1M gifts to 15 campaigns, by ZIP and day | past neighbours ~1.5x over a shuffled map | ~1.3 [1.06, 1.52] | Launch day is a broadcast; base-building is a wave (Buttigieg 1.6, Biden and Yang ~1) |
 
 - **Border effect:** how much more likely a place is to adopt once its
   neighbours have. A shuffled map gives ~1 in every case.
@@ -822,6 +823,86 @@ What it says:
    (Buttigieg, Yang), from raw ActBlue filings. That is the political twin
    of a new baby name (open item 20).
 
+### Ninth look, 2026-11-11: a slow-burning political idea (2019 primary donors)
+
+**Q: does a candidate's donor base spread county to county over months,
+the way solar did?** This is the political twin of a new baby name: an idea
+(this candidate) that people pick up over months, from people around them
+or from the news.
+
+Data: ActBlue's raw filings for Jan 2019 to Jan 2020: the 2019 midyear
+report (amended, 5.8 GB), the year-end report (10.5 GB) and Jan 2020
+(2.3 GB). These were streamed through the extractor, not stored.
+- **18.1M gifts** earmarked for 15 Democratic presidential campaigns
+  (memo field 43: "Earmarked for PETE FOR AMERICA, INC (C00697441)").
+- One donor = one name + ZIP + candidate, dated by their first gift to
+  that candidate.
+- Donors per candidate: Sanders 2.36M, Warren 1.34M, Buttigieg 0.96M,
+  Biden 0.63M, Yang 0.50M, Harris 0.45M, and down to Bennet 0.08M.
+
+**Take-off rule:** the week a county reaches a share of the donors it will
+have for that candidate by Jan 2020 (the solar rule). Counties with at
+least 20 donors only. Each candidate is one wave with its own clock.
+Neighbour windows are 4 weeks.
+
+The share matters:
+- **At 10%, take-off is mostly launch day.** Sanders, Biden, O'Rourke and
+  Harris hit 10% in nearly every county in the same week (a broadcast
+  again: the campaign announcement).
+- **At 50%, take-off is the base being built.** It is spread over months
+  (Buttigieg late July to early September, Klobuchar August to November).
+
+State clock, past 4 weeks vs next 4 weeks, 15 candidates together:
+
+| Take-off at | Past 4 wks | Next 4 wks | Past ÷ next | Within-state shuffle, past ÷ next |
+|---|---|---|---|---|
+| 25% | 1.61 | 1.48 | 1.09 | ~0.75 (3 shuffles) |
+| **50%** | **1.76 [1.48, 2.07]** | 1.39 [1.19, 1.67] | **1.27 [1.06, 1.52]** | **0.74-0.80 (3 shuffles)** |
+
+95% intervals are from resampling states (400 copies). On a shuffled map,
+the past share is ~1.1 and the next share ~1.45. That "next" pull is
+mechanical: it comes from the state clock, not from geography. So the real
+map adds a **past-neighbour pull of ~1.5x over the shuffle and no extra
+"alike" pull**.
+
+By candidate (50%, state clock, 300 copies):
+
+| Candidate | Past ÷ next | 95% |
+|---|---|---|
+| Buttigieg | 1.64 | [1.13, 2.26] |
+| Sanders | 1.42 | [1.09, 1.88] |
+| Warren | 1.45 | [0.95, 2.13] |
+| Biden | 1.09 | [0.79, 1.47] |
+| Yang | 1.06 | [0.64, 1.82] |
+| Harris | 0.90 | [0.23, 3.31] (take-offs bunched at the June debate) |
+
+What it says:
+
+1. **A slow-burning political idea does travel as a wave.** It is modest,
+   a learning ratio of ~1.3 (laws ~1.6, solar ~2.4-3, names ~10), but it
+   is above 1 and well above the shuffled map. That makes this the first
+   political wave the method has found, and it shows up exactly where the
+   eighth look predicted it would: the slow idea, not the news shock.
+2. **Who spreads, and who does not.** Buttigieg, the newcomer who built a
+   base person to person, spreads most clearly, and Sanders' movement
+   spreads too. Biden, a name everyone already knew, does not: his base
+   arrived by broadcast. Yang, the internet candidate (podcasts, online
+   fans), also shows no county wave; his "neighbours" were online, not
+   next door.
+3. **Launch day is a broadcast; the base-building months are a wave.** The
+   same campaign is both, at different times. That matches the eighth
+   look.
+4. **For an organization:** for a new or little-known candidate, where the
+   base forms next is predictable from where it formed in the last month.
+   Field and events can follow the wave and go one county ahead of it. For
+   a famous candidate, or after a news shock, the geography of timing
+   carries little; readiness everywhere matters more.
+5. **Caveat: media is still inside the clock.** Debates, town halls and
+   podcasts hit everyone at once; the clock absorbs national shocks, but
+   local media coverage could look like neighbour spread. Next is to add
+   GDELT (national and local attention per candidate per day) as measured
+   covariates (open item 21).
+
 ### Political twins, and the bridge back to politics
 
 Each alternative explanation has a political twin: state programmes ↔ state
@@ -876,4 +957,5 @@ Candidate dated political "adoptions", to run through the solar pipeline:
 17. Wave prediction test (Nov 25 TODO): DONE 2026-11-11 (sixth look). Next: other split years; move the scoring into the tested library for the public page
 18. DONE 2026-11-11 (eighth look: broadcast, not a wave; same-day surge at daily resolution). Newcomer donors: the raw ActBlue / WinRed filings (every gift, any size), May-Nov 2022. Does the wave show among people giving for the first time?
 19. Kansas 2022 ballot-committee giving (state ethics commission), if a bulk export exists
-20. A slow-burning political idea: a new candidate's donor base spreading county by county over months (2019 primary, raw ActBlue filings); the political twin of a new baby name
+20. DONE 2026-11-11 (ninth look: a modest real wave, learning ratio ~1.3; Buttigieg clearest, Biden and Yang none). A slow-burning political idea: a new candidate's donor base spreading county by county over months (2019 primary, raw ActBlue filings); the political twin of a new baby name
+21. GDELT media attention per candidate per day (national TV via the TV API; online news national and local via the raw GKG files or BigQuery) as measured covariates in the ninth-look model: does the wave survive measured media?

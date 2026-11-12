@@ -136,6 +136,14 @@ Related, not yet downloaded: the researchers' own estimated state-to-state diffu
 | Acceptance | 28,791,997 individual gifts with valid dates and 2,943,318 distinct name + ZIP donors, Jan-Aug 2022. A dollar check against each report's own summary line (F3XN) is still to do. |
 | Quirks | FEC electronic format v8.4: fields separated by the ASCII file separator (0x1C), one record type per line (`HDR`, `F3XN`, `SA11AI` for individual receipts, `TEXT`, ...). In `SA11AI`, zero-based fields: 7 last name, 8 first name, 16 ZIP, 19 date (YYYYMMDD), 20 amount. ActBlue leaves the aggregate (field 21) at 0.00, so "first gift ever" cannot be read from the file; a newcomer is defined from the data itself. Contains personal names and addresses (public record): extracts keep counts only. |
 
+### 2019 primary: ActBlue's raw filings, streamed
+
+| File | `data/raw/us_fec_actblue_raw_2019_20261111/`: per-filing extracts `1780795.pkl` (2019 midyear, amended, Jan-Jun), `1378435.pkl` (2019 year-end, Jul-Dec), `1385527.pkl` (Jan 2020), with logs and `SHA256SUMS` of the raw files. The raw `.fec` files (5.8, 10.5 and 2.3 GB) were streamed through the extractor and not kept; re-download to reproduce. |
+|---|---|
+| Source | `https://docquery.fec.gov/dcdev/posted/{file_number}.fec`. In 2019 ActBlue filed semiannually (MY, YE), then monthly from 2020. Use the amended MY (1780795), not the original (1344765). |
+| Acceptance | 18,133,520 earmarked individual gifts to 15 Democratic presidential committees (Jan 2019 to Jan 2020). A dollar check against each committee's published totals is still to do. |
+| Quirks | Same v8.3/8.4 layout as the 2022 files. The recipient is in the memo text, field 43: `Earmarked for <NAME> (<committee id>)`; field 22 says `Earmark` or `Contribution to Act Blue`. The extracts hold counts per candidate, ZIP and day plus each donor's first-gift date keyed by a hash of name + ZIP + candidate (`PYTHONHASHSEED=0`, so hashes match across filings). That hash is a pseudonymous key: keep these files out of git like the raw filings. |
+
 ## Catalogs (committed, not raw)
 
 - `data/catalog/ballot_measures.csv` — 271 statewide measures, 1996–2025,
