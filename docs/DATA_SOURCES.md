@@ -144,6 +144,20 @@ Related, not yet downloaded: the researchers' own estimated state-to-state diffu
 | Acceptance | 18,133,520 earmarked individual gifts to 15 Democratic presidential committees (Jan 2019 to Jan 2020). A dollar check against each committee's published totals is still to do. |
 | Quirks | Same v8.3/8.4 layout as the 2022 files. The recipient is in the memo text, field 43: `Earmarked for <NAME> (<committee id>)`; field 22 says `Earmark` or `Contribution to Act Blue`. The extracts hold counts per candidate, ZIP and day plus each donor's first-gift date keyed by a hash of name + ZIP + candidate (`PYTHONHASHSEED=0`, so hashes match across filings). That hash is a pseudonymous key: keep these files out of git like the raw filings. |
 
+### Metro areas (a free stand-in for TV markets)
+
+| File | `data/raw/us_nber_cbsa_fips_20261112/cbsa2fipsxw.csv`: NBER's county to CBSA / CSA crosswalk, 2023 delineation (OMB). |
+|---|---|
+| Source | `https://data.nber.org/cbsa-csa-fips-county-crosswalk/2023/cbsa2fipsxw_2023.csv`. Public domain (federal delineation). |
+| Quirks | All 3,222 rows are counties **in** a CBSA; counties in no metro or micro area are simply absent. Read with `dtype=str` and treat a missing code as "no market"; two missing codes are not the same market. Connecticut uses the 2022 planning regions, not the old counties in `cb_2021`, so CT pairs drop out. Nielsen's DMAs (the real TV markets) are licensed and are not used. |
+
+### National TV attention (GDELT TV API)
+
+| File | `data/raw/us_gdelt_tv_2019_20261112/tv_<candidate>.csv`: 15-second clips per day per national network mentioning each 2019 Democratic candidate (full name in quotes), Jan 2019 to Jan 2020; `SHA256SUMS`. |
+|---|---|
+| Source | `https://api.gdeltproject.org/api/v2/tv/tv?query="<name>" market:"National"&mode=timelinevol&datanorm=raw&timelinesmooth=0&format=csv`. Free; the API asks for at most one request every 5 seconds. Underlying captions: Internet Archive TV News Archive. |
+| Quirks | Nine national networks (CNN, MSNBC, Fox News, Bloomberg, CNBC, Fox Business, C-SPAN 1-3). Local stations in 2019 cover only San Francisco and DC. Surnames alone are ambiguous (Sarah Sanders, Fidel Castro, Harris County), so query full names. Podcasts are not covered. |
+
 ## Catalogs (committed, not raw)
 
 - `data/catalog/ballot_measures.csv` — 271 statewide measures, 1996–2025,

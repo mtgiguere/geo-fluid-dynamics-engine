@@ -903,6 +903,60 @@ What it says:
    GDELT (national and local attention per candidate per day) as measured
    covariates (open item 21).
 
+#### Ninth look, part 2 (2026-11-12): is it the news?
+
+**National TV (GDELT TV API, 2019, the nine national networks, per candidate
+per day, full names).** National TV attention tracks each candidate's new
+donors closely: weekly correlation 0.7-0.9 for most, 0.52 for Warren. The
+biggest donor days are broadcasts of two kinds:
+- debate nights (June 27-28, July 31-Aug 1, Sept 12, Oct 16, Nov 20)
+- **quarter-end fundraising deadlines** (June 30, Sept 30, Dec 31), the
+  campaigns' own email blasts. Warren's donors follow the deadlines more
+  than TV.
+
+All of this hits every county the same week, so the clock absorbs it. The
+model's state clock also absorbs anything that hits a whole state in a
+week, statewide news included. Adding GDELT at the national or state level
+would therefore explain the clock, not change the wave.
+
+**Local TV is what is left.** A local station covers several neighbouring
+counties at once, which looks like neighbours. GDELT's local TV for 2019
+covers only San Francisco and DC, too few to use. Nielsen's TV markets
+(DMAs) are licensed, not public. The free stand-in is the Census metro area
+(CSA if any, else CBSA; NBER's 2023 crosswalk). Each county's neighbours
+were split into same metro, different metro, and pairs involving a county
+in no metro. All three were fitted together (past and next 4 weeks, state
+clock, 50% take-off, 300 copies resampling states).
+
+| Neighbour pair | Pairs | Past 4 wks | Next 4 wks | Past ÷ next [95%] |
+|---|---|---|---|---|
+| Same metro | 2,475 | 2.60 | 1.22 | **2.13 [1.60, 2.81]** |
+| Different metros | 1,388 | 1.77 | 1.36 | **1.30 [1.04, 1.59]** |
+| A county in no metro | 5,445 | 0.86 | 1.94 | 0.44 [0.34, 0.54] |
+
+(The whole-map shuffle gave ~0.77 for past ÷ next.)
+
+What it says:
+1. **The wave crosses metro lines.** Between counties in different metros
+   (different commuting areas, mostly different TV stations), the learning
+   ratio is still 1.3, above 1 and well above the shuffle. That part is
+   not one local station covering both sides.
+2. **It is strongest inside a metro** (2.1). That could be local TV or
+   people who live and work together; metro areas are drawn by commuting,
+   so this proxy cannot separate the two. The real Nielsen markets are
+   larger (about 210 against about 900 metros). Pairs in the same TV market
+   but different metros would split them. The free 2003 county-to-DMA file
+   (ICPSR 22720) needs an ICPSR account (open item 22).
+3. **Rural edges show no learning.** Where a county outside any metro is
+   involved, the past pull is ~0.9 and the next pull ~1.9. Small rural
+   counties reach their 50% mark at about the same time as, or just before,
+   their neighbours. This may be the noise of a 20-donor county, not a real
+   pattern; untested.
+4. **For an organization:** the base spreads metro to metro and, most
+   strongly, within a metro. For a new candidate, the next places are the
+   rest of the metros that are already warm, then the metros next door.
+   Rural spread is not predictable from neighbours here.
+
 ### Political twins, and the bridge back to politics
 
 Each alternative explanation has a political twin: state programmes ↔ state
@@ -958,4 +1012,5 @@ Candidate dated political "adoptions", to run through the solar pipeline:
 18. DONE 2026-11-11 (eighth look: broadcast, not a wave; same-day surge at daily resolution). Newcomer donors: the raw ActBlue / WinRed filings (every gift, any size), May-Nov 2022. Does the wave show among people giving for the first time?
 19. Kansas 2022 ballot-committee giving (state ethics commission), if a bulk export exists
 20. DONE 2026-11-11 (ninth look: a modest real wave, learning ratio ~1.3; Buttigieg clearest, Biden and Yang none). A slow-burning political idea: a new candidate's donor base spreading county by county over months (2019 primary, raw ActBlue filings); the political twin of a new baby name
-21. GDELT media attention per candidate per day (national TV via the TV API; online news national and local via the raw GKG files or BigQuery) as measured covariates in the ninth-look model: does the wave survive measured media?
+21. GDELT media attention per candidate per day (national TV via the TV API; online news national and local via the raw GKG files or BigQuery) as measured covariates in the ninth-look model: does the wave survive measured media? PARTLY DONE 2026-11-12 (ninth look, part 2): national TV pulled and explains the clock; local TV for 2019 is too thin, so the metro split stood in. The wave crosses metro lines (1.30 [1.04, 1.59])
+22. Same TV market, different metro: the free 2003 county-to-DMA crosswalk (ICPSR 22720, needs a free ICPSR account; Matt) separates local TV from living and working together
