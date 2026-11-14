@@ -1002,6 +1002,45 @@ What it says:
    "a broadcast". Then say plainly that the political wave is statistical,
    not visual: it is measured, not seen. That is the consultant's job.
 
+#### Ninth look, part 4 (2026-11-14): "a definite wave from Wisconsin into southern Illinois"
+
+Matt, watching solar on the wave player: "the Great Lakes area from like
+Wisconsin to Southern IL is a DEFINITE wave starting north and flowing
+south." The data agrees that the south goes later: in WI + IL, crossing time
+against how far south a county is gives r = +0.72. The typical Wisconsin
+county crossed 50% in 2022 Q2, the typical Illinois county in 2024 Q1. It is
+not a ripple out of Chicago (counties nearer Chicago went later, r = -0.38).
+
+**Mostly it is two states on different clocks, not neighbours:**
+- **The north-south gradient is weak within Illinois** (r = 0.13); it is
+  0.42 within Wisconsin. The sweep is mainly a jump at the state line.
+- **Hand-offs across the two states are at chance** (262 against 254, 1.03x).
+- **Illinois switches on all at once.** Installs per year in Illinois: 51
+  (2018), then 2,540 (2019), 9,945 (2020), and 19,348 (2023). Illinois Shines
+  (the Adjustable Block Program, created by the Future Energy Jobs Act) first
+  opened for applications on 2019-01-30. It reopened, much larger, on
+  2021-12-14, after the Climate and Equitable Jobs Act (effective
+  2021-09-15). Wisconsin grew steadily instead: 802, 1,222, 1,927, 2,276,
+  2,936 (2018-2022).
+- Caveat: part of Illinois' pre-2019 thinness may be reporting. LBNL's
+  coverage of a state often comes from its incentive program. Either way it
+  is a statewide event, not a hand-off.
+
+**The real part is inside Wisconsin:** a north-to-south gradient of 0.42,
+and hand-offs above chance (~1.2-1.5x by setting).
+
+What it says:
+1. **A state program looks like a wave on a map.** This is the "state
+   programmes" explanation from the solar section, live. It is why the model
+   takes out each state's own clock first. Without that, the map shows a
+   big north-to-south wave that is really one state's law.
+2. **The political twin:** a state party, a ballot campaign or a new state
+   law switching on everywhere at once. To an organization it looks the same
+   as momentum. Telling the two apart is the expertise.
+3. **For the story page (Nov 28):** a "looks like a wave, isn't quite"
+   chapter. Wisconsin-Illinois as the trap, Wisconsin alone as the real part
+   (open item 23).
+
 ### Political twins, and the bridge back to politics
 
 Each alternative explanation has a political twin: state programmes ↔ state
@@ -1059,3 +1098,4 @@ Candidate dated political "adoptions", to run through the solar pipeline:
 20. DONE 2026-11-11 (ninth look: a modest real wave, learning ratio ~1.3; Buttigieg clearest, Biden and Yang none). A slow-burning political idea: a new candidate's donor base spreading county by county over months (2019 primary, raw ActBlue filings); the political twin of a new baby name
 21. GDELT media attention per candidate per day (national TV via the TV API; online news national and local via the raw GKG files or BigQuery) as measured covariates in the ninth-look model: does the wave survive measured media? PARTLY DONE 2026-11-12 (ninth look, part 2): national TV pulled and explains the clock; local TV for 2019 is too thin, so the metro split stood in. The wave crosses metro lines (1.30 [1.04, 1.59])
 22. Same TV market, different metro: the free 2003 county-to-DMA crosswalk (ICPSR 22720, needs a free ICPSR account; Matt) separates local TV from living and working together
+23. Story-page chapter "looks like a wave, isn't quite": Wisconsin into Illinois solar is mostly Illinois Shines (opened 2019-01-30, expanded after CEJA 2021); the real neighbour part is inside Wisconsin (ninth look, part 4)
