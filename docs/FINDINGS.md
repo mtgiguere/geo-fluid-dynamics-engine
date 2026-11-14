@@ -71,7 +71,7 @@ project found that swing never could. *Caveat:* one state; the two issues share 
 "personal-liberty" flavor, so an off-cluster (e.g. economic) measure is the next
 test. *(Notebooks: `issue_resistance_starter`, `issue_generality_ohio`.)*
 
-### Economic axis — minimum wage (inverts "What's the Matter with Kansas?")
+### Economic axis — minimum wage (agrees with Bartels and Gelman et al., against "What's the Matter with Kansas?")
 Across 10 verified statewide minimum-wage measures (2006–2020), every one passed
 *above* its state's Democratic presidential share (mean **+15 points**), and the
 gap is **largest where the state is reddest**: corr(partisan lean, economic
@@ -81,7 +81,9 @@ for a raise 20–30 points beyond their presidential Democratic share; blue Colo
 *directly* on the ballot and red-state voters back it decisively — self-interest
 crossing party, the opposite ideological direction from the abortion result, and
 strong evidence the False-Bastion pattern is about *disposition vs. label*, not a
-one-sided artifact. *Caveat:* N=10 verified subset, state-level/ecological,
+one-sided artifact. This is ballot evidence for an argument already made with
+surveys (Bartels 2006; Gelman et al. 2007), not a new overturning of Frank; see
+`docs/RELATED_WORK.md`. *Caveat:* N=10 verified subset, state-level/ecological,
 selection bias (minimum wage is on the ballot mostly where it can win), and a
 mechanical component: when a measure passes broadly, the raw gap above the
 Democratic share grows almost automatically as that share falls, so the −0.82

@@ -24,7 +24,7 @@ EDA, one run, no confidence intervals yet), built on tested modules.
 | Wave | Data | Border effect | Learning ÷ alike | Over time |
 |---|---|---|---|---|
 | Rooftop solar | 3.6M installs, by county and quarter, ~2000-2025 | 4-7x after each state's own clock | ~2.4-3x | (25 years only) |
-| State laws | 563 laws x 50 states, 1691-2017 | ~3.4x | ~1.3-2x | Learning fell from ~2.0 before 1960 to ~1.4 since |
+| State laws | 563 laws x 50 states, 1691-2017 | ~3.4x | ~1.3-2x | Learning fell from ~2.0 before 1960 to ~1.4 since (agrees with Mallinson 2021 and DellaVigna & Kim 2026; `docs/RELATED_WORK.md`) |
 | Baby names | 838-1,350 names x 51 states, 1910-2025 | ~12x | ~6-10x | ~16x before 1950, ~8-10x since 2000 |
 | Political giving after a news shock (ActBlue, WinRed, 2022) | 28.8M ActBlue gifts by ZIP and day; FEC bulk | ~1x (same as a shuffled map) | none | Almost every county surged the same day (Dobbs: 735 of 797) |
 | A candidate's donor base (ActBlue, 2019 primary) | 18.1M gifts to 15 campaigns, by ZIP and day | past neighbours ~1.5x over a shuffled map | ~1.3 [1.06, 1.52] | Launch day is a broadcast; base-building is a wave (Buttigieg 1.6, Biden and Yang ~1) |
