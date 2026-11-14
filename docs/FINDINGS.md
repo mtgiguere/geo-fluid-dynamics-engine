@@ -229,6 +229,54 @@ weaker throughout, as they should be); counties are aggregates — persistence o
 
 ---
 
+## 9. Ideas travel neighbour to neighbour, when they burn slowly
+
+Elections photograph a wave every two or four years, which is too rarely to see
+it move (finding 1's "everyone co-moves"). So we went to things with a date on
+every adoption, proved the method on waves everyone agrees exist, then pointed
+it at politics. The test, in every case: does a county adopt sooner after its
+**neighbours** did, once everything that hits the whole state in the same week
+is taken out? And is that **learning** (the neighbours who went *before* matter
+more than the ones who go *after*) or just **look-alike neighbours**?
+
+| Idea | Data | Learning ratio (before ÷ after) |
+|---|---|---|
+| Rooftop solar | 3.6M installs, county by quarter, 2000-2025 | 2.4-3x |
+| State laws | 563 laws x 50 states, 1691-2017 | ~1.6x (2.0 before 1960, 1.4 since) |
+| Baby names | ~1,000 names x 51 states, 1910-2025 | ~10x |
+| A new candidate's donors (2019 primary) | 18.1M ActBlue gifts by ZIP and day | ~1.3x [1.06, 1.52]; Buttigieg 1.6x, Biden and Yang ~1 |
+| Giving after a news shock (Dobbs, 2022) | 28.8M ActBlue gifts by ZIP and day | none: 735 of 797 counties surged the same day |
+
+- **Waves are real, and mostly learning.** In all four slow ideas, neighbours
+  who went first matter more than neighbours who go later.
+- **News shocks are broadcasts, not waves.** At daily resolution, giving
+  after Dobbs or on Biden's launch lands everywhere at once. Waves belong to
+  slow ideas: a product people see, a name people hear, a law states copy, a
+  candidate people discover.
+- **Each idea has its own roads.** Which state goes first barely carries from
+  one kind of idea to another (laws vs names ~0.3, against ~0.8-1.0 within a
+  kind). Setting it up for a given idea is specialist work.
+- **The wave predicts where an idea goes next.** It does so out of sample:
+  names, 57% of picks right against 36% at random; laws, 27% against 20%.
+- **It survives the obvious other explanations.** It is not luck (more
+  hand-offs than chance), not a common shock (the state clock), not just
+  look-alikes (before beats after), and not only local TV (it crosses metro
+  lines, 1.3x). The one thing it cannot separate is a cause that travels county
+  by county in order, such as a salesman or a field office. Only an experiment
+  can. See `docs/FAQ.md`.
+- **Seen vs measured.** On a map, solar is a wave you can see (New York: 80
+  hand-offs against 49 by chance). The political wave is real but too faint to
+  see by eye; it has to be measured.
+
+*Caveats:* these are scratch analyses on the tested `geofluid.spatial.timing`
+model, with error bars from resampling states or waves; they are not yet in a
+notebook (the Dec 6 solar notebook is first). The FEC bulk file omits donors
+under $200, so the political runs use ActBlue's raw filings, which are
+Democratic-side only. A metro area is a stand-in for a TV market. *(Research
+log: fourth to ninth looks; wave player: `web/public/waves.html`.)*
+
+---
+
 ## What it means for the product
 
 The engine is a poor oracle and an excellent instrument. Its value is:
