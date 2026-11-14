@@ -61,3 +61,11 @@ export function tally(topic, frame, inView) {
   }
   return { real, chance };
 }
+
+// Milliseconds per frame. At 1x a whole run takes about 9 s (16 s zoomed in to
+// a state, where there is more to follow), kept within 60-250 ms a frame (450
+// zoomed); `speed` then scales it: 0.5 = half speed, twice as long a frame.
+export function frameDelay(frames, zoomed, speed) {
+  const ms = Math.max(60, Math.min(zoomed ? 450 : 250, (zoomed ? 16000 : 9000) / frames));
+  return ms / speed;
+}

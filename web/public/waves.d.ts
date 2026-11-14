@@ -13,3 +13,4 @@ export interface Topic {
   chance: Record<string, number>;
 }
 export function tally(topic: Topic, frame: number, inView: (fips: string) => boolean): { real: number; chance: number };
+export function frameDelay(frames: number, zoomed: boolean, speed: number): number;

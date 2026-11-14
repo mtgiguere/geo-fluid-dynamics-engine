@@ -5,7 +5,7 @@
 // final total so far, "A" = all of it.
 import { describe, expect, it } from "vitest";
 
-import { EMPTY, FULL, isFront, levelAt, levelColor, markCurve, tally, zoomBox } from "../public/waves.js";
+import { EMPTY, FULL, frameDelay, isFront, levelAt, levelColor, markCurve, tally, zoomBox } from "../public/waves.js";
 
 describe("levelAt", () => {
   it("reads the county's level at a frame from its string", () => {
@@ -89,5 +89,19 @@ describe("tally", () => {
     const all = () => true;
     expect(tally(topic, 2, all)).toEqual({ real: 1, chance: 1.0 });
     expect(tally(topic, 3, all)).toEqual({ real: 2, chance: 1.5 });
+  });
+});
+
+describe("frameDelay", () => {
+  it("spreads a whole run over about 9 s (16 s zoomed in), within 60-250 ms (450 zoomed) a frame, then divides by speed", () => {
+    // Derivation: 57 weekly frames, whole country: 9000 / 57 = 157.9 ms, inside
+    // 60-250 -> 157.9 at 1x, 315.8 at 0.5x (half speed = twice as long).
+    // 104 solar quarters zoomed in: 16000 / 104 = 153.8 ms. 20 frames, whole
+    // country: 9000 / 20 = 450 -> capped at 250. 400 frames: 22.5 -> floor 60.
+    expect(frameDelay(57, false, 1)).toBeCloseTo(157.89, 2);
+    expect(frameDelay(57, false, 0.5)).toBeCloseTo(315.79, 2);
+    expect(frameDelay(104, true, 1)).toBeCloseTo(153.85, 2);
+    expect(frameDelay(20, false, 1)).toBe(250);
+    expect(frameDelay(400, false, 1)).toBe(60);
   });
 });

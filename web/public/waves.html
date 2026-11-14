@@ -40,6 +40,9 @@
     border-left:4px solid var(--ember); border-radius:8px; padding:10px 14px; margin:4px 0 8px; font-size:15px; }
   .featured button { min-width:0; padding:6px 12px; font-size:14px; }
   .featured[hidden] { display:none; }
+  .pair { display:inline-flex; align-items:center; gap:8px; max-width:100%; }
+  .pair select { min-width:0; max-width:100%; }
+  #topic { width:330px; } #state { width:270px; }
   .tally { font-size:15px; color:var(--ink); margin-top:2px; }
   .tally b { font-family:var(--mono); }
   .curve { width:100%; height:90px; display:block; margin-top:6px; }
@@ -63,11 +66,18 @@
 </header>
 <main class="wrap">
   <div class="controls">
-    <label for="topic" class="stats">Idea</label>
-    <select id="topic"></select>
-    <label for="state" class="stats">Where</label>
-    <select id="state"></select>
+    <span class="pair"><label for="topic" class="stats">Idea</label>
+    <select id="topic"></select></span>
+    <span class="pair"><label for="state" class="stats">Where</label>
+    <select id="state"></select></span>
     <button id="play" type="button">▶ Play</button>
+    <span class="pair"><label for="speed" class="stats">Speed</label>
+    <select id="speed" style="min-width:0">
+      <option value="0.25">Slowest (¼×)</option>
+      <option value="0.5" selected>Slow (½×)</option>
+      <option value="1">Normal</option>
+      <option value="2">Fast (2×)</option>
+    </select></span>
     <input id="frame" type="range" min="0" value="0" aria-label="Time">
   </div>
   <div class="featured" id="featured" hidden>
@@ -109,7 +119,7 @@
   </footer>
 </main>
 <script type="module">
-import { FULL, isFront, levelAt, levelColor, markCurve, tally, zoomBox } from "./waves.js";
+import { FULL, frameDelay, isFront, levelAt, levelColor, markCurve, tally, zoomBox } from "./waves.js";
 
 const SVG = "http://www.w3.org/2000/svg";
 const data = await (await fetch("data/waves.json")).json();
@@ -147,7 +157,7 @@ function fillStates() {
   const f = topic.featured;
   stateSel.innerHTML = "";
   stateSel.add(new Option("Whole country", ""));
-  if (f) stateSel.add(new Option(`★ Clearest for this idea: ${data.states[f.state]}`, f.state));
+  if (f) stateSel.add(new Option(`★ Clearest: ${data.states[f.state]}`, f.state));
   for (const [code, name] of Object.entries(data.states).sort((a, b) => a[1].localeCompare(b[1]))) {
     stateSel.add(new Option(name, code));
   }
@@ -233,11 +243,11 @@ function draw() {
 }
 
 function stop() { clearInterval(timer); timer = null; playBtn.textContent = "▶ Play"; }
+const speedSel = document.getElementById("speed");
 function play() {
   if (frame >= topic.labels.length - 1) frame = 0;
   playBtn.textContent = "❚❚ Pause";
-  // Zoomed in, slower: there is more to follow per frame.
-  const ms = Math.max(60, Math.min(state ? 450 : 250, (state ? 16000 : 9000) / topic.labels.length));
+  const ms = frameDelay(topic.labels.length, Boolean(state), Number(speedSel.value));
   timer = setInterval(() => {
     if (frame >= topic.labels.length - 1) return stop();
     frame++; draw();
@@ -267,6 +277,8 @@ document.getElementById("featuredgo").addEventListener("click", () => {
   stop(); stateSel.value = topic.featured.state; zoom(topic.featured.state);
 });
 playBtn.addEventListener("click", () => (timer ? stop() : play()));
+// A new speed takes effect at once: restart the clock from the current frame.
+speedSel.addEventListener("change", () => { if (timer) { stop(); play(); } });
 slider.addEventListener("input", () => { stop(); frame = Number(slider.value); draw(); });
 choose(0);
 </script>
