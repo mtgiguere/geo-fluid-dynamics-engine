@@ -36,3 +36,28 @@ export function markCurve(seriesList, mark) {
     (_, f) => seriesList.filter((s) => levelAt(s, f) >= mark).length / seriesList.length,
   );
 }
+
+// Zoom to a state: the box around its counties' boxes, padded by `pad` of
+// its width and height on each side (becomes the map's viewBox).
+export function zoomBox(boxes, pad) {
+  const x0 = Math.min(...boxes.map((b) => b.x)), y0 = Math.min(...boxes.map((b) => b.y));
+  const x1 = Math.max(...boxes.map((b) => b.x + b.width)), y1 = Math.max(...boxes.map((b) => b.y + b.height));
+  const w = x1 - x0, h = y1 - y0;
+  return { x: x0 - pad * w, y: y0 - pad * h, width: w * (1 + 2 * pad), height: h * (1 + 2 * pad) };
+}
+
+// The honest yardstick for the arrows (geofluid.map.waves.chance_handoffs):
+// by `frame`, how many in-state hand-offs were drawn into counties in view,
+// against how many chance alone would draw (the state's timings shuffled).
+// A cross-border arrow is drawn but not counted: chance shuffles within a state.
+export function tally(topic, frame, inView) {
+  let real = 0, chance = 0;
+  for (const [a, b, f] of topic.handoffs) {
+    if (f <= frame && a.slice(0, 2) === b.slice(0, 2) && inView(b)) real++;
+  }
+  for (const [fips, v] of Object.entries(topic.chance)) {
+    const s = topic.series[fips];
+    if (s && inView(fips) && levelAt(s, frame) >= topic.mark) chance += v;
+  }
+  return { real, chance };
+}

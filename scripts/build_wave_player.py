@@ -23,7 +23,9 @@ import pandas as pd
 
 from geofluid.ingest.zcta_county import zip_to_county
 from geofluid.map.svg import project_rings
-from geofluid.map.waves import running_share_levels
+from geofluid.map.waves import chance_handoffs, handoffs, running_share_levels
+from geofluid.scope import _STATE_NAMES
+from geofluid.spatial.weights import county_adjacency
 
 ROOT = Path(__file__).resolve().parents[1]
 RAW = ROOT / "data/raw"
@@ -39,6 +41,25 @@ CANDIDATES = {
     "yang": ("Andrew Yang's donors, 2019", "1.06 [0.64, 1.82]: no county wave"),
     "biden": ("Joe Biden's donors, 2019", "1.09 [0.79, 1.47]: a broadcast"),
 }
+# The state where each idea is easiest to SEE, from a scratch scan
+# (2026-11-14) of hand-offs against chance (`chance_handoffs`) at every mark
+# and window. Only solar beats chance clearly enough to feature: New York,
+# 80 hand-offs against 49 by chance. Candidates' best states (1.3-1.6x on
+# 20-40 arrows) are what picking the best of 50 states finds by luck, so none
+# is featured; their learning ratio is real but too small to see by eye.
+# Biden's Iowa is featured as the contrast: everything at once.
+FEATURED = {
+    "Rooftop solar, 2000-2025": (
+        "36",
+        "80 hand-offs against 49 by chance, the clearest wave on the map",
+    ),
+    "Joe Biden's donors, 2019": (
+        "19",
+        "the contrast: nearly every county in two weeks, hand-offs no more than chance",
+    ),
+}
+# Arrows reach back this many frames: about the hazard model's windows.
+WINDOW = {"quarter": 4, "week": 4, "day": 3}
 
 
 def _zip_county() -> pd.DataFrame:
@@ -140,12 +161,28 @@ def _map() -> tuple[dict[str, str], float]:
 def main() -> None:
     look = _zip_county()
     paths, height = _map()
+    geo = json.loads((ROOT / "web/public/data/counties.geojson").read_text())
+    adjacency = county_adjacency(geo)
     topics = [_solar(), *_candidates(look), _dobbs(look)]
     for t in topics:
         t["series"] = {k: v for k, v in t["series"].items() if k in paths}
-        print(f"{t['title']}: {len(t['series'])} counties x {len(t['labels'])} frames")
+        t["window"] = WINDOW[t["step"]]
+        t["handoffs"] = handoffs(t["series"], t["mark"], adjacency, t["window"])
+        chance = chance_handoffs(t["series"], t["mark"], adjacency, t["window"])
+        t["chance"] = {k: round(v, 3) for k, v in chance.items() if v}
+        if t["title"] in FEATURED:
+            state, why = FEATURED[t["title"]]
+            t["featured"] = {"state": state, "why": why}
+        print(
+            f"{t['title']}: {len(t['series'])} counties x {len(t['labels'])} frames, "
+            f"{len(t['handoffs'])} hand-offs"
+        )
+    states = {f: _STATE_NAMES[f] for f in sorted({k[:2] for k in paths}) if f in _STATE_NAMES}
     DATA_OUT.write_text(
-        json.dumps({"height": height, "paths": paths, "topics": topics}, separators=(",", ":")),
+        json.dumps(
+            {"height": height, "paths": paths, "states": states, "topics": topics},
+            separators=(",", ":"),
+        ),
         encoding="utf-8",
     )
     print(f"wrote {DATA_OUT.relative_to(ROOT)} ({DATA_OUT.stat().st_size / 1e6:.1f} MB)")

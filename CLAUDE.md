@@ -235,11 +235,13 @@ watchdog for hollow tests. (mutmut only runs on Linux CI — it refuses on Windo
 - `src/geofluid/map/layers` — GeoJSON layer + per-year metrics export shaping;
   `map/svg` — `project_rings`, the inline-SVG projection every public page builder uses (tested once,
   not copied); `map/waves` — `running_share_levels`, the wave player's frames (each county's share of
-  its own final total, one character per frame)
+  its own final total, one character per frame), `handoffs` (the arrows: a neighbour crossed the mark
+  in the last few frames) and `chance_handoffs` (the arrows chance alone would draw, exact: the honest
+  yardstick, since a broadcast draws arrows too)
 - `scripts/export_web_data.py` — thin orchestration → `web/public/data/*.json`;
   `scripts/build_wave_player.py` — the wave player (`web/public/waves.html` + `data/waves.json`):
-  pick an idea (solar, 2019 candidates' donors, Dobbs giving), press play, watch it travel; draft, not
-  yet linked from the app;
+  pick an idea (solar, 2019 candidates' donors, Dobbs giving), press play, watch it travel; zoom to a
+  state for hand-off arrows and the live hand-offs-vs-chance count; draft, not yet linked from the app;
   `scripts/build_targeting_demo.py` — renders the public prescriptive demo
   (`web/public/demo.html`) from real data through the tested targeting engine;
   `scripts/fetch_mo_enr.cjs` — election-night fetch of county ballot-measure results from

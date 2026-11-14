@@ -957,6 +957,51 @@ What it says:
    rest of the metros that are already warm, then the metros next door.
    Rural spread is not predictable from neighbours here.
 
+#### Ninth look, part 3 (2026-11-14): can you SEE the wave on a map?
+
+Matt, on the wave player (`web/public/waves.html`): "it's very difficult to
+see a wave, even though statistically it's there. Is there a state that shows
+it cleanly?" We added a state zoom and arrows. When a county crosses its
+mark, an arrow comes from each neighbour that crossed in the few frames
+before.
+
+**The arrows lie in a broadcast.** In Biden's Iowa, nearly every county
+crosses within two weeks, so nearly every county has a neighbour that
+crossed "recently", and the map fills with arrows anyway. The yardstick
+(`geofluid.map.waves.chance_handoffs`) is the arrows chance alone would draw
+if each state's crossing times were shuffled among its counties. It is
+computed exactly, with no random draws. A wave you can see beats chance; a
+broadcast lands near 1x.
+
+Same-state hand-offs against chance, all counties (scan of marks 20% and 50%,
+windows 1, 2 and 4 frames):
+
+| Idea | Nation, hand-offs ÷ chance | Clearest states |
+|---|---|---|
+| Rooftop solar | 1.14-1.19x at every setting | **New York 1.63x (80 vs 49)**, Wisconsin ~1.5x, Virginia 1.3-1.4x, Minnesota ~1.4x |
+| Candidates (Buttigieg, Sanders, Warren, Yang) | 0.97-1.09x | best states 1.3-1.6x on 20-40 arrows |
+| Biden | 0.99-1.08x | none |
+| Dobbs newcomers | 0.96-1.09x | none |
+
+What it says:
+1. **Solar is a wave you can see.** In New York the hand-offs run 1.6x
+   chance, from the Capital Region and central New York outward
+   (2015-2021). That is featured on the page.
+2. **The candidates' waves are real but too small to see.** The hazard
+   model finds a learning ratio of up to 1.6 (ninth look). Drawn as
+   arrows, though, the hand-offs are indistinguishable from chance. The odd
+   state at 1.3-1.6x rests on 20-40 arrows; picking the best of ~50 states
+   turns that up by luck, so none is featured.
+3. **The "ripple" was a trap.** Our first pick of the clearest states
+   ranked by distance from the first counties to cross (Colorado for solar,
+   Georgia for Yang). A ripple out of a city is city first, countryside
+   later; it is not neighbours passing it on. The hand-off count is the
+   honest test.
+4. **For the MPSA talk:** show solar in New York to make "a wave" concrete.
+   Show Biden in Iowa (the map lights up, the hand-offs are at chance) for
+   "a broadcast". Then say plainly that the political wave is statistical,
+   not visual: it is measured, not seen. That is the consultant's job.
+
 ### Political twins, and the bridge back to politics
 
 Each alternative explanation has a political twin: state programmes ↔ state

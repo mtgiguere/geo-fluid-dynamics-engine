@@ -32,8 +32,16 @@
   .when { font:700 22px/1.2 var(--mono); color:var(--ink); min-height:1.3em; }
   .stats { color:var(--muted); font-size:14px; }
   .stage { position:relative; }
-  svg.map { width:100%; height:auto; display:block; }
-  svg.map path { stroke:#fff; stroke-width:.25; }
+  svg.map { width:100%; height:auto; max-height:64vh; display:block; }
+  svg.map path { stroke:#fff; stroke-width:.25; transition:opacity .3s; }
+  svg.map path.out { opacity:.18; }
+  svg.map .arrows line { stroke:var(--ember-deep); stroke-linecap:round; }
+  .featured { display:flex; flex-wrap:wrap; gap:10px; align-items:center; background:#fff; border:1px solid var(--line);
+    border-left:4px solid var(--ember); border-radius:8px; padding:10px 14px; margin:4px 0 8px; font-size:15px; }
+  .featured button { min-width:0; padding:6px 12px; font-size:14px; }
+  .featured[hidden] { display:none; }
+  .tally { font-size:15px; color:var(--ink); margin-top:2px; }
+  .tally b { font-family:var(--mono); }
   .curve { width:100%; height:90px; display:block; margin-top:6px; }
   .legend { display:flex; flex-wrap:wrap; gap:16px; align-items:center; font-size:13px; color:var(--muted); padding:8px 0 4px; }
   .ramp { width:160px; height:10px; border-radius:3px; background:linear-gradient(90deg,#ece8df,#0b5563); }
@@ -57,11 +65,18 @@
   <div class="controls">
     <label for="topic" class="stats">Idea</label>
     <select id="topic"></select>
+    <label for="state" class="stats">Where</label>
+    <select id="state"></select>
     <button id="play" type="button">▶ Play</button>
     <input id="frame" type="range" min="0" value="0" aria-label="Time">
   </div>
+  <div class="featured" id="featured" hidden>
+    <span id="featuredtext"></span>
+    <button id="featuredgo" type="button">Zoom there</button>
+  </div>
   <div class="when" id="when" aria-live="polite"></div>
   <div class="stats" id="stats"></div>
+  <div class="tally" id="tally"></div>
   <div class="stage">
     <svg class="map" id="map" role="img" aria-label="County map of the lower 48 states"></svg>
   </div>
@@ -71,6 +86,8 @@
     <span>Nothing yet</span><span class="ramp"></span><span>All of it</span>
     <span><span class="sw" style="background:var(--ember)"></span><span id="marklabel">Crossing the mark</span></span>
     <span><span class="sw" style="background:var(--nodata)"></span>Too few to read</span>
+    <span id="arrowkey" hidden>→ from a neighbour that crossed in the last few <span id="arrowstep"></span>s
+      (faint: earlier hand-offs)</span>
   </div>
   <div class="verdict" id="verdict"></div>
   <footer>
@@ -80,32 +97,103 @@
     <p>"Learning ratio": in the hazard model, how much more a county is pulled by neighbours who went in the last
       few weeks than by neighbours who go in the next few (which it could not have learned from); 95% ranges from
       resampling states. 1 means no neighbour-to-neighbour spread. Details: docs/RESEARCH_LOG.md.</p>
+    <p>Arrows (when zoomed to a state): when a county crosses the mark, an arrow comes from each neighbour that
+      crossed in the few frames before it. They draw the hand-offs the hazard model counts. An arrow is not proof
+      the idea crossed that border; the learning ratio is the test of that. The "clearest state" for each idea is
+      the one where hand-offs most clearly beat chance. "By chance alone": the arrows you would expect if each
+      state's crossing times were shuffled among its counties (computed exactly, no random draws). A broadcast
+      lands near 1×. Candidates' waves are real in the model (learning ratio up to 1.6) but stay near 1× here:
+      too small to see by eye.</p>
     <p>Sources: Lawrence Berkeley National Laboratory, Tracking the Sun (solar); FEC, ActBlue's raw filings (donors,
       counted by ZIP and day; no names kept); Census ZIP-county file. Alaska, Hawaii and Puerto Rico not shown.</p>
   </footer>
 </main>
 <script type="module">
-import { FULL, isFront, levelAt, levelColor, markCurve } from "./waves.js";
+import { FULL, isFront, levelAt, levelColor, markCurve, tally, zoomBox } from "./waves.js";
 
 const SVG = "http://www.w3.org/2000/svg";
 const data = await (await fetch("data/waves.json")).json();
 const map = document.getElementById("map"), curve = document.getElementById("curve");
 const topicSel = document.getElementById("topic"), slider = document.getElementById("frame");
-const playBtn = document.getElementById("play");
+const playBtn = document.getElementById("play"), stateSel = document.getElementById("state");
+const deep = getComputedStyle(document.documentElement).getPropertyValue("--ember-deep").trim();
 const nodata = getComputedStyle(document.documentElement).getPropertyValue("--nodata").trim();
 const ember = getComputedStyle(document.documentElement).getPropertyValue("--ember").trim();
 
-map.setAttribute("viewBox", `0 0 1000 ${data.height.toFixed(1)}`);
-const paths = {};
+const NATION = { x: 0, y: 0, width: 1000, height: data.height };
+const paths = {}, centre = {};
 for (const [fips, d] of Object.entries(data.paths)) {
   const p = document.createElementNS(SVG, "path");
   p.setAttribute("d", d);
   map.appendChild(p);
   paths[fips] = p;
 }
+// The arrow layer sits on top of the counties.
+const arrows = document.createElementNS(SVG, "g");
+arrows.setAttribute("class", "arrows");
+map.appendChild(arrows);
+map.setAttribute("viewBox", `0 0 1000 ${data.height.toFixed(1)}`);
+for (const [fips, p] of Object.entries(paths)) {
+  const b = p.getBBox();
+  centre[fips] = [b.x + b.width / 2, b.y + b.height / 2];
+}
 data.topics.forEach((t, i) => topicSel.add(new Option(t.title, String(i))));
 
-let topic, curveVals, frame = 0, timer = null;
+let topic, curveVals, frame = 0, timer = null, state = "", view = NATION, byFrame = new Map();
+
+const inView = (fips) => !state || fips.startsWith(state);
+
+function fillStates() {
+  const f = topic.featured;
+  stateSel.innerHTML = "";
+  stateSel.add(new Option("Whole country", ""));
+  if (f) stateSel.add(new Option(`★ Clearest for this idea: ${data.states[f.state]}`, f.state));
+  for (const [code, name] of Object.entries(data.states).sort((a, b) => a[1].localeCompare(b[1]))) {
+    stateSel.add(new Option(name, code));
+  }
+  stateSel.value = state && data.states[state] ? state : "";
+  const box = document.getElementById("featured");
+  box.hidden = !f;
+  if (f) document.getElementById("featuredtext").textContent =
+    `Clearest state for this idea: ${data.states[f.state]}, ${f.why}.`;
+}
+
+function zoom(code) {
+  state = code;
+  view = state
+    ? zoomBox(Object.entries(paths).filter(([k]) => k.startsWith(state)).map(([, p]) => p.getBBox()), 0.06)
+    : NATION;
+  map.setAttribute("viewBox", `${view.x} ${view.y} ${view.width} ${view.height}`);
+  for (const [fips, p] of Object.entries(paths)) p.classList.toggle("out", !inView(fips));
+  curveVals = markCurve(Object.entries(topic.series).filter(([k]) => inView(k)).map(([, v]) => v), topic.mark);
+  document.getElementById("arrowkey").hidden = !state;
+  draw();
+}
+
+function drawArrows() {
+  arrows.innerHTML = "";
+  if (!state) return;
+  const unit = view.width / 400;  // arrow size follows the zoom
+  for (let f = 0; f <= frame; f++) {
+    for (const [a, b] of byFrame.get(f) || []) {
+      if (!b.startsWith(state) || !centre[a] || !centre[b]) continue;
+      const age = frame - f, recent = age < topic.window;
+      const [x1, y1] = centre[a], [x2, y2] = centre[b];
+      const dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len;
+      const sx = x1 + ux * len * 0.15, sy = y1 + uy * len * 0.15, ex = x2 - ux * len * 0.15, ey = y2 - uy * len * 0.15;
+      const w = recent ? unit * 1.6 : unit * 1.0, h = w * 3.2;
+      const op = recent ? 1 - (0.6 * age) / topic.window : 0.4;
+      const line = document.createElementNS(SVG, "line");
+      line.setAttribute("x1", sx); line.setAttribute("y1", sy);
+      line.setAttribute("x2", ex - ux * h * 0.6); line.setAttribute("y2", ey - uy * h * 0.6);
+      line.setAttribute("stroke-width", w); line.setAttribute("opacity", op);
+      const head = document.createElementNS(SVG, "polygon");
+      head.setAttribute("points", `${ex},${ey} ${ex - ux * h - uy * h * 0.55},${ey - uy * h + ux * h * 0.55} ${ex - ux * h + uy * h * 0.55},${ey - uy * h - ux * h * 0.55}`);
+      head.setAttribute("fill", deep); head.setAttribute("opacity", op);
+      arrows.append(line, head);
+    }
+  }
+}
 
 function drawCurve(upTo) {
   const n = curveVals.length, x = (i) => (n > 1 ? (i / (n - 1)) * 1000 : 0), y = (v) => 86 - v * 80;
@@ -118,28 +206,38 @@ function drawCurve(upTo) {
 }
 
 function draw() {
-  let fronts = 0, past = 0;
+  let fronts = 0, past = 0, total = 0;
   for (const [fips, p] of Object.entries(paths)) {
     const s = topic.series[fips];
     if (!s) { p.setAttribute("fill", nodata); continue; }
     const front = isFront(s, frame, topic.mark);
-    if (front) fronts++;
-    if (levelAt(s, frame) >= topic.mark) past++;
+    if (inView(fips)) {
+      total++;
+      if (front) fronts++;
+      if (levelAt(s, frame) >= topic.mark) past++;
+    }
     p.setAttribute("fill", front ? ember : levelColor(levelAt(s, frame)));
   }
-  const total = Object.keys(topic.series).length;
   document.getElementById("when").textContent = topic.labels[frame];
   document.getElementById("stats").textContent =
     `${past.toLocaleString()} of ${total.toLocaleString()} counties past ${topic.mark * 10}% · ${fronts.toLocaleString()} crossing this ${topic.step}`;
   slider.value = String(frame);
   drawCurve(frame);
+  drawArrows();
+  const t = tally(topic, frame, inView);
+  const ratio = t.chance ? t.real / t.chance : 0;
+  document.getElementById("tally").innerHTML = t.chance < 5
+    ? "Hand-offs: too few yet to compare with chance."
+    : `Hand-offs so far: <b>${t.real}</b> · by chance alone: <b>${t.chance.toFixed(0)}</b> · ` +
+      `<b>${ratio.toFixed(2)}×</b> ${ratio >= 1.25 ? "— more than chance: a wave you can see" : ratio >= 1.1 ? "— a little more than chance" : "— about chance: no visible wave"}`;
 }
 
 function stop() { clearInterval(timer); timer = null; playBtn.textContent = "▶ Play"; }
 function play() {
   if (frame >= topic.labels.length - 1) frame = 0;
   playBtn.textContent = "❚❚ Pause";
-  const ms = Math.max(60, Math.min(250, 9000 / topic.labels.length));
+  // Zoomed in, slower: there is more to follow per frame.
+  const ms = Math.max(60, Math.min(state ? 450 : 250, (state ? 16000 : 9000) / topic.labels.length));
   timer = setInterval(() => {
     if (frame >= topic.labels.length - 1) return stop();
     frame++; draw();
@@ -149,15 +247,25 @@ function play() {
 function choose(i) {
   stop();
   topic = data.topics[i];
-  curveVals = markCurve(Object.values(topic.series), topic.mark);
+  byFrame = new Map();
+  for (const [a, b, f] of topic.handoffs) {
+    if (!byFrame.has(f)) byFrame.set(f, []);
+    byFrame.get(f).push([a, b]);
+  }
   document.getElementById("marklabel").textContent = `Crossing ${topic.mark * 10}% this ${topic.step}`;
+  document.getElementById("arrowstep").textContent = topic.step;
   slider.max = String(topic.labels.length - 1);
   frame = 0;
   document.getElementById("verdict").textContent = topic.verdict;
-  draw();
+  fillStates();
+  zoom(stateSel.value);
 }
 
 topicSel.addEventListener("change", () => choose(Number(topicSel.value)));
+stateSel.addEventListener("change", () => { stop(); zoom(stateSel.value); });
+document.getElementById("featuredgo").addEventListener("click", () => {
+  stop(); stateSel.value = topic.featured.state; zoom(topic.featured.state);
+});
 playBtn.addEventListener("click", () => (timer ? stop() : play()));
 slider.addEventListener("input", () => { stop(); frame = Number(slider.value); draw(); });
 choose(0);
