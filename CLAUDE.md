@@ -234,8 +234,12 @@ watchdog for hollow tests. (mutmut only runs on Linux CI — it refuses on Windo
 - `src/geofluid/scope` — geographic scope catalog + cross-border neighborhood expansion
 - `src/geofluid/map/layers` — GeoJSON layer + per-year metrics export shaping;
   `map/svg` — `project_rings`, the inline-SVG projection every public page builder uses (tested once,
-  not copied)
+  not copied); `map/waves` — `running_share_levels`, the wave player's frames (each county's share of
+  its own final total, one character per frame)
 - `scripts/export_web_data.py` — thin orchestration → `web/public/data/*.json`;
+  `scripts/build_wave_player.py` — the wave player (`web/public/waves.html` + `data/waves.json`):
+  pick an idea (solar, 2019 candidates' donors, Dobbs giving), press play, watch it travel; draft, not
+  yet linked from the app;
   `scripts/build_targeting_demo.py` — renders the public prescriptive demo
   (`web/public/demo.html`) from real data through the tested targeting engine;
   `scripts/fetch_mo_enr.cjs` — election-night fetch of county ballot-measure results from
@@ -262,7 +266,8 @@ watchdog for hollow tests. (mutmut only runs on Linux CI — it refuses on Windo
   change organizes). Each finding is summarized in `docs/FINDINGS.md`.
 - `web/` — Vite + TS + Mapbox frontend (`src/metrics.ts`, `src/scope.ts`,
   `src/measure.ts`; `e2e/` Playwright); `public/calc.js` — the receipt page's budget calculator as an
-  ES module the page imports, unit-tested by `src/calc.test.ts` (rule 7: page logic gets Vitest); `public/demo.html` — the static, public
+  ES module the page imports, unit-tested by `src/calc.test.ts` (rule 7: page logic gets Vitest); `public/waves.js` — the wave
+  player's frame logic (level, colour, wave front, the past-the-mark curve), tested by `src/waves.test.ts`; `public/demo.html` — the static, public
   Stage-4 prescriptive demo, linked from the app's "The art of the possible" button; `public/forecast.html` — the static, public 2026 pre-registration
   explainer, linked from the app's "The November receipt" button (rebuild after registration); `public/blueprint.html` — the public deep-dive
   (research arc with inline notebook figures), linked from "The blueprint" button

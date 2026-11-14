@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Watch an Idea Travel</title>
+<!-- The wave player. Data: data/waves.json, built by scripts/build_wave_player.py
+     through the tested geofluid.map.waves; frame logic: waves.js, tested in
+     src/waves.test.ts. This page only draws. -->
+<style>
+  :root {
+    --ink:#15202B; --paper:#F2F3EF; --graphite:#28313B; --muted:#5C6770;
+    --ember:#E8A33D; --ember-deep:#C8791F; --line:#D8DAD2; --nodata:#FBFBF8;
+    --sans: ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono: ui-monospace,"SFMono-Regular","Cascadia Code",Menlo,Consolas,monospace;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--graphite); font-family:var(--sans);
+    line-height:1.5; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:1080px; margin:0 auto; padding:0 16px; }
+  header { background:var(--ink); color:#EAF0F4; padding:36px 0 28px; }
+  .eyebrow { font:600 12px/1 var(--mono); letter-spacing:.18em; text-transform:uppercase; color:var(--ember); }
+  h1 { font-size:clamp(28px,4.4vw,46px); font-weight:800; margin:.3em 0 .15em; letter-spacing:-.02em; line-height:1.05; }
+  .lede { color:#B7C4CE; max-width:62ch; margin:0; }
+  .controls { display:flex; flex-wrap:wrap; gap:12px; align-items:center; padding:18px 0 10px; }
+  select, button { font:600 15px var(--sans); border-radius:8px; border:1px solid var(--line);
+    background:#fff; color:var(--ink); padding:9px 12px; }
+  select { min-width:min(100%, 340px); }
+  button { background:var(--ember); border-color:var(--ember-deep); cursor:pointer; min-width:96px; }
+  button:focus-visible, select:focus-visible, input:focus-visible { outline:3px solid var(--ink); outline-offset:2px; }
+  input[type=range] { flex:1 1 260px; accent-color:var(--ember-deep); }
+  .when { font:700 22px/1.2 var(--mono); color:var(--ink); min-height:1.3em; }
+  .stats { color:var(--muted); font-size:14px; }
+  .stage { position:relative; }
+  svg.map { width:100%; height:auto; display:block; }
+  svg.map path { stroke:#fff; stroke-width:.25; }
+  .curve { width:100%; height:90px; display:block; margin-top:6px; }
+  .legend { display:flex; flex-wrap:wrap; gap:16px; align-items:center; font-size:13px; color:var(--muted); padding:8px 0 4px; }
+  .ramp { width:160px; height:10px; border-radius:3px; background:linear-gradient(90deg,#ece8df,#0b5563); }
+  .sw { display:inline-block; width:12px; height:12px; border-radius:2px; vertical-align:-1px; margin-right:5px; border:1px solid var(--line); }
+  .verdict { font-size:18px; font-weight:700; color:var(--ink); margin:14px 0 4px; }
+  footer { color:var(--muted); font-size:13px; padding:18px 0 40px; border-top:1px solid var(--line); margin-top:18px; }
+  footer p { max-width:80ch; }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="eyebrow">Geo-Fluid Dynamics Engine · wave player (draft)</div>
+    <h1>Watch an idea travel</h1>
+    <p class="lede">Pick an idea and press play. Each county darkens as the idea fills it in.
+      The <span style="color:var(--ember)">orange flash</span> is the moment a county crosses the mark
+      (a set share of its own final total): the edge of the wave.</p>
+  </div>
+</header>
+<main class="wrap">
+  <div class="controls">
+    <label for="topic" class="stats">Idea</label>
+    <select id="topic"></select>
+    <button id="play" type="button">▶ Play</button>
+    <input id="frame" type="range" min="0" value="0" aria-label="Time">
+  </div>
+  <div class="when" id="when" aria-live="polite"></div>
+  <div class="stats" id="stats"></div>
+  <div class="stage">
+    <svg class="map" id="map" role="img" aria-label="County map of the lower 48 states"></svg>
+  </div>
+  <svg class="curve" id="curve" viewBox="0 0 1000 90" preserveAspectRatio="none" role="img"
+       aria-label="Share of counties past the mark, over time"></svg>
+  <div class="legend">
+    <span>Nothing yet</span><span class="ramp"></span><span>All of it</span>
+    <span><span class="sw" style="background:var(--ember)"></span><span id="marklabel">Crossing the mark</span></span>
+    <span><span class="sw" style="background:var(--nodata)"></span>Too few to read</span>
+  </div>
+  <div class="verdict" id="verdict"></div>
+  <footer>
+    <p>Each county is coloured by the share of its <em>own</em> final total reached so far, so a big county and a
+      small one are read by the shape of their arrival, not their size. The line under the map is the share of
+      counties past the mark: a wave draws an S-curve over months, a broadcast draws a cliff.</p>
+    <p>"Learning ratio": in the hazard model, how much more a county is pulled by neighbours who went in the last
+      few weeks than by neighbours who go in the next few (which it could not have learned from); 95% ranges from
+      resampling states. 1 means no neighbour-to-neighbour spread. Details: docs/RESEARCH_LOG.md.</p>
+    <p>Sources: Lawrence Berkeley National Laboratory, Tracking the Sun (solar); FEC, ActBlue's raw filings (donors,
+      counted by ZIP and day; no names kept); Census ZIP-county file. Alaska, Hawaii and Puerto Rico not shown.</p>
+  </footer>
+</main>
+<script type="module">
+import { FULL, isFront, levelAt, levelColor, markCurve } from "./waves.js";
+
+const SVG = "http://www.w3.org/2000/svg";
+const data = await (await fetch("data/waves.json")).json();
+const map = document.getElementById("map"), curve = document.getElementById("curve");
+const topicSel = document.getElementById("topic"), slider = document.getElementById("frame");
+const playBtn = document.getElementById("play");
+const nodata = getComputedStyle(document.documentElement).getPropertyValue("--nodata").trim();
+const ember = getComputedStyle(document.documentElement).getPropertyValue("--ember").trim();
+
+map.setAttribute("viewBox", `0 0 1000 ${data.height.toFixed(1)}`);
+const paths = {};
+for (const [fips, d] of Object.entries(data.paths)) {
+  const p = document.createElementNS(SVG, "path");
+  p.setAttribute("d", d);
+  map.appendChild(p);
+  paths[fips] = p;
+}
+data.topics.forEach((t, i) => topicSel.add(new Option(t.title, String(i))));
+
+let topic, curveVals, frame = 0, timer = null;
+
+function drawCurve(upTo) {
+  const n = curveVals.length, x = (i) => (n > 1 ? (i / (n - 1)) * 1000 : 0), y = (v) => 86 - v * 80;
+  const pts = (k) => curveVals.slice(0, k + 1).map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  curve.innerHTML =
+    `<line x1="0" x2="1000" y1="86" y2="86" stroke="#D8DAD2"/>` +
+    `<polyline points="${pts(n - 1)}" fill="none" stroke="#D8DAD2" stroke-width="2" vector-effect="non-scaling-stroke"/>` +
+    `<polyline points="${pts(upTo)}" fill="none" stroke="${FULL}" stroke-width="2.5" vector-effect="non-scaling-stroke"/>` +
+    `<circle cx="${x(upTo)}" cy="${y(curveVals[upTo])}" r="4" fill="${ember}"/>`;
+}
+
+function draw() {
+  let fronts = 0, past = 0;
+  for (const [fips, p] of Object.entries(paths)) {
+    const s = topic.series[fips];
+    if (!s) { p.setAttribute("fill", nodata); continue; }
+    const front = isFront(s, frame, topic.mark);
+    if (front) fronts++;
+    if (levelAt(s, frame) >= topic.mark) past++;
+    p.setAttribute("fill", front ? ember : levelColor(levelAt(s, frame)));
+  }
+  const total = Object.keys(topic.series).length;
+  document.getElementById("when").textContent = topic.labels[frame];
+  document.getElementById("stats").textContent =
+    `${past.toLocaleString()} of ${total.toLocaleString()} counties past ${topic.mark * 10}% · ${fronts.toLocaleString()} crossing this ${topic.step}`;
+  slider.value = String(frame);
+  drawCurve(frame);
+}
+
+function stop() { clearInterval(timer); timer = null; playBtn.textContent = "▶ Play"; }
+function play() {
+  if (frame >= topic.labels.length - 1) frame = 0;
+  playBtn.textContent = "❚❚ Pause";
+  const ms = Math.max(60, Math.min(250, 9000 / topic.labels.length));
+  timer = setInterval(() => {
+    if (frame >= topic.labels.length - 1) return stop();
+    frame++; draw();
+  }, ms);
+}
+
+function choose(i) {
+  stop();
+  topic = data.topics[i];
+  curveVals = markCurve(Object.values(topic.series), topic.mark);
+  document.getElementById("marklabel").textContent = `Crossing ${topic.mark * 10}% this ${topic.step}`;
+  slider.max = String(topic.labels.length - 1);
+  frame = 0;
+  document.getElementById("verdict").textContent = topic.verdict;
+  draw();
+}
+
+topicSel.addEventListener("change", () => choose(Number(topicSel.value)));
+playBtn.addEventListener("click", () => (timer ? stop() : play()));
+slider.addEventListener("input", () => { stop(); frame = Number(slider.value); draw(); });
+choose(0);
+</script>
+</body>
+</html>

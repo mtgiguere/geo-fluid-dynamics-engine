@@ -142,7 +142,7 @@ Related, not yet downloaded: the researchers' own estimated state-to-state diffu
 |---|---|
 | Source | `https://docquery.fec.gov/dcdev/posted/{file_number}.fec`. In 2019 ActBlue filed semiannually (MY, YE), then monthly from 2020. Use the amended MY (1780795), not the original (1344765). |
 | Acceptance | 18,133,520 earmarked individual gifts to 15 Democratic presidential committees (Jan 2019 to Jan 2020). A dollar check against each committee's published totals is still to do. |
-| Quirks | Same v8.3/8.4 layout as the 2022 files. The recipient is in the memo text, field 43: `Earmarked for <NAME> (<committee id>)`; field 22 says `Earmark` or `Contribution to Act Blue`. The extracts hold counts per candidate, ZIP and day plus each donor's first-gift date keyed by a hash of name + ZIP + candidate (`PYTHONHASHSEED=0`, so hashes match across filings). That hash is a pseudonymous key: keep these files out of git like the raw filings. |
+| Quirks | Same v8.3/8.4 layout as the 2022 files. The recipient is in the memo text, field 43: `Earmarked for <NAME> (<committee id>)`; field 22 says `Earmark` or `Contribution to Act Blue`. The extracts hold counts per candidate, ZIP and day plus each donor's first-gift date keyed by a hash of name + ZIP + candidate (`PYTHONHASHSEED=0`, so hashes match across filings). That hash is a pseudonymous key: keep these files out of git like the raw filings. `actblue_2019_new_donors_by_zip_day.csv.gz` (5.3M rows, 8.26M donors) is the keyless summary built from them: new donors per candidate, ZIP and first-gift day. The wave player reads it; it holds counts only. |
 
 ### Metro areas (a free stand-in for TV markets)
 
