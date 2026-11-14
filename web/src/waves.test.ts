@@ -5,7 +5,22 @@
 // final total so far, "A" = all of it.
 import { describe, expect, it } from "vitest";
 
-import { EMPTY, FULL, frameDelay, isFront, levelAt, levelColor, markCurve, tally, zoomBox } from "../public/waves.js";
+import {
+  EMPTY,
+  FULL,
+  EARLY,
+  LATE,
+  MID,
+  arrivalColor,
+  crossFrame,
+  frameDelay,
+  isFront,
+  levelAt,
+  levelColor,
+  markCurve,
+  tally,
+  zoomBox,
+} from "../public/waves.js";
 
 describe("levelAt", () => {
   it("reads the county's level at a frame from its string", () => {
@@ -103,5 +118,30 @@ describe("frameDelay", () => {
     expect(frameDelay(104, true, 1)).toBeCloseTo(153.85, 2);
     expect(frameDelay(20, false, 1)).toBe(250);
     expect(frameDelay(400, false, 1)).toBe(60);
+  });
+});
+
+describe("crossFrame", () => {
+  it("gives the frame a county first reaches the mark, or null if it never does", () => {
+    // Derivation: "0247A" is 0, 20, 40, 70, 100% -> first at or past 50% at
+    // frame 3; past 20% at frame 1. "0124" never reaches 50%.
+    expect(crossFrame("0247A", 5)).toBe(3);
+    expect(crossFrame("0247A", 2)).toBe(1);
+    expect(crossFrame("0124", 5)).toBeNull();
+  });
+});
+
+describe("arrivalColor", () => {
+  it("runs EARLY (dark) -> MID -> LATE (pale) across the earliest-to-latest arrival in view", () => {
+    // Derivation: EARLY #24135f = (36, 19, 95), MID #c4407a = (196, 64, 122),
+    // LATE #f6e3a1. Arrivals from frame 0 to 4: frame 0 EARLY, 2 MID, 4 LATE.
+    // Frame 1 is halfway EARLY -> MID: (116, 41.5, 108.5) -> rounded
+    // (116, 42, 109) = #742a6d. With one arrival frame only (lo = hi), EARLY.
+    expect([EARLY, MID, LATE]).toEqual(["#24135f", "#c4407a", "#f6e3a1"]);
+    expect(arrivalColor(0, 0, 4)).toBe(EARLY);
+    expect(arrivalColor(2, 0, 4)).toBe(MID);
+    expect(arrivalColor(4, 0, 4)).toBe(LATE);
+    expect(arrivalColor(1, 0, 4)).toBe("#742a6d");
+    expect(arrivalColor(7, 7, 7)).toBe(EARLY);
   });
 });

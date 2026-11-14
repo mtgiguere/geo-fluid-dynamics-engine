@@ -14,3 +14,8 @@ export interface Topic {
 }
 export function tally(topic: Topic, frame: number, inView: (fips: string) => boolean): { real: number; chance: number };
 export function frameDelay(frames: number, zoomed: boolean, speed: number): number;
+export function crossFrame(series: string, mark: number): number | null;
+export const EARLY: string;
+export const MID: string;
+export const LATE: string;
+export function arrivalColor(frame: number, lo: number, hi: number): string;

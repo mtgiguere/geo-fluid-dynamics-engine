@@ -241,7 +241,8 @@ watchdog for hollow tests. (mutmut only runs on Linux CI — it refuses on Windo
 - `scripts/export_web_data.py` — thin orchestration → `web/public/data/*.json`;
   `scripts/build_wave_player.py` — the wave player (`web/public/waves.html` + `data/waves.json`):
   pick an idea (solar, 2019 candidates' donors, Dobbs giving), press play, watch it travel; zoom to a
-  state for hand-off arrows and the live hand-offs-vs-chance count; draft, not yet linked from the app;
+  state for hand-off arrows and the live hand-offs-vs-chance count; an "Arrival map" toggle shows one still
+  map coloured by WHEN each county caught on (order is easier to judge still than animated); draft, not yet linked from the app;
   `scripts/build_targeting_demo.py` — renders the public prescriptive demo
   (`web/public/demo.html`) from real data through the tested targeting engine;
   `scripts/fetch_mo_enr.cjs` — election-night fetch of county ballot-measure results from

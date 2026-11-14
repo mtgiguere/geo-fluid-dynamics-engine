@@ -12,10 +12,13 @@ export const EMPTY = "#ece8df";
 export const FULL = "#0b5563";
 const rgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
 
-export function levelColor(level) {
-  const t = level / 10;
-  const [a, b] = [rgb(EMPTY), rgb(FULL)];
+const lerp = (from, to, t) => {
+  const [a, b] = [rgb(from), rgb(to)];
   return "#" + a.map((v, i) => Math.round(v + (b[i] - v) * t).toString(16).padStart(2, "0")).join("");
+};
+
+export function levelColor(level) {
+  return lerp(EMPTY, FULL, level / 10);
 }
 
 // The wave front: the frame a county crosses the topic's mark (the take-off
@@ -68,4 +71,23 @@ export function tally(topic, frame, inView) {
 export function frameDelay(frames, zoomed, speed) {
   const ms = Math.max(60, Math.min(zoomed ? 450 : 250, (zoomed ? 16000 : 9000) / frames));
   return ms / speed;
+}
+
+// The arrival map's input: the frame a county first reaches the mark, or
+// null if it never does.
+export function crossFrame(series, mark) {
+  for (let f = 0; f < series.length; f++) if (levelAt(series, f) >= mark) return f;
+  return null;
+}
+
+// The arrival map: one still picture, each county coloured by WHEN it reached
+// the mark, from the earliest arrival in view (dark) to the latest (pale).
+// Order is easier to read in a still map than in an animation of flashes.
+export const EARLY = "#24135f";
+export const MID = "#c4407a";
+export const LATE = "#f6e3a1";
+
+export function arrivalColor(frame, lo, hi) {
+  const t = hi > lo ? (frame - lo) / (hi - lo) : 0;
+  return t <= 0.5 ? lerp(EARLY, MID, t * 2) : lerp(MID, LATE, (t - 0.5) * 2);
 }

@@ -42,6 +42,12 @@
   .featured[hidden] { display:none; }
   .pair { display:inline-flex; align-items:center; gap:8px; max-width:100%; }
   .pair select { min-width:0; max-width:100%; }
+  button.seg { background:#fff; border-color:var(--line); min-width:0; }
+  button.seg.on { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .arrive-legend { display:none; align-items:center; gap:10px; }
+  .arrival .arrive-legend { display:flex; }
+  .arrival .play-legend, .arrival #frame, .arrival #play, .arrival .speedpair { display:none; }
+  .aramp { width:200px; height:10px; border-radius:3px; }
   #topic { width:330px; } #state { width:270px; }
   .tally { font-size:15px; color:var(--ink); margin-top:2px; }
   .tally b { font-family:var(--mono); }
@@ -71,10 +77,14 @@
   <div class="controls">
     <span class="pair"><label for="topic" class="stats">Idea</label>
     <select id="topic"></select></span>
+    <span class="pair" role="group" aria-label="View">
+      <button id="viewplay" type="button" class="seg on" aria-pressed="true">Watch it travel</button>
+      <button id="viewarrive" type="button" class="seg" aria-pressed="false">Arrival map</button>
+    </span>
     <span class="pair"><label for="state" class="stats">Where</label>
     <select id="state"></select></span>
     <button id="play" type="button">▶ Play</button>
-    <span class="pair"><label for="speed" class="stats">Speed</label>
+    <span class="pair speedpair"><label for="speed" class="stats">Speed</label>
     <select id="speed" style="min-width:0">
       <option value="0.25">Slowest (¼×)</option>
       <option value="0.5" selected>Slow (½×)</option>
@@ -96,8 +106,10 @@
   <svg class="curve" id="curve" viewBox="0 0 1000 90" preserveAspectRatio="none" role="img"
        aria-label="Share of counties past the mark, over time"></svg>
   <div class="legend">
-    <span>Nothing yet</span><span class="ramp"></span><span>All of it</span>
-    <span><span class="sw" style="background:var(--ember)"></span><span id="marklabel">Crossing the mark</span></span>
+    <span class="arrive-legend"><span id="arrlo"></span><span class="aramp" id="aramp"></span><span id="arrhi"></span>
+      <span>(when each county reached <span id="arrmark"></span>)</span></span>
+    <span class="play-legend">Nothing yet</span><span class="ramp play-legend"></span><span class="play-legend">All of it</span>
+    <span class="play-legend"><span class="sw" style="background:var(--ember)"></span><span id="marklabel">Crossing the mark</span></span>
     <span><span class="sw" style="background:var(--nodata)"></span>Too few to read</span>
     <span id="arrowkey" hidden>→ from a neighbour that crossed in the last few <span id="arrowstep"></span>s
       (faint: earlier hand-offs)</span>
@@ -141,7 +153,9 @@
   </footer>
 </main>
 <script type="module">
-import { FULL, frameDelay, isFront, levelAt, levelColor, markCurve, tally, zoomBox } from "./waves.js";
+import {
+  EARLY, FULL, LATE, MID, arrivalColor, crossFrame, frameDelay, isFront, levelAt, levelColor, markCurve, tally, zoomBox,
+} from "./waves.js";
 
 const SVG = "http://www.w3.org/2000/svg";
 const data = await (await fetch("data/waves.json")).json();
@@ -171,7 +185,8 @@ for (const [fips, p] of Object.entries(paths)) {
 }
 data.topics.forEach((t, i) => topicSel.add(new Option(t.title, String(i))));
 
-let topic, curveVals, frame = 0, timer = null, state = "", view = NATION, byFrame = new Map();
+let topic, curveVals, frame = 0, timer = null, state = "", view = NATION, byFrame = new Map(), arrival = false;
+document.getElementById("aramp").style.background = `linear-gradient(90deg, ${EARLY}, ${MID}, ${LATE})`;
 
 const inView = (fips) => !state || fips.startsWith(state);
 
@@ -237,7 +252,37 @@ function drawCurve(upTo) {
     `<circle cx="${x(upTo)}" cy="${y(curveVals[upTo])}" r="4" fill="${ember}"/>`;
 }
 
+// The arrival map: one still picture. Colours run from the earliest arrival
+// among the counties in view (dark) to the latest (pale).
+function drawArrival() {
+  const cross = {};
+  for (const [fips, s] of Object.entries(topic.series)) {
+    const f = crossFrame(s, topic.mark);
+    if (f !== null) cross[fips] = f;
+  }
+  const shown = Object.entries(cross).filter(([k]) => inView(k)).map(([, f]) => f).sort((a, b) => a - b);
+  const lo = shown[0] ?? 0, hi = shown[shown.length - 1] ?? 0;
+  for (const [fips, p] of Object.entries(paths)) {
+    p.setAttribute("fill", fips in cross ? arrivalColor(cross[fips], lo, hi) : nodata);
+  }
+  arrows.innerHTML = "";
+  const half = shown[Math.floor(shown.length / 2)] ?? 0;
+  document.getElementById("when").textContent = "Arrival map";
+  document.getElementById("stats").textContent = shown.length
+    ? `${shown.length.toLocaleString()} counties reached ${topic.mark * 10}% · first ${topic.labels[lo]} · half by ${topic.labels[half]} · last ${topic.labels[hi]}`
+    : "No county in view reached the mark.";
+  document.getElementById("arrlo").textContent = shown.length ? topic.labels[lo] : "";
+  document.getElementById("arrhi").textContent = shown.length ? topic.labels[hi] : "";
+  document.getElementById("arrmark").textContent = `${topic.mark * 10}%`;
+  const last = topic.labels.length - 1, t = tally(topic, last, inView), ratio = t.chance ? t.real / t.chance : 0;
+  document.getElementById("tally").innerHTML = t.chance < 5
+    ? "Hand-offs: too few to compare with chance."
+    : `All hand-offs: <b>${t.real}</b> · by chance alone: <b>${t.chance.toFixed(0)}</b> · <b>${ratio.toFixed(2)}×</b>`;
+  drawCurve(last);
+}
+
 function draw() {
+  if (arrival) return drawArrival();
   let fronts = 0, past = 0, total = 0;
   for (const [fips, p] of Object.entries(paths)) {
     const s = topic.series[fips];
@@ -294,6 +339,18 @@ function choose(i) {
 }
 
 topicSel.addEventListener("change", () => choose(Number(topicSel.value)));
+function setView(arr) {
+  stop();
+  arrival = arr;
+  document.body.classList.toggle("arrival", arr);
+  for (const [id, on] of [["viewplay", !arr], ["viewarrive", arr]]) {
+    const b = document.getElementById(id);
+    b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on));
+  }
+  draw();
+}
+document.getElementById("viewplay").addEventListener("click", () => setView(false));
+document.getElementById("viewarrive").addEventListener("click", () => setView(true));
 stateSel.addEventListener("change", () => { stop(); zoom(stateSel.value); });
 document.getElementById("featuredgo").addEventListener("click", () => {
   stop(); stateSel.value = topic.featured.state; zoom(topic.featured.state);
