@@ -53,6 +53,144 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
 
 > The narrative across these findings is consolidated in `docs/FINDINGS.md`.
 
+- **PROVE A WAVE ON A KNOWN WAVE: rooftop solar (Matt, 2026-11-07).** Ideas
+  spread person to person; our election data says "the whole state moves at
+  once" because the clock is too slow (one snapshot per election) and because
+  we only looked along county borders. Test the engine on an idea that is
+  known to spread: home solar (Berkeley Lab *Tracking the Sun*, free, one
+  row per install with install date and ZIP code; peer effects shown by
+  Bollinger & Gillingham). Steps:
+  1. **Ingest** (TDD; acceptance against Berkeley Lab's own published install
+     counts): installs per county per quarter, per 1,000 households (ACS).
+  2. **The timing model** (the long-planned survival/hazard piece): when does
+     each county "take off", and did its neighbours take off first?
+  3. **The roads**: borders vs Census commuting flows vs IRS migration flows vs
+     TV media markets. Which one does the wave travel along? (No Facebook data.)
+  4. **The clock test**: sample the same solar data once every four years, as
+     elections do. If the wave disappears, that is direct evidence that
+     elections are too far apart to show a wave, which explains the abstract's
+     "no obvious first domino" finding.
+  5. **Bring it back to politics**: the same detector on GDELT's daily county
+     coverage (fast clock) and dated local-option adoptions (slow clock).
+  JIT trigger: now (Matt's pick for the MPSA paper).
+
+- **INFORMATION-ENVIRONMENT LAYER: heat, explanation, wording (Matt,
+  2026-11-04).** The engine's missing variable may be what voters knew when
+  they reached the question. Three parts:
+  1. **Heat (salience).** Hot, identity-linked issues (abortion) bring settled
+     opinions and single-issue voters, so a county's past vote carries forward.
+     Low-stakes issues ("should sheriffs be a constitutional office?") are
+     decided in the booth, so there is no stable county trait to carry.
+  2. **Explanation.** Was the meaning of YES/NO campaigned on? (Matt, as a
+     voter: Amendment 3's meaning was heavily advertised, the others' not.)
+  3. **Wording.** Double negatives, "YES keeps the law" referendums,
+     politician-written summaries. When voters are unsure, they tend to vote
+     No rather than skip (2026 roll-off was under 1% on every measure, yet NO
+     beat our calls on all five).
+  First evidence (provisional, 3 pairs, mixed electorates and time gaps):
+  share of the county gap that carried over between two votes on the same
+  issue in Missouri:
+
+  | Issue | Gap carried over | r |
+  |---|---|---|
+  | abortion 2024 -> 2026 | 79% | 0.74 |
+  | minimum wage 2018 -> 2024 | 62% | 0.68 |
+  | Clean Missouri 2018 -> 2020 repeal | 30% | 0.44 |
+  | unrelated pair, for reference | 34% | 0.31 |
+
+  The Clean Missouri repeal is also the wording case: its 2020 summary led
+  with a gift ban and buried the redistricting change, and a court ordered it
+  rewritten. Data to collect:
+  - Official ballot text (MO SoS fair-ballot language; catalog measures where
+    available).
+  - Committee spending (Missouri Ethics Commission; other states' finance
+    portals).
+  - News volume per measure per week (GDELT, see the NLP section).
+  - Search interest by media market (Google Trends).
+  Measures to build:
+  - Simple wording features: reading level, negation count, YES = change vs
+    keep, length, loaded words.
+  - A meaning-similarity embedding of the ballot text (the first NLP task,
+    PyTorch + HF).
+  Tests:
+  - (a) Does gap persistence rise with heat across the catalog's repeated
+    issues (many more pairs than Missouri's three)?
+  - (b) Do quiet or confusingly worded measures drift toward No from their
+    partisan expectation?
+  - (c) Does picking past votes by text similarity beat the hand topic labels
+    in the method bake-off?
+  Payoff: the engine knows in advance how far to trust itself (tight ranges
+  and county history on hot, explained measures; party plus a No lean and wide
+  ranges on quiet ones; it would likely have caught Amdt 8 and Prop A). For a
+  campaign: on a quiet measure, explaining what YES means may be worth more
+  than persuading. Trigger: alongside the method bake-off; Missouri 2026 is
+  the first case study (results in hand; spending and coverage still to
+  collect).
+
+- **LITERATURE CHECK before MPSA (2026-11-04).** Before the April 2027 talk
+  claims anything about False Bastions, issue resistance or ballot-measure
+  targeting, survey what is already published so nothing is presented as new
+  that is not:
+  - candidate-vs-measure divergence and ticket-splitting;
+  - state- and county-level opinion vs policy "incongruence";
+  - ballot-measure ideal-point and scaling work;
+  - post-2022 abortion-measure studies (KS, KY, OH, MI, MO);
+  - county forecasting methods (partisanship + demographics);
+  - spatial diffusion (Hui & Cho 2017 and what cites it).
+  Output: a short related-work note in `docs/` (citations, not copies; no
+  copyrighted PDFs committed) and an honest one-line positioning for the talk.
+  Expected positioning, to be confirmed or corrected by the check: the gap is
+  well known; what may be less common is treating it as a lasting county trait
+  that is forecast, turned into persuade / turn out / skip labels, and graded
+  in public before the vote. Provisional 2026 evidence for "lasting": about 80%
+  of the 2024 Amendment 3 county gap survived into 2026, and 25 of 27 red
+  bastions held. It is mostly issue-specific in Missouri (cross-measure median
+  r 0.09; `notebooks/mo_2026_scorecard.py` §9). Trigger: after the certified
+  scorecard, well before April.
+
+- **ENGINE METHOD BAKE-OFF: analogs vs averages vs trendlines (2026-11-04,
+  after the provisional 2026 scorecard).** Goal (Matt): learn how to make the
+  engine as good as it can be, choosing the method by honest backtest before the
+  next registration, never by tuning on the answer key. Provisional 2026 lessons
+  that motivate it: Amendment 3 (one close same-issue analog, abortion 2024) was
+  near-exact on level and 23% better than partisanship on pattern; the two level
+  misses (Amdt 8, Prop A) had weak/no precedent yet got brackets as narrow as
+  Amdt 3's; every measure shifted toward NO vs our call (incl. Amdt 6, whose
+  progressive side is YES, so not a pure Democratic wave); on Amdt 6 our analog
+  added ~0 over partisanship and On Point's demographic model beat our pattern.
+  Candidates, all fit on the ~21 certified MO measures 2018-2026
+  (`county_receipts_mo`):
+    1. **Single best analog** (the 2026 registered method), as the control.
+    2. **Flat average** of all past gaps. Already known not to beat
+       partisanship when pooled across issues; kept as a reference.
+    3. **Similarity-weighted ensemble**: every past measure, weighted by
+       closeness to the new question (topic, severity, electorate).
+    4. **County trendlines**: each county's gap over time, projected forward
+       (`realignment.trend_surprise` pointed at measure gaps instead of
+       presidential swing). Midterm and presidential electorates fit apart
+       (`history_buckets` already splits them); topic families fit apart or
+       topic-adjusted first; slopes shrunk toward neighbours' and the state's
+       (few points per county, so a raw 13-point slope is noise; the
+       neighbour pull is also the geo-fluid test). Pure vs DAMPED trend:
+       FINDINGS says realignments flicker rather than ratchet, so expect the
+       damped one to win; either result is a finding.
+    5. **Demographic fallback** (age, education, race, density) when no close
+       analog exists: the Amdt 6 lesson.
+    6. **Bracket width from history**: size each level range by how far past
+       Missouri results landed from their precedent, widening with analog
+       distance, and test for a standing "when in doubt, vote No" offset
+       (cross-check with roll-off, RUNBOOK step 8).
+  Protocol: rolling-origin backtest (data through 2022 -> forecast 2024; data
+  through 2024 -> forecast 2026), scored with the same `geofluid.scoring`
+  relevel-then-RMSE plus bracket coverage. Measure-level n is small (~5 per
+  origin), so report it as method selection, not proof. The winner is
+  registered for the next scored election and graded there. Also the densest
+  series we have (Aug + Nov, nearly every year), so it doubles as the first
+  look for a wave that four-year presidential snapshots alias away (see Module
+  2 notes). Trigger: certified 2026 results (December), which become the
+  second backtest origin's answer key; can start on the 2024 origin now. New
+  library code (damped trend, shrinkage, similarity weights) is test-first.
+
 - **2026 PRE-REGISTERED PREDICTION EXPERIMENT — COMMITTED, CLOCK RUNNING
   (2026-08-10).** Full protocol in `docs/MEASUREMENT_DESIGN.md` §7; researched
   ballot landscape in `data/catalog/upcoming_2026.json`. Predict county-level
@@ -502,6 +640,34 @@ trigger arrives, with its own tests). Newest decisions at top of each section.
   would blend it with `county_adjacency` (e.g. row-normalized convex combination).
 
 ## NLP / text (future phase)
+
+- **GDELT as the media/sentiment source for Module 4 (Chaos & Anomaly)
+  (Matt, 2026-11-04).** The GDELT Project (https://gdeltproject.org/) publishes
+  a free, worldwide catalog of web news: events, the Global Knowledge Graph
+  (people, organisations, places, themes per article) and a tone score per
+  article, updated every 15 minutes, queryable in Google BigQuery. Not
+  exhaustive, but one free place to mine. Why it fits:
+  - **Module 4:** a daily media-attention / tone series per place and theme is
+    a candidate input to the surprise-field monitor (does coverage or tone
+    shift before a county's vote surprises?).
+  - **The aliasing hypothesis (Module 2 notes):** a daily series is the
+    opposite of four-year snapshots; it may be fast enough to see a wave move.
+  - **Portability:** worldwide coverage, so the same source works for the
+    Mexico demo and beyond.
+  Caveats to check before trusting it:
+  - Coverage of an issue is not public opinion, and national outlets
+    dominate.
+  - Tone is a dictionary-based score, and non-English text is machine
+    translated.
+  - Place names are geocoded automatically, often only to city or state
+    level, so county resolution needs an acceptance test against known
+    events (the Bugs #10-12 rule applies to any ingest).
+  - BigQuery's free tier has a monthly query limit and GDELT's tables are
+    huge, so queries must be partition-filtered and the cost checked before
+    any run.
+  The PyTorch/HF decision below still applies if we compute our own tone
+  instead of using GDELT's. Trigger: when Module 4's live surprise-field
+  monitor is scoped.
 
 - **NLP stack decision — PyTorch + Hugging Face `transformers` (agreed
   2026-06-15).** When the project reaches a text/NLP phase, default to PyTorch +
