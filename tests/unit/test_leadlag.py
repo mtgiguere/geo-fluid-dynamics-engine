@@ -157,10 +157,16 @@ def test_county_with_constant_swing_is_excluded() -> None:
     assert list(s.index) == ["01001", "01003"]
 
 
-@given(
-    a_series=st.lists(st.floats(-100, 100, allow_nan=False), min_size=6, max_size=6, unique=True),
-    b_series=st.lists(st.floats(-100, 100, allow_nan=False), min_size=6, max_size=6, unique=True),
+# Swings in percentage points to 0.01, as county returns report them. Raw
+# floats let Hypothesis draw distinct-but-subnormal values (1e-300, 2e-309):
+# their squares underflow, numpy's std is exactly 0, and lead_lag rightly
+# refuses to score a numerically constant county (found 2026-11-14).
+_SWINGS = st.lists(
+    st.integers(-10_000, 10_000).map(lambda v: v / 100), min_size=6, max_size=6, unique=True
 )
+
+
+@given(a_series=_SWINGS, b_series=_SWINGS)
 def test_lead_lag_is_antisymmetric_within_a_mutual_pair(
     a_series: list[float], b_series: list[float]
 ) -> None:
@@ -174,9 +180,10 @@ def test_lead_lag_is_antisymmetric_within_a_mutual_pair(
     exact and independent of the specific values, which is why it is a property
     rather than a single worked example.
 
-    Unique series guarantee every one-election-shifted window has variance, so both
-    counties are always scored and neither is excluded; the property can therefore
-    be asserted unconditionally, with no guard."""
+    Unique series (at 0.01-point resolution) guarantee every one-election-shifted
+    window has variance, so both counties are always scored and neither is
+    excluded; the property can therefore be asserted unconditionally, with no
+    guard."""
     years = [2000, 2004, 2008, 2012, 2016, 2020]
     panel = _panel(
         {

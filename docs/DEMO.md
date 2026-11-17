@@ -167,6 +167,10 @@ four points ahead of peers (about 0.8 standard deviations of the residual).
 
 ## Questions you should expect (and honest answers)
 
+For the wave questions ("how do you know it's the neighbours, and not Santa
+Claus?", "isn't this just news?", "couldn't anyone run it?") the ready answers
+are in `docs/FAQ.md`.
+
 **"Isn't this just showing me Democratic-leaning counties?"**
 > No — the opposite. It deliberately sets your base aside. A target is a county
 > that voted *against* its partisanship — Republican by the numbers, but
