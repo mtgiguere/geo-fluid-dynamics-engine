@@ -1,1583 +1,189 @@
-# The TDD Contract
-## Why We Do Test-Driven Development — Evidence From This Codebase
+# The Engineering Contract
 
-This document exists because of a deliberate experiment.
+Binding for every session, human or Claude, on library and shipped code.
+The goal is a project that is still trustworthy and easy to change years from
+now: every number it publishes traces back to a tested function, and every
+function exists because a test demanded it.
 
-During the development of the Geo-Fluid Dynamics Engine, Claude was given significant
-autonomy and explicitly allowed to use TAD (Test-After Development) instead of TDD.
-The results were analyzed in a systematic retrospective. What follows is the evidence —
-not theory, not best practice citations, but specific bugs, specific tests, and specific
-lines of code from this project that prove why TDD is not optional.
-
-**If you are a new Claude Code session starting work on this project: read this first.**
-**If you are inclined to skip TDD "just this once": re-read this.**
+Each rule below was learned the hard way, here or in this project's two
+predecessors. The stories are in git history (this file before 2026-11-18);
+what stays is the rule. Code comments cite rules by their number (Bug #3,
+RED FLAG 3); the index at the end keeps those citations meaningful.
 
 ---
 
-## What TAD Looks Like (What We Did Wrong)
-
-TAD means: design in your head → write implementation → write tests that confirm
-what you just wrote → push.
-
-The tests look fine. They pass. Coverage looks good. But something is wrong:
-**the tests are asking "does this code do what I just wrote?" not "does this code do
-what it SHOULD do?"** That is a completely different question.
-
-Here is the evidence from this project.
-
----
-
-## Bug #1: Column Name Drift (adoption_prob → adoption_probability)
-
-**What happened:**
-
-`SurvivalDiffusionModel.get_adoption_frontier()` was implemented and returned a column
-named `adoption_prob`. Separately, `frontier_map.build_layer()` was implemented expecting
-a column named `adoption_probability`. Both were tested individually and both passed.
-
-When CI wired them together via the API test, it crashed:
-```
-ValueError: Missing required columns: ['on_frontier', 'adoption_probability']
-```
-
-**Why TAD caused it:**
-
-I wrote `get_adoption_frontier()` and tested it knowing I named the column `adoption_prob`.
-I wrote `frontier_map.build_layer()` and tested it knowing I expected `adoption_probability`.
-Both tests confirmed what I just coded. Neither test specified the contract between them.
-
-**What TDD would have done:**
-
-Write this test first, before implementing either function:
-```python
-def test_frontier_output_is_consumable_by_frontier_map():
-    frontier = model.get_adoption_frontier()
-    # This test specifies the contract between two functions
-    result = frontier_map.build_layer(frontier)
-    assert result["type"] == "FeatureCollection"
-```
-
-That test would fail immediately on the first implementation attempt because the column
-name would be wrong. The contract would be specified before either function was written.
-
----
-
-## Bug #2: Empty DataFrame KeyError (node_classifier)
-
-**What happened:**
-
-`classify_nodes()` was called with an empty adoption_events DataFrame.
-`pd.DataFrame([])` with an empty list produces a DataFrame with **zero columns**, not
-zero rows with the expected columns. So `adoption_events["topic_id"]` raised `KeyError`.
-
-CI output:
-```
-KeyError: 'topic_id'
-modules/gravity_engine/processing/node_classifier.py:87
-```
-
-**Why TAD caused it:**
-
-I wrote `_compute_county_stats()` and tested it with non-empty adoption_events.
-The happy path worked. I never asked "what does an empty adoption_events look like?"
-because I was thinking about the implementation I just wrote, not the contract.
-
-**What TDD would have done:**
-
-Before writing a single line of `_compute_county_stats()`, write this test:
-```python
-def test_classify_nodes_with_no_adopters_for_topic():
-    """Topic 2 has no adopters — function must not crash."""
-    ae = _make_adoption_events({}, topic_id=2)  # empty dict → empty DataFrame
-    result = classify_nodes(panel, out_c, in_c, fips_index, ae, topic_id=2)
-    assert result["node_type"].isin(NODE_TYPES).all()
-```
-
-Watch it fail. Then write the guard. The bug never ships.
-
----
-
-## Bug #3: FIPS Sort Order (The Comment That Lied)
-
-**What happened:**
-
-In `test_spatial_weights.py`, the test comment read:
-```python
-fips_order = sorted(panel["fips"].unique())
-sup_vec = np.array(support)  # ordered: 29169, 29183, 29189 alphabetically
-```
-
-The comment said alphabetically. The code used `support` which was in **insertion order**
-`[29169, 29189, 29183]`. The test had been wrong since it was written. CI found it:
+## 1. The cycle
 
 ```
-assert np.float64(0.15000000000000002) < 1e-06
+1. Write ONE test. It describes behaviour you want, not code you will write.
+2. Run it. CONFIRM RED, and that it fails for the reason you expect.
+3. Write the minimum code to pass it. Not one line more.
+4. Run it. CONFIRM GREEN.
+5. Refactor if needed; run the suite again.
+6. Commit. The message describes the behaviour added.
 ```
 
-**Why TAD caused it:**
+- **One test at a time means one.** Two new tests blur which behaviour is
+  missing when RED fires.
+- **Bug fix:** first a test that reproduces the bug (RED), then the fix. The
+  test stays forever.
+- **An edge case you think of mid-implementation:** stop, write its test, run it.
+- **Immediately GREEN is information.** Either the behaviour was already
+  guaranteed (keep the test: it turns a coincidence into a guarantee), or an
+  earlier cycle over-built. A run of immediately-GREEN tests means the second.
+- **Derive in the docstring before the assertion.** Write the hand-math into
+  the test's docstring first, then the expected value. Arithmetic done in the
+  head after the fixture is written has been wrong twice.
 
-I wrote the test knowing the implementation sorts alphabetically. I wrote the assertion
-knowing what I intended. I wrote the comment to remind myself. Then I wrote the wrong code
-in the assertion because I was thinking about `support` in the order I created it, not in
-the order the implementation would use it.
+## 2. Just-in-time
 
-**What TDD would have done:**
+Write only the code a currently failing test demands. If you cannot point to
+the failing test that needs a function, the function does not belong yet.
+Speculative public functions are API surface you must maintain and that
+callers use wrong. Start from what the consumer wants: the right design is
+usually one public function with private steps, not a pipeline of public steps
+the caller must chain in the right order.
 
-Write the test first with an explicit mapping that makes the expected output unambiguous:
-```python
-fips_to_support = {"29169": 0.3, "29189": 0.6, "29183": 0.9}
-fips_order = sorted(panel["fips"].unique())
-sup_vec = np.array([fips_to_support[f] for f in fips_order])
-```
+## 3. What a test must not do (the red flags)
 
-The explicit mapping cannot lie. The comment can.
+| # | Red flag | Instead |
+|---|---|---|
+| 1 | `pytest.skip("not implemented")` stub | Write the real test; let it fail |
+| 2 | Conditional guard: `if len(result) > 0: assert ...` | Design the fixture so the result is never empty |
+| 3 | Seed-specific assertion (`rng(42)` then a copied value) | Section 4: constructions, recovery, properties |
+| 4 | `is True` / `is False` on pandas or numpy values | `== True`, `bool(...)`, or compare the value |
+| 5 | Test named for the mechanism (`test_uses_groupby`) | Name the behaviour |
+| 6 | Test written after the function | That is test-after; delete and redo the cycle |
+| 7 | A function no failing test demanded | Section 2 |
+| 8 | A public function only one private caller uses | Make it private or inline it |
 
----
+A good test: a specific, deterministic input; one call; one exact expected
+output or exact error. Coverage says which lines ran, not which behaviours
+were checked. A test that cannot fail is documentation, not verification;
+mutation testing exists to find those.
 
-## Bug #4: The np.True_ Identity Check
+## 4. Stochastic and numerical code: verified without seeds
 
-**What happened:**
+1. **Deterministic construction.** Find an input where chance has no room to
+   act (a county adjacent to every other one has pseudo p-value exactly 1.0
+   under any permutation).
+2. **Noise-free recovery.** Build data from known parameters with no error
+   term and demand the parameters back (SAR: y = (I - ρW)⁻¹Xβ).
+3. **Properties.** Invariances and identities as Hypothesis properties
+   (location-scale invariance of Moran's I; mean of local I equals global I;
+   a uniform field's area-weighted mean is the field value).
+4. **Reproducibility, not seed values.** Two identically seeded injected
+   generators must give identical output. A published analysis may record its
+   seed so the map can be re-derived. What is banned is asserting the number
+   seed 42 happened to produce.
 
-Three tests in `test_rolloff.py` failed with:
-```
-assert np.True_ is True   →   AssertionError
-assert np.False_ is False →   AssertionError
-```
+## 5. Real data falsifies your model of the world
 
-**Why TAD caused it:**
+Fixtures and implementation share the same imagination, so strict TDD alone
+cannot catch a wrong idea of what the file looks like.
 
-I was thinking about boolean logic when I wrote the tests. I knew the implementation
-would produce True/False values. I used `is True` because that's what you write when
-you're thinking "this should be True." I wasn't thinking about what pandas actually
-returns — numpy scalars, not Python singletons.
+- **Every loader's definition of done includes a real-data acceptance run**
+  against externally certified facts (official statewide or national totals).
+  Every discrepancy becomes a RED test whose fixture reproduces the real row
+  pattern in miniature.
+- **Spot checks validate only the cells you check.** When provenance matters,
+  diff the whole file against the authoritative source.
+- **Guard loudly before any pivot or groupby** that could receive NaN keys.
+  Aggregations silently drop NaN groups; a mapping failure must raise and
+  name what failed to map.
+- **Absence is explicit.** Zero ballots is not an observation; a missing
+  prior election is NaN, not a shorter calendar.
+- **Output-preserving refactors are proven by regeneration.** Rebuild the
+  affected data products and confirm they are byte-identical.
+- **Executing a notebook on real data is an acceptance run too.** Notebooks
+  are exempt from test-first, not from honesty against the data.
 
-**What TDD would have done:**
+## 6. Where meaning lives
 
-If you write the test first and actually RUN it to confirm it fails (the RED step),
-you immediately discover that the implementation doesn't exist yet, and you think carefully
-about what the assertion syntax should be. The RED step forces you to think about the
-assertion before the implementation.
+Loaders stay politics-agnostic: they report raw yes/no and never decide which
+side is "progressive." Orientation is an explicit input, named once per
+consumer (`Measure.progressive_side`, the overlay's `progressive_side`). The
+tell that this rule was broken: a source with flipped polarity needs a new
+code path instead of a new config value.
 
-The correct pattern — never use `is True` or `is False` with pandas/numpy values:
-```python
-assert result["is_false_bastion"]  # truthiness check — works with np.bool_
-assert not result["is_false_bastion"]
-assert result["is_false_bastion"] == True  # value equality — not identity
-```
+## 7. Where the discipline reaches
 
----
+- **Library and shipped code** (`src/geofluid/`, page logic): full contract.
+- **Frontend: E2E verifies integration, never logic** ("the Frontend Line").
+  Pure page logic (formatters, expression builders, calculators) lives in
+  modules with Vitest contracts. Playwright proves the built app works at the
+  real deploy path and that the pages connect.
+- **Page-builder scripts** follow the same line: logic that computes a number
+  a page publishes moves into the tested library; the script only assembles.
+- **Notebooks / EDA are TDD-exempt.** They call tested library functions; new
+  analytical capability arrives as a tested library function first. A bug
+  fixed inside a notebook needs a regression test only if the same hazard
+  exists in shipped code.
 
-## Bug #5: Eight Hollow Tests That Cannot Fail
+## 8. Changing an existing test
 
-**What happened:**
+Legitimate only when the external contract changed (an API, file format or
+standard): say so in the test docstring and the commit message. Changing a
+test because the code you want to write doesn't satisfy it is deleting the
+specification. Never.
 
-The retrospective analysis found 8 tests with conditional guards that let the
-core assertion bypass entirely. The test runs, it passes, coverage is counted.
-But the thing being tested is never actually verified.
-
-Example:
-```python
-def test_wombling_value_equals_support_difference():
-    """With support [0.8, 0.3], wombling_value should be 0.5."""
-    ...
-    if len(result) > 0:  # ← hollow guard
-        assert abs(result.iloc[0]["wombling_value"] - 0.5) < 1e-6
-```
-
-If `result` is empty — because the adjacency detection has a bug — this test passes.
-The bug ships. The test reported 100% on this line.
-
-**Why TAD caused it:**
-
-I knew the implementation sometimes returns empty results for edge cases. I added the
-guard to avoid flaky tests. But I was protecting the implementation from the test,
-which is exactly backwards. Tests are supposed to catch bugs. Guards prevent that.
-
-**What TDD would have done:**
-
-Write the test first. It specifies that for two adjacent polygons with supports 0.8
-and 0.3, the output must be non-empty and must have wombling_value ≈ 0.5. Full stop.
-```python
-def test_wombling_value_equals_support_difference():
-    gdf = _make_adjacent_counties()
-    W = np.array([[0, 1], [1, 0]], dtype=float)
-    support = pd.Series({"A": 0.8, "B": 0.3})
-    result = lattice_wombling(gdf, support, W, ["A", "B"])
-    assert len(result) == 1, "Two adjacent counties must produce one boundary"
-    assert abs(result.iloc[0]["wombling_value"] - 0.5) < 1e-6
-```
-
-No guard. If the function doesn't detect the boundary, the test fails loudly.
-
----
-
-## What 100% Coverage Actually Means
-
-Coverage tells you which lines were **executed**. It does not tell you which behaviors
-were **verified**.
-
-Example: `compute_ifs(0.5, 0.5)` achieves 100% line coverage of `compute_ifs`.
-It does not test:
-- `compute_ifs(float('nan'), 0.5)` → returns NaN silently
-- `compute_ifs(-0.1, 0.5)` → `np.clip` handles it, but was that specified?
-- `compute_ifs(0.0, 0.5)` → geometric mean property, verified?
-- `compute_ifs(1.0, 1.0)` → what does full-danger look like?
-
-86% coverage with TAD ≠ 86% of behavior verified.
-70% coverage with TDD > 86% coverage with TAD.
-
-The number that matters is: **what fraction of the behavioral contract is specified
-in tests before the code is written?**
-
----
-
-## The Actual TDD Discipline — Not Theory, Instructions
-
-### The Sequence (Non-Negotiable)
+## 9. Gates and guardrails
 
 ```
-1. Write one test. It must describe behavior you want, not code you will write.
-2. Run the test. CONFIRM IT FAILS (RED). If it passes, the test is wrong.
-3. Write the minimum code to make it pass. Not more.
-4. Run the test. CONFIRM IT PASSES (GREEN).
-5. Refactor if needed. Run tests again.
-6. Commit. The commit message describes the behavior added, not the code written.
-7. Repeat.
-```
-
-The RED step is not optional. If you skip it, you are doing TAD.
-
-### Pre-Commit — Run the Linters Locally First
-
-CI catching a linter error is not a minor inconvenience. It means you pushed
-broken code, wasted pipeline minutes, and added a noise commit ("fix lint") to
-the history. The fix is simple: run the linters before committing, not after.
-
-```bash
-# Before every commit — Python
 uv run ruff check .
-uv run pytest --no-header -q
-
-# Before every commit — R (when analysis/ files changed)
-Rscript --vanilla -e "lintr::lint_package()"
+uv run ruff format .    # if it changes files, re-run ruff check
+uv run pytest           # its own step: never piped through tail or any filter
 ```
 
-If any of these fail, do not commit. Fix the issue first.
+- `.githooks/pre-commit` enforces this (`git config core.hooksPath .githooks`
+  once per clone). CI repeats it with mypy strict, branch coverage ≥ 90%,
+  pip-audit and CodeQL; Playwright gates every deploy; mutation testing runs
+  on every push to main as the watchdog for tests that cannot fail.
+- **A rule violated once gets promoted to a mechanism.** Written rules get
+  skipped; CI catches after the push; a hook cannot be skipped silently.
+- **A guardrail that has never run is decoration.** Schedule its first
+  verified execution as part of installing it.
 
-### Comments Are for Every Reader — Not Just Developers
+## 10. Git and pull requests
 
-This project is deliberately public. Its audience is not only software engineers.
-It includes policymakers, researchers, journalists, students, and anyone who cares
-about freshwater and human welfare. The code should be legible to a motivated
-non-developer who is willing to read carefully.
+- After structural git operations (stash across branches, conflicted pops,
+  merges), check `git ls-files | wc -l` against the expected count before
+  pushing. A single-file commit once deleted 42 files from main; the cause was
+  never found. Prefer committing work in progress over stashing across
+  branches.
+- **A handed-over PR is final.** Further work goes to a new branch.
 
-**This means: long, explanatory comments are a feature, not a code smell.**
+## 11. Debugging
 
-When implementing scientific methodology — a hypothesis test, a model specification,
-a data transformation decision — write a comment that explains:
-- What the code is doing in plain language
-- WHY this approach was chosen
-- What the expected result means
-- What the limitation is
-- What alternative was considered and rejected
+- When CI and local disagree, list and diff the actual inputs (env vars,
+  tokens, data, versions) before forming a theory.
+- Ask Matt for the failing log early. One pasted log beats three guesses.
+- Error messages must carry identifiers (URL, FIPS, file). If a failure cannot
+  name its subject, fix the capture first.
 
-```r
-# H7 requires a fundamentally different empirical approach from H1-H6.
-# The mechanism operates over 10-30 year horizons:
-#   - Countries deplete aquifers today for agriculture
-#   - 10-20 years later, groundwater runs out
-#   - Agriculture collapses, food prices rise, instability follows
-#
-# The correct test: controlling for baseline income, do countries with faster
-# aquifer depletion achieve lower SUBSEQUENT economic performance?
-```
+## 12. Comments are for every reader
 
-This is not over-commenting. This is open science. A UN analyst, a journalist,
-or a student should be able to read this and understand what we are testing and why.
-
-**Linters that fight this goal should be configured away — not obeyed.**
-
-`commented_code_linter` (R) is disabled in `.lintr` because it would flag
-methodological commentary as violations. The linter serves the project, not the
-other way around. When a lint rule conflicts with the project's purpose, disable
-the rule and document why.
-
-### Red Flag Signals — Stop and Fix Before Proceeding
-
-If you find yourself writing any of the following, you are not doing TDD:
-
-```python
-# RED FLAG 1: Skip guard without confirmed implementation
-pytest.skip("not implemented")  # wrong — this is the TDD stub; DON'T add the code yet
-
-# RED FLAG 2: Conditional guard hiding assertion
-if len(result) > 0:
-    assert something  # wrong — design fixture so result is always non-empty
-
-# RED FLAG 3: Seed-specific assertion
-rng = np.random.default_rng(42)  # wrong — use property-based testing for algorithms
-assert some_trend_holds()         #        or construct data so the property is guaranteed
-
-# RED FLAG 4: Identity check with pandas/numpy
-assert result["col"] is True     # wrong — always
-assert result["col"] is False    # wrong — always
-
-# RED FLAG 5: Test name that describes implementation
-def test_calls_psycopg2_connect():  # wrong — tests describe behavior not mechanism
-def test_uses_groupby():
-
-# RED FLAG 6: Test written after the function it tests
-# (you wrote parse(), then wrote test_parse() — that is TAD)
-```
-
-### What a Good Test Looks Like
-
-A good test is written **before the implementation** and specifies:
-1. Given this specific, deterministic input
-2. When this function is called
-3. Then this exact output is produced (or this exact error is raised)
-
-```python
-def test_adoption_year_is_first_crossing():
-    """Specifies: the adoption year is the FIRST year support crosses the threshold.
-    Not the last. Not any year. The first."""
-    support = pd.DataFrame(
-        {
-            "fips": ["29169"] * 4,
-            "topic_id": [1] * 4,
-            "year": [2012, 2016, 2020, 2024],
-            "support_pct": [0.40, 0.48, 0.52, 0.58],
-        }
-    )
-    events = compute_adoption_events(support, topic_id=1, threshold_pct=0.50)
-    row = events[events["fips"] == "29169"].iloc[0]
-    assert row["first_adoption_year"] == 2020  # not 2024; not 2016
-```
-
-This test was written before the implementation. It fails before the implementation.
-It specifies exactly one thing. It has no guards. It has no seeds. It has one expected value.
-
-### Using Hypothesis for Algorithmic Code
-
-For mathematical functions (IFS, CCI, spatial weights, survival probability),
-seed-based testing is always wrong. Use Hypothesis:
-
-```python
-from hypothesis import given, strategies as st
-
-
-@given(
-    cci=st.floats(0.0, 1.0, allow_nan=False),
-    ili=st.floats(0.0, 1.0, allow_nan=False),
-)
-def test_ifs_always_in_0_1(cci, ili):
-    """Property: IFS is always in [0, 1] for valid inputs."""
-    assert 0.0 <= compute_ifs(cci, ili) <= 1.0
-```
-
-Hypothesis will find the edge cases you didn't think of.
-
-### Property Tests Emerge Naturally From Strict TDD
-
-You do not always need Hypothesis to write a property test. When you ask
-"what must be true about this output regardless of the specific input?" — you are
-already thinking in properties. Strict TDD surfaces this naturally.
-
-During GFIP Phase 1 GRACE ingest development, the spatial aggregation test was written as:
-
-```python
-def test_load_grace_area_weighted_mean_of_constant_equals_that_constant():
-    """Property: area-weighted mean of a spatially uniform field must equal the field value.
-    This holds regardless of country shape or latitude.
-    """
-    for value in [-3.5, 0.0, 2.8]:
-        ds = _make_dataset(value=value)
-        result = load_grace(ds, shapes)
-        assert abs(result.iloc[0]["grace_lwe_anomaly_cm"] - value) < 1e-6
-```
-
-This test was not designed. It emerged from asking "what must always be true about
-area-weighted mean?" — the answer is: a uniform field must return the field value.
-That property is independent of grid resolution, country shape, or latitude.
-
-If the cos(lat) weights were wrong, this test would catch it for any input value.
-A seed-based test (`assert result == 1.847...`) would only catch it for that one case.
-
-**The pattern:** When testing mathematical or spatial functions, ask:
-- What invariant must hold for all valid inputs?
-- What relationship must be preserved regardless of the specific values?
-- What property would be violated if my algorithm is wrong?
-
-That question — not the specific expected output — is the test. It is more powerful
-than any hand-calculated expected value, and it emerges naturally from strict TDD
-because strict TDD forces you to think about behavior before implementation.
-
-### When a Test Is Immediately GREEN — That Is Also Information
-
-During GFIP Phase 1 development, two tests passed without driving any code change:
-- Year column is integer dtype (pivot preserves int64 automatically)
-- Tiny country with no grid cells gets NaN (weighted mean of empty mask = NaN naturally)
-
-When a test you write is immediately GREEN, it means one of two things:
-1. The behavior was already guaranteed by your implementation choice — the test
-   is still valuable as a regression guard, confirming the guarantee is real.
-2. The test is redundant — it confirms something another test already covers.
-
-In strict TDD, an immediately GREEN test is not a failure. It is the process telling
-you something about your implementation that you could not have known without running
-it. Write the test. See GREEN. Note the reason. Move on.
+The audience includes policymakers, journalists and students. Long comments
+that explain scientific method (what is done, why this approach, what the
+result means, its limits, what was rejected) are a feature. A lint rule that
+fights this is configured away, with the reason written down.
 
 ---
 
-## The Conversation You Will Have
-
-At some point you will think:
-
-> "This is a simple function. I know exactly what it does. Writing the test first
-> is just busywork. I'll write the test after — it'll be faster."
-
-That is exactly what happened in this project. Every time. The function that felt
-simple had a bug. The test written after documented the bug. CI found it later.
-
-The bugs above were not from complex functions. They were from:
-- A column being named `adoption_prob` instead of `adoption_probability`
-- An empty DataFrame having zero columns instead of zero rows
-- A comment that said "alphabetically" while the code did insertion order
-- A boolean being `np.True_` instead of `True`
-
-None of these required deep thinking to get right. All of them required writing the
-test first so the contract was specified before the code was written.
-
----
-
-## The Standing Instruction for This Project
-
-**For every new function added to this codebase:**
-
-1. Write the test in the test file. Run pytest. Confirm RED.
-2. Write the implementation. Run pytest. Confirm GREEN.
-3. Then and only then, open a PR.
-
-**For every bug fix:**
-1. Write a test that reproduces the bug. Confirm RED.
-2. Fix the bug. Confirm GREEN.
-3. The test stays in the suite permanently.
-
-**For every edge case you think of while implementing:**
-1. Stop implementing. Write the edge case test first.
-2. Run it. Confirm RED (or discover the implementation already handles it).
-3. Continue.
-
-This is not about discipline or methodology. This is about the specific, documented
-bugs in this codebase that would not exist if we had done this.
-
----
-
-## Summary of Evidence
-
-| Bug | How Found | TDD Prevention |
-|-----|-----------|----------------|
-| `adoption_prob` vs `adoption_probability` | CI failure after PR merge | Interface contract test written before either function |
-| Empty DataFrame KeyError in node_classifier | CI failure | Test with empty adoption_events before implementation |
-| FIPS sort order mismatch | CI failure | Explicit mapping in test rather than `np.array(support)` |
-| `np.True_ is True` assertion failure | CI failure | RED step forces you to think about assertion syntax |
-| 8 hollow tests with conditional guards | Manual retrospective | No guards — design fixture to guarantee non-empty result |
-| 20+ seed-dependent assertions | Manual retrospective | Hypothesis property tests |
-| Column naming inconsistency (node types) | Manual retrospective | Enum defined in test file before any implementation |
-| Blank map on GitHub Pages (BASE_URL prefix missing) | Human opened deployed URL | Playwright E2E test runs against actual built app at real deployment path |
-
-Bugs #1–#7 were caught by CI or by a human reviewing. Bug #8 was caught by a human opening
-a browser against the live deployment.
-**Tests that don't catch bugs are documentation, not verification.**
-
----
-
-## Groundshift Examples — Evidence From This Codebase
-
-*Added after the first full TDD development arc on Groundshift. These examples are from
-real sessions on this project, not the GFIP predecessor. They are here because future
-Claude Code sessions need concrete examples from this codebase, not just the prior one.*
-
----
-
-### Bug #9 (Groundshift): The Silent threat_tier — How a Test Can Have the Same Bug as the Code
-
-**What happened:**
-
-`make_plugin` in `tests/unit/conftest.py` accepted a `threat_tier` parameter and passed it
-to `PluginMetadata`. But when constructing `SuitabilityModifier`, the implementation was:
-
-```python
-metadata = {}
-```
-
-The `threat_tier` from `PluginMetadata` was never copied into `SuitabilityModifier.metadata`.
-The aggregator reads `metadata["threat_tier"]` to route modifiers into the correct tier.
-With `metadata={}`, every plugin was routed as `"stress"` tier regardless of its declared tier.
-
-The existing tests all passed. They were testing the wrong thing — they exercised the
-aggregation formula, but with stress-tier routing for all plugins, even existential ones.
-An existential plugin that should have applied Liebig's ceiling (`min(envelope, factor)`)
-was instead applying the stress formula (`envelope × factor`).
-
-**Why TDD almost didn't catch it:**
-
-The test was written **after** the conftest was written, confirming the behavior of the code
-that already existed. Because the conftest bug was in the test infrastructure itself, even
-TDD-style tests inherited the bug. The test was asking "does this code do what I just wrote?"
-rather than "does this code do what it should do?"
-
-**What caught it:**
-
-A codebase review during session onboarding found the mismatch between the `PluginMetadata`
-field and the hardcoded `metadata={}`. A regression test was written first:
-
-```python
-def test_existential_tier_plugin_applies_liebig_ceiling_not_multiplicative(make_plugin):
-    # existential factor=0.3, envelope=0.8:
-    #   correct (existential): min(0.8, 0.3) = 0.3
-    #   wrong   (stress bug):  0.8 × 0.3    = 0.24
-    registry = PluginRegistry()
-    registry.register(make_plugin("p1", factor=0.3, probability=1.0, threat_tier="existential"))
-    result = Scorer(registry).run(_da(0.8), REGION, TIME_RANGE, CROP_PROFILE)
-    assert float(result.score.mean()) == pytest.approx(0.3)
-```
-
-**That test was RED.** The conftest bug was confirmed. Then the fix was written: copy
-`threat_tier` and `custom_weight` from `PluginMetadata` into `SuitabilityModifier.metadata`.
-
-**The lesson for this codebase:**
-
-`SuitabilityModifier.metadata` **must** contain `"threat_tier"` (and `"custom_weight"` if
-the tier is `"custom"`). These are how the aggregator routes. If they are missing or
-wrong, the aggregator silently falls back to stress-tier routing. This is not a graceful
-fallback — it is silent scientific error that produces plausible-but-wrong output.
-
-The fix is documented in `tests/unit/conftest.py`. The regression test
-`test_existential_tier_plugin_applies_liebig_ceiling_not_multiplicative` must never be
-removed — it is the only test that would catch this class of routing bug.
-
----
-
-### Observation #1 (Groundshift): An Immediately GREEN Test Is Information
-
-During calibration anchor development, a test was written for the case where an anchor
-is completely outside the run region — the clip returns empty and `mean()` produces `NaN`:
-
-```python
-def test_score_anchors_no_alert_when_anchor_outside_result_extent():
-    anchor = _anchor("origin_center", 100.0, 80.0, 110.0, 85.0)
-    results = score_anchors(_make_result(), [anchor])
-    assert results[0].alert_triggered is False
-```
-
-This test passed immediately without any code change. The reason: in Python,
-`NaN < 0.70` evaluates to `False`. The alert condition `expected_min is not None and mean_score < expected_min`
-was already NaN-safe by language semantics, not by any defensive code.
-
-**This is not a failed TDD step — it is TDD doing its job.** The test confirmed a
-behavioral guarantee that could not have been known without running it. The test stays
-in the suite as a regression guard. If someone later adds a `math.isnan` check that
-accidentally changes this behavior, the test will catch it.
-
-This is also why the RED step matters: writing the test and *running it* to see GREEN
-is different from writing the test and *assuming* it will be GREEN. Assumptions are often
-wrong. Python's NaN comparison semantics are subtle enough that many developers would
-expect `NaN < 0.70` to raise rather than return False. The test proved the behavior.
-
----
-
-### Observation #2 (Groundshift): The RED Step Reveals Design Gaps
-
-When the CLI integration test was written:
-```python
-args = parser.parse_args(["run", "--crop", "coffee", "--region", "ethiopia", "--phase", "describe"])
-```
-
-The RED step revealed: `FileNotFoundError: coffee.yaml not found`. Only `coffee_arabica.yaml`
-existed. The test did not fail for the expected reason (`ImportError: run_describe`).
-
-This is RED step discipline paying off. The test failed for a design reason that needed
-a decision: does `--crop coffee` mean arabica? Is arabica the default? Should `coffee_arabica`
-be the canonical ID? The decision was made (yes, `coffee` means arabica), a `coffee.yaml`
-alias was created, and then the test failed for the correct reason before implementation
-proceeded.
-
-If the test had been written after the implementation (TAD), the developer would have
-written `--crop coffee_arabica` to match the file that existed, and `--crop coffee` would
-have been a silent gap. The RED step forced the interface question into the open.
-
----
-
-### Process Rule (Groundshift): ruff format Is Not Optional
-
-`ruff check` catches code quality issues. `ruff format` enforces consistent code style.
-Both must pass before every commit. The pre-commit sequence is always:
-
-```bash
-ruff check .
-ruff format .
-pytest
-```
-
-Running only `ruff check` and skipping `ruff format` will result in formatting drift that
-accumulates across commits and forces manual cleanup. This happened multiple times in
-early Groundshift sessions. The fix is mechanical: always run both, always in that order.
-
-If `ruff format` changes any files, re-run `ruff check` to confirm no new issues were
-introduced. Then commit.
-
----
-
-### Observation #3 (Groundshift): The 14-Test Cascade — TDD Catches Breaking Changes Instantly
-
-When `DescribePhaseRunner.run()` changed its return type from `SuitabilityResult` to
-`DescribeResult`, 14 tests failed at once — precisely identifying every call site that
-needed updating.
-
-```
-FAILED tests/integration/test_describe_phase_smoke.py::test_pipeline_returns_suitability_result
-FAILED tests/integration/test_describe_phase_smoke.py::test_score_is_a_dataarray
-FAILED tests/integration/test_describe_phase_smoke.py::test_confidence_is_a_dataarray
-... (14 total)
-```
-
-Without the test suite, this breaking change would have been silent until runtime — or
-worse, produced wrong output without crashing (the old `.score` attribute would have
-thrown an `AttributeError` on the `DescribeResult` object, but only when that code path
-was exercised by a real run).
-
-The cascade also made the fix mechanical: each failing test told you exactly what
-attribute access needed to change (`result.score` → `result.suitability.score`).
-No guessing, no grepping, no fear that you missed a call site.
-
-**The lesson for this codebase:**
-
-Breaking interface changes are not dangerous when there is a test suite. They are
-*only* dangerous without one. TDD means breaking changes are caught at commit time
-(seconds) instead of deploy time (minutes or hours later, under real data conditions).
-
-This pattern will recur when `PredictPhaseRunner` is added (it will return
-`PredictResult`, not `SuitabilityResult`). The same cascade will happen and be just
-as easy to fix.
-
----
-
-### Process Rule (Groundshift): Fix Code Smells Immediately
-
-During a retrospective on the imagery pipeline, two instances of defensive `getattr`
-were found in `cli.py`:
-
-```python
-if getattr(args, "source", "worldclim") == "era5":  # should be: if args.source == "era5":
-if getattr(args, "imagery", None) == "sentinel2":   # should be: if args.imagery == "sentinel2":
-```
-
-Both arguments are always set by the argparse parser (with defaults). The `getattr`
-pattern implied mistrust of the parser that wasn't justified and obscured intent.
-
-These were fixed immediately — not deferred to "next session" or "when we get a chance."
-Small code smells deferred are code smells forgotten. Fix them at the retrospective
-when they are fresh, not later when they are invisible.
-
----
-
-### Updated Summary of Evidence
-
-| Bug / Observation | How Found | TDD Prevention |
-|---|---|---|
-| `adoption_prob` vs `adoption_probability` (GFIP) | CI failure after PR merge | Interface contract test before either function |
-| Empty DataFrame KeyError in node_classifier (GFIP) | CI failure | Test with empty input before implementation |
-| FIPS sort order mismatch (GFIP) | CI failure | Explicit mapping in test, not array literal |
-| `np.True_ is True` assertion failure (GFIP) | CI failure | RED step forces assertion syntax thought |
-| 8 hollow tests with conditional guards (GFIP) | Manual retrospective | No guards — design fixture to guarantee result |
-| 20+ seed-dependent assertions (GFIP) | Manual retrospective | Hypothesis property tests |
-| Column naming inconsistency (GFIP) | Manual retrospective | Enum defined in test before any implementation |
-| Blank map on GitHub Pages (GFIP) | Human opened deployed URL | Playwright E2E test runs against real deployment |
-| Silent `threat_tier` routing bug (Groundshift) | Codebase review + regression test | Test specifies existential-vs-stress tier outcome before fix |
-| `--crop coffee` vs `coffee_arabica.yaml` (Groundshift) | RED step revealed wrong failure reason | RED step forces interface question before implementation |
-| NaN anchor alert (Groundshift) | Immediately GREEN | Confirmed Python NaN comparison semantics as guarantee |
-| `DescribeResult` return type change (Groundshift) | 14-test cascade at commit time | Precise failure list; fixed in minutes with no missed call sites |
-| Defensive `getattr` in CLI (Groundshift) | Retrospective code review | Fixed immediately; deferred smells become invisible smells |
-| "TOTAL VOTES CAST" pseudo-candidate doubled Milwaukee (GFDE) | Real-data acceptance run | RED test reproducing the real row pattern before the fix |
-| TOTAL rows + sub-mode rows coexist; Harris County 4.5× (GFDE) | Real-data acceptance run | Same — fixtures modeled on the real file, not imagination |
-| Zero-vote placeholder TOTAL rows zeroed four states (GFDE) | Real-data acceptance run | RED before refining the precedence rule |
-
----
-
-*This document was written after the fact as an honest retrospective.*
-*Its purpose is to prevent future sessions from repeating the same patterns.*
-*The evidence in it is real. The bugs were real. The fixes were real.*
-*Do the work in the right order.*
-
----
-
-## Bug #8: The Blank Map — What E2E Tests Would Have Caught
-
-This bug is different from #1–#7. It was not a logic error in a function. It was a
-**deployment configuration error** — the kind no unit test can see, because unit tests
-run against components in isolation, not against an actual built app served from a real URL.
-
-When GFIP was deployed to GitHub Pages at
-`https://mtgiguere.github.io/global_freshwater_intelligence_project/`, the dashboard loaded
-but the map was blank and all panels showed no data. Every fetch for JSON was returning 404.
-The cause:
-
-Static JSON files were being fetched with paths beginning with `/`:
-```typescript
-const url = `/data/global-risk.json`
-```
-
-GitHub Pages serves the app at the sub-path `/global_freshwater_intelligence_project/`.
-An absolute `/data/...` path resolves from the domain root — which 404s. The files were
-actually at `/global_freshwater_intelligence_project/data/...`.
-
-The fix was to prefix all static paths with `import.meta.env.BASE_URL` — a Vite variable
-set to the deployment sub-path at build time:
-```typescript
-const url = `${import.meta.env.BASE_URL}data/global-risk.json`
-```
-
-**Why no existing test caught it:**
-
-- Unit tests mock `fetch`. The mock does not care what path is requested.
-- Vitest/RTL runs in jsdom, not in a built app with a real URL structure.
-- TypeScript compiles correctly regardless of what string is inside the backtick.
-- CI passed: 177 Python tests green · 43 frontend tests green · 97% coverage · zero lint errors.
-
-Then the map was blank the first time a human opened the deployed URL.
-
-**What an E2E test would have done:**
-
-An E2E test runs the production build, serves it from a real HTTP server at the actual
-deployment path, launches a real browser, and navigates to the URL. It mocks nothing.
-It exercises the full stack: Vite build → `BASE_URL` injection → browser fetch → real HTTP
-response → component render. The test would fail at the first canvas visibility check
-because the canvas never receives data — before any human opens a browser.
-
----
-
-## The E2E Testing Gap
-
-**What GFIP has:**
-- 177 Python unit/integration tests (strict TDD)
-- 43 React unit tests (Vitest + RTL)
-- 97% line coverage
-
-**What GFIP does not have:**
-- Any test that runs against the actual built app in an actual browser
-
-These are fundamentally different verification levels. Unit tests verify that individual
-functions satisfy their contracts. E2E tests verify that the **integrated system** — built,
-bundled, served at its real URL — works for a real user completing a real task.
-
-Bugs #1–#7 are unit-level failures. Bug #8 is a deployment-level failure.
-No amount of unit test coverage can prevent it, because it lives in the gap between
-"this component has a correct implementation" and "this app works when deployed to this URL."
-
-### The Right Tool: Playwright
-
-Playwright is the correct E2E testing tool for this stack. It:
-- Runs real Chromium, Firefox, and WebKit — not a DOM simulation
-- Installs alongside Vitest without conflict: `npm install -D @playwright/test`
-- Tests both the local dev server and the production build (set `baseURL` per environment)
-- Waits reliably on network requests, DOM elements, and canvas rendering
-- Produces a video recording and screenshots on failure — the most useful artefact
-  for diagnosing deployment bugs, because it shows exactly what a browser saw
-
-Configure it with a `playwright.config.ts` at the `dashboard/` root alongside
-`vite.config.ts`. The two runners are invoked separately (`npx playwright test` vs
-`npm test`) and do not interfere.
-
-### Golden Path Scenarios for GFIP
-
-A golden path test covers the most important thing a user would try to do. For GFIP,
-there are six. Each should be one Playwright test.
-
-**1. Map loads with coloured countries**
-```typescript
-test('map renders with coloured countries on load', async ({ page }) => {
-  await page.goto('/')
-  await expect(page.locator('canvas')).toBeVisible({ timeout: 10_000 })
-  await expect(page.getByText(/countries loaded/)).toBeVisible()
-})
-```
-*What this catches:* BASE_URL path bug, CORS failures, blank-canvas rendering failures,
-broken static JSON fetches. If this test had existed, Bug #8 would have been caught in CI
-before any human opened the deployed URL.
-
-**2. Click a country — info bar appears**
-```typescript
-test('clicking a country shows its name and CRS score', async ({ page }) => {
-  await page.goto('/')
-  await expect(page.locator('canvas')).toBeVisible({ timeout: 10_000 })
-  await page.locator('canvas').click({ position: { x: 480, y: 240 } })
-  await expect(page.getByText(/CRS:/)).toBeVisible()
-})
-```
-*What this catches:* GeoJSON click handler, numericToIso3 lookup, risk data join.
-
-**3. Country Deep Dive — chart renders with real data**
-```typescript
-test('Country Deep Dive shows a time-series chart', async ({ page }) => {
-  await page.goto('/')
-  await page.getByRole('button', { name: 'Country Deep Dive' }).click()
-  // Recharts renders SVG paths — at least one path means data arrived
-  await expect(page.locator('.recharts-line-curve').first()).toBeVisible({ timeout: 10_000 })
-})
-```
-*What this catches:* country detail fetch, chart data format, Recharts rendering.
-
-**4. ML Futures — forecast scores appear**
-```typescript
-test('ML Futures shows three score bars for the default country', async ({ page }) => {
-  await page.goto('/')
-  await page.getByRole('button', { name: 'ML Futures' }).click()
-  await expect(page.getByText('Water Scarcity Forecast')).toBeVisible({ timeout: 10_000 })
-  await expect(page.getByText('Political Instability Forecast')).toBeVisible()
-  await expect(page.getByText('Displacement Pressure Forecast')).toBeVisible()
-})
-```
-*What this catches:* prediction endpoint fetch, score bar rendering, is_trained banner logic.
-
-**5. Outcomes Explorer — all seven hypothesis cards appear**
-```typescript
-test('Outcomes Explorer renders all seven hypothesis cards', async ({ page }) => {
-  await page.goto('/')
-  await page.getByRole('button', { name: 'Outcomes Explorer' }).click()
-  for (const h of ['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'H7']) {
-    await expect(page.getByRole('heading', { name: new RegExp(`^${h}`) }))
-      .toBeVisible({ timeout: 10_000 })
-  }
-})
-```
-*What this catches:* hypotheses endpoint, card rendering, insights text display.
-
-**6. Country search — type to select, panel updates**
-```typescript
-test('searching for a country and selecting it updates the deep dive', async ({ page }) => {
-  await page.goto('/')
-  await page.getByRole('button', { name: 'Country Deep Dive' }).click()
-  await page.getByPlaceholder(/search/i).fill('Kenya')
-  await page.getByText('Kenya').first().click()
-  await expect(page.getByText(/Kenya/)).toBeVisible()
-})
-```
-*What this catches:* CountrySearch autocomplete, country selection state, panel re-render.
-
-### When to Run E2E Tests
-
-E2E tests are slower than unit tests (seconds per test vs milliseconds). The right cadence:
-
-- **CI on pushes to `main`**: run after the unit test suite passes — not on every feature
-  branch commit, where they would slow the development feedback loop.
-- **Before any deployment**: run `npx playwright test` locally after `npm run build`
-  before pushing changes to `vite.config.ts`, `client.ts`, or GitHub Actions workflows.
-- **After any configuration change**: `BASE_URL`, `VITE_BASE_PATH`, CSP headers, or
-  sub-path routing — any of these can produce Bug #8-class failures that only E2E catches.
-
-The unit test suite remains the fast development feedback loop. E2E tests are the
-deployment gate. Both are required; neither replaces the other.
-
-### The Lesson
-
-> 177 unit tests + 43 component tests + 97% coverage + zero lint errors
-> = a completely passing CI suite
-> = a blank map when the first user opens the deployed URL.
->
-> Coverage measures which lines were executed. It does not measure whether the app
-> works for a person using a browser. Those are different questions. Both must be asked.
-
----
-
-## Just-In-Time Programming — The Other Half of the Discipline
-
-TDD tells you *how* to build. Just-In-Time (JIT) programming tells you *what* to build
-and *when*. Together they are the same discipline from two angles.
-
-**The JIT rule:**
-
-> Write only the code that a currently failing test demands.
-> Do not write code for needs that do not yet exist.
-
-This sounds obvious. It is not practiced. Here is what violating it looks like:
-
-```python
-# VIOLATION: writing a helper "because it might be useful later"
-def filter_variables(df, variables):  # no test demands this as a public function
-    ...  # it exists because I imagined a future caller
-
-
-def validate_schema(df):  # same — planned upfront, not test-driven
-    ...
-```
-
-Both functions were written during the GFIP AQUASTAT batch approach because the
-developer anticipated they would be needed. No test demanded them as public functions.
-The strict TDD pass eliminated both — not because they were wrong, but because they
-were *premature*.
-
-**The tell:**
-
-If you are about to write a function and you cannot point to a currently failing test
-that demands it — stop. The function does not belong yet.
-
-When the need arrives, a test will fail. That failing test is your permission to write
-the function. Not before.
-
-**Why this matters:**
-
-Every speculative public function is API surface that has to be maintained, tested,
-documented, and kept consistent with the rest of the codebase. Speculative functions
-that never get called are pure cost. Speculative functions that *do* get called but
-were designed for an imagined use case often get called *wrong*.
-
-JIT is not laziness. It is the discipline of trusting that the tests will tell you
-what to build, in the order you need to build it.
-
-**The connection to TDD:**
-
-TDD enforces JIT automatically. You cannot write speculative code and have it be tested,
-because the test is supposed to come first. If you find yourself writing code before the
-test, you are violating both TDD and JIT simultaneously.
-
-The sequence "write test → write minimum code → repeat" *is* just-in-time programming.
-The "minimum code" step is JIT: not one line more than the failing test requires.
-
-**A RED FLAG specific to JIT violations:**
-
-```python
-# RED FLAG 7: Function with no failing test demanding it
-def _compute_auxiliary_stats(df):  # who called this? what test failed without it?
-    ...
-
-
-# RED FLAG 8: Public function that is only called by one private function
-def parse_raw_csv(path):  # if only load_aquastat() calls this, it should
-    ...  # be private or inlined — no external test demands it
-```
-
----
-
-## What We Learned: Batch TDD vs Strict TDD
-
-This section documents a deliberate experiment run during GFIP Phase 1 development.
-The same module (AQUASTAT ingest) was written twice: once with batch TDD ("tests-first
-design") and once with strict TDD (one test, RED, minimum code, GREEN, repeat).
-
-### The experiment
-
-**Batch approach:** All 17 tests written at once. RED confirmed once as a batch (ImportError).
-Full implementation written at once. GREEN confirmed.
-
-**Strict TDD:** One test at a time. RED confirmed individually. Minimum code to pass that
-one test. GREEN confirmed. Next test.
-
-### What changed
-
-| | Batch | Strict TDD |
-|---|---|---|
-| Public functions | 5 | 1 |
-| Lines of implementation | 52 | 27 |
-| Tests | 17 | 8 |
-| Branch coverage | 99% | 100% |
-
-### Why the designs diverged
-
-**1. Starting from consumer behavior collapses the API.**
-
-Batch approach started from "what functions do I need?" and produced 5 public functions:
-`parse_raw_csv`, `filter_variables`, `pivot_to_wide`, `map_country_codes`, `validate_schema`.
-
-Strict TDD started from "what does the consumer want?" and produced 1 public function:
-`load_aquastat`. The internal steps became private implementation details.
-
-The consumer cannot call the pipeline steps in the wrong order. They cannot forget to call
-`validate_schema`. The function guarantees its output is valid. The batch API could not.
-
-**2. Error handling location is driven by the test, not by habit.**
-
-Batch approach: `map_country_codes` returned NaN silently. `validate_schema` caught it
-downstream. Two public functions the consumer had to remember to chain.
-
-Strict TDD: The test said "load_aquastat raises if any country cannot be mapped." So the
-check lives inside `load_aquastat`. Fail-fast, co-located with the failure, impossible to skip.
-
-**3. Some planned functions never needed to exist.**
-
-`validate_schema` was a public function in the batch approach because it was planned upfront.
-No test ever demanded it as a public function. Strict TDD never created it.
-
-**4. One test was immediately GREEN — and that is information.**
-
-The year-is-integer test passed without any code change. In the batch approach this could not
-be known, so a defensive cast was written anyway. Strict TDD revealed the cast was unnecessary.
-When a test you write is immediately GREEN, the behavior was already guaranteed. This is not
-a failure of TDD — it is TDD giving you information about your implementation.
-
-**5. Fewer tests, but higher quality.**
-
-17 tests → 8 tests. The batch approach tested each internal function separately. When those
-functions are private, those tests verify implementation mechanics, not behavior. The 8 strict
-TDD tests each verify one consumer-visible behavior. All 8 drove a code change or confirmed
-a behavioral guarantee.
-
-### The lesson
-
-> "Tests-first design" produces the design you planned.
-> Strict TDD produces the design the behavior demands.
->
-> They are not the same design. The strict TDD design is simpler, better encapsulated,
-> and has fewer failure modes — not because the developer was smarter, but because
-> each test forced the question: "what is the minimum interface that satisfies this
-> one behavior?" The answer is always simpler than what you planned.
-
----
-
-## Methodological Notes — Data Limitations Discovered During EDA
-
-These are not engineering bugs. They are scientific observations about the data that
-shape how the Phase 3 analysis must be designed and interpreted.
-
-### Annual Averages Mask Seasonal Water Stress
-
-**Discovery (Phase 2 EDA):**
-The primary exposure variable — `renewable_freshwater_percap` from AQUASTAT — is an
-annual average. This makes countries like India, Pakistan, and the Sahel *appear*
-adequately watered when they are effectively bone-dry for 6–9 months of the year.
-
-**The mechanism:**
-Monsoon climates receive the majority of annual precipitation in a 60–90 day window.
-When the monsoon arrives, the ground is baked hard from months of heat. Water runs off
-as floods rather than infiltrating to recharge aquifers. The annual "total" looks fine.
-The lived reality is severe seasonal scarcity for most of the year.
-
-**Why this matters for each hypothesis:**
-- H1–H4: Cross-sectional correlations between freshwater and human outcomes are
-  artificially weakened because the annual average misclassifies seasonally-arid
-  countries as water-secure.
-- H7 (groundwater): Monsoon countries are among the heaviest aquifer extractors
-  precisely *because* surface water is seasonally unreliable. GRACE data reveals
-  the depletion that annual averages hide.
-
-**What this means for Phase 3:**
-1. Annual freshwater per capita is a necessary but insufficient exposure variable.
-2. Fixed effects panel regression partially addresses this by controlling for
-   time-invariant country characteristics (including climate type).
-3. The SPEI (Standardised Precipitation-Evapotranspiration Index) from CMIP6/WorldClim
-   data captures drought duration and intensity at monthly resolution and should be
-   included as a supplementary exposure variable in Phase 3 models.
-4. A `seasonal_aridity_flag` (see below) should be computed and used as a moderating
-   variable — effects of freshwater stress may be stronger in seasonally arid countries.
-
-### The Seasonal Aridity Flag — Plan
-
-**Definition:** A country-year is seasonally arid if it experiences more than 6 months
-per year with average precipitation below 50mm (roughly 1.6mm/day — the standard
-meteorological dry month threshold).
-
-**Data source:** WorldClim 2.1 — 30-year average monthly precipitation at 2.5 arc-minute
-resolution, available as free GeoTIFF downloads at worldclim.org.
-
-**Implementation plan:**
-1. Download 12 monthly precipitation GeoTIFFs from WorldClim 2.1.
-2. Aggregate each raster to country level (area-weighted mean, same approach as GRACE).
-3. For each country: count months where monthly_precip_mm < 50.
-4. Output variables:
-   - `dry_months_count` — integer 0–12, number of months below threshold
-   - `seasonal_aridity_flag` — boolean, True if dry_months_count > 6
-5. Add both to the Master Panel as static country-level features (WorldClim is a
-   long-term climatological average, not time-varying — join on iso3 only, not year).
-
-**Expected findings:**
-Countries flagged: most of MENA, Sahel, Horn of Africa, Pakistan, northwestern India,
-Central Asia, northern Mexico, southwestern USA, parts of Brazil (Nordeste), Australia
-(interior). These are exactly the countries where the annual freshwater average
-misrepresents lived water scarcity.
-
-**Phase 3 moderation analysis:**
-Run regressions separately for `seasonal_aridity_flag == True` and `== False`.
-The hypothesis is that H1–H5 effect sizes will be significantly larger in the
-seasonally-arid group — because in these countries, a reduction in annual freshwater
-represents a reduction in an already marginal and unreliable supply, not just a
-reduction from abundance.
-
----
-
-## Geo-Fluid Dynamics Engine Examples — Evidence From the Rebuild
-
-*Added 2026-06-11 after the first development arc of the GFDE rebuild (the returns and
-demographics ingest modules). The contract above was written from GFIP and Groundshift
-evidence; this section records what the rebuild itself taught. The headline lesson is
-new: strict TDD with fixtures was followed to the letter — and the loader was still
-wrong three ways, because the fixtures encoded a model of the world that the world
-did not match.*
-
----
-
-### Bugs #10–#12 (GFDE): Three Correct Implementations of a Wrong World-Model
-
-**What happened:**
-
-`load_county_returns` was built in six strict TDD cycles. Every test was written first,
-every RED confirmed, no guards, no seeds, 100% branch coverage, mypy strict clean.
-Then the real 94,409-row MIT county returns file was run through it, and the panel was
-wrong in three distinct ways:
-
-1. **Bug #10 — the pseudo-candidate.** Wisconsin/Vermont/West Virginia/Wyoming 2024
-   carry a row `candidate="TOTAL VOTES CAST", party=NaN` holding the county's reported
-   turnout. The loader mapped NaN party into `other_votes`: Milwaukee County reported
-   918,421 total votes instead of 454,314 — exactly doubled.
-2. **Bug #11 — total-mode rows coexist with sub-mode rows.** Texas 2024 (and Utah 2020)
-   report a county's complete `TOTAL VOTES` count AND the early-vote breakdown alongside
-   it, plus stray unattributed bulk rows. Summing everything gave Harris County 7.0M
-   votes against 1.56M actual ballots — a 4.5× over-count.
-3. **Bug #12 — zero-vote placeholder totals.** The obvious fix for #11 ("when TOTAL rows
-   exist, use only them") would have silently zeroed Arkansas, Louisiana, Oklahoma, and
-   Pennsylvania, whose 2024 TOTAL rows are zero-vote placeholders with the real count in
-   the sub-mode rows.
-
-**Why strict TDD did not catch them:**
-
-The fixtures were invented from a reasonable mental model: one row per candidate per
-mode, modes partition the vote. The tests verified the code against that model
-perfectly. But the tests could only encode row patterns the developer knew existed.
-The failure mode is not TAD's "does the code do what I just wrote?" — it is
-"does the world look like what I imagined?" No amount of test-first discipline answers
-that question, because the test and the implementation share the same imagination.
-
-**What caught them:**
-
-A real-data acceptance run: load the actual file, compare aggregates against externally
-certified facts (national vote totals per election), and investigate every discrepancy.
-Each discrepancy became a RED test whose fixture reproduces the *real* row pattern in
-miniature (Milwaukee's pseudo-candidate, Harris County's coexisting modes, Arkansas's
-zero placeholders). Then the fix. The final panel matches certified national results
-for all seven elections, 2000–2024.
-
-**The rule this adds to the discipline:**
-
-> Fixtures specify the contract. Real data falsifies your model of the world.
-> For every ingest module, a real-data acceptance run against externally verifiable
-> facts is part of the definition of done — not extra credit. Validate aggregates
-> against certified or published values, and treat every discrepancy as a RED test
-> waiting to be written.
-
-A corollary from the same arc: **spot checks validate only the cells you check.**
-A mirror of the dataset passed spot checks (known counties, known years) while carrying
-an off-by-one FIPS shift that corrupted ~146 county-years in other states. Structural
-corruption needs structural comparison — when provenance matters, diff the whole file
-against the authoritative source, not samples of it.
-
----
-
-### Observation (GFDE): Converting Accidental Behavior Into Specified Behavior
-
-The acceptance run found 6 county-years silently absent from the panel (Alaska's
-placeholder "DISTRICT 99", a Kansas City pseudo-FIPS, defunct Bedford City VA) — all
-all-zero placeholder entities dropped as a *side effect* of the Bug #12 fix. The
-behavior was correct and entirely accidental.
-
-The response was a test specifying the behavior (`zero ballots is not an observation`),
-expected and confirmed immediately GREEN. Accidental correctness is a liability — the
-next refactor can remove it without any test noticing. The immediately-GREEN test is
-the cheapest possible insurance: it converts a coincidence into a guarantee.
-
----
-
-### Process Rule (GFDE): When the World Changes, Changing the Test Is Legitimate
-
-Mid-arc, the Census API began rejecting keyless requests (a 2025 policy change,
-confirmed live: an HTML "Missing Key" page returned with HTTP 200). The existing test
-specified the exact request URL without a key; the URL builder now needed one.
-
-The existing test was *modified* — expected URL updated to include `&key=` — rather
-than a new test added beside it. This is legitimate exactly when the **external
-contract itself changed**, and it must be visible: the commit message and the test
-docstring both record the external cause. The line being drawn:
-
-- Changing a test because the API/file format/standard it specifies changed: correct.
-  Document the cause in the test and the commit.
-- Changing a test because the implementation you want to write doesn't satisfy it:
-  that is deleting the specification to fit the code. Never.
-
----
-
-### Process Rule (GFDE): One Test at a Time Means One
-
-During the demographics arc, two tests were added in a single edit (sort order +
-null handling) because the second "was obviously going to be immediately GREEN."
-It was — and that is luck, not discipline. The prediction could have been wrong, and
-with two new failing tests the RED step no longer tells you *which* behavior is
-unimplemented; failure reasons blur. The cadence exists precisely so every RED has
-one unambiguous cause. The violation was disclosed in the commit message; the rule
-stands: one test, one RED, one GREEN, one commit.
-
----
-
-## Second GFDE Retrospective — Guardrails, Debugging Economics, Open Questions
-
-*Added 2026-06-11, after the deployment arc and the spatial-weights module. The first
-GFDE section was about fixtures versus reality; this one is about what happens when
-the system meets CI, production, and its own operator.*
-
----
-
-### Process Rule (GFDE): A Gate That Trips Is the System Working
-
-The CI format gate failed on the spatial-weights branch: one commit went in without
-the `ruff format` step. This is verbatim the failure mode documented above under
-*"ruff format is not optional"* — which had already happened "multiple times in early
-Groundshift sessions." It survives model upgrades. It survives having written the rule
-down. Humans (and models) forget; that is a property of the system, not a defect of
-the operator.
-
-The response hierarchy, now policy:
-
-1. A rule stated in documentation will eventually be skipped.
-2. A rule checked in CI will be caught after the push — minutes lost, nothing shipped.
-3. A rule enforced by a pre-commit hook cannot be skipped silently at all.
-
-When a documented rule is violated once, promote it to mechanism. `.githooks/pre-commit`
-now runs check / format-check / pytest on every commit (`git config core.hooksPath
-.githooks`, once per clone). The gate caught the drift; the hook retires the class.
-
----
-
-### Process Rule (GFDE): When CI Diverges From Local, Diff the Inputs First
-
-The deployment arc burned seven CI runs. The post-mortem on the post-mortem:
-
-- Two or three runs went to plausible hypotheses (Mapbox telemetry, missing WebGL
-  flags) that were reasoned from experience rather than evidence.
-- The run that broke the case was boring: reproduce locally with the EXACT inputs CI
-  has. The input that differed was the token itself — CI built with a token whose
-  scopes excluded TILES:READ (403 on `api.mapbox.com/v4` only; style, sprite, and
-  glyphs all 200). Local runs had silently used a different token from `.env.local`.
-- The console error that would have named the failing URL doesn't include URLs
-  ("Failed to load resource: 403"). The E2E suite now records every >= 400 response
-  WITH its URL, so this entire class self-diagnoses in the assertion diff.
-
-The rules:
-
-1. **Before hypothesizing about environmental differences, enumerate the actual
-   inputs** — env vars, tokens, data files, versions — and diff them against CI's.
-   The divergent input is usually one you assumed constant.
-2. **Ask the human for the log early.** One pasted log beats three speculative runs.
-   Minimizing interruptions is false economy when each guess costs a CI cycle.
-3. **Error channels must carry identifiers.** If a failure message cannot name its
-   subject (URL, FIPS, file), fix the capture before debugging the failure.
-
----
-
-### Observation (GFDE): Tests Forced Design Decisions — the Thesis, Confirmed Twice
-
-The contract claims strict TDD produces the design the behavior demands. Two concrete
-confirmations from this arc:
-
-**The swing calendar.** A fixture for "county absent from the previous election"
-contained no 2016 rows for ANY county — and the implementation, which derived the
-election calendar from the panel itself, marked an 8-year drift as a valid swing.
-The RED test forced the question into the open: what IS "the preceding election"?
-The answer (the presidential calendar, year minus four) is now an explicit contract
-that will survive the planned 1868 historical extension. Implemented TAD-style, the
-panel-derived behavior would have shipped and broken silently years of data later.
-
-**Islands in the keys.** Writing the adjacency test first forced the Hawaii question
-before any weights code existed: a county with no neighbors must still appear in the
-adjacency (empty set), because dropping it would shrink the weights matrix and
-misalign every index built on it. That decision, made in a test, became the all-zero-
-row semantics of W. The design flowed from the specification downward.
-
----
-
-### The Frontend Line (GFDE): Where TDD Currently Does Not Reach
-
-`web/src/main.ts` accumulates real logic — color-expression builders, swing
-formatters, a metric registry — and none of it has unit tests. Four Playwright golden
-paths cover the integrated app. This was a defensible just-in-time call while the UI
-was a thin shell over tested data products; it is drifting toward exactly the shape
-this contract warns about.
-
-The line, drawn now: **E2E verifies integration, never logic.** The trigger for
-Vitest is either (a) the first frontend logic bug, or (b) the next arc that grows
-frontend logic — whichever comes first. Pure functions (formatters, expression
-builders) are already extractable and will be tested as contracts, the same as any
-Python function.
-
----
-
-### OPEN INCIDENT (GFDE): The Single-File Commit — Unexplained
-
-Commit a72f9d1 was created from a corrupted index containing exactly one file,
-silently deleting 42 tracked files from main's tree (history intact, working tree
-intact; restored and verified the same day). The sequence was an ordinary
-`stash / checkout / pull / stash pop / add one file / commit` on Windows (git 2.24,
-core.autocrlf=true). The mechanism is NOT understood. The reflog looks normal. It has
-not recurred.
-
-An unexplained failure is a failure that can recur. Until the mechanism is found:
-
-- After any structural git operation (stash across branches, conflicted pops),
-  verify `git ls-files | wc -l` against the expected count before pushing.
-- Prefer committing work-in-progress over stashing across branch switches.
-- If it recurs: capture `git fsck`, the reflog, and the index file itself BEFORE
-  repairing, and consider upgrading the decade-old git 2.24.
-
----
-
-### Updated Evidence (this retrospective)
-
-| Event | How Caught | Codified As |
-|---|---|---|
-| Format drift on one commit | CI format gate | Pre-commit hook; "promote violated rules to mechanism" |
-| CI token missing TILES:READ scope | Local repro with CI's exact inputs | "Diff the inputs first"; per-resource token checks |
-| Console errors without URLs cost 2 blind rounds | Manual log reading | E2E captures every >= 400 response with its URL |
-| Swing calendar ambiguity | RED test fixture without 2016 rows | Explicit year-minus-four contract |
-| Island counties and matrix alignment | Test written before W existed | Islands keep keys; W keeps zero rows |
-| Single-file commit corrupting main | Deploy failed: web/ absent on runner | Open incident; tree-count tripwire before push |
-
----
-
-## Third GFDE Retrospective — Verifying the Unverifiable, and Guardrails That Never Ran
-
-*Added 2026-06-12, after the statistics arcs (Moran's I, LISA, permutation
-inference, the SAR estimator) and the volunteer-facing UX arcs. The theme:
-what strict TDD looks like when the code under test is stochastic, numerical,
-and scientific — and what happens to a guardrail nobody exercises.*
-
----
-
-### Technique (GFDE): Verifying Stochastic and Numerical Machinery Without Seeds
-
-RED FLAG 3 bans seed-specific assertions. This period built a permutation
-test and a maximum-likelihood estimator anyway. The patterns that made it
-possible — stronger than seeded snapshots, not weaker:
-
-**1. The deterministic construction.** Find an input where the stochastic
-machinery's output is forced by logic, for ANY rng. A county adjacent to all
-other counties sees the identical neighbor-mean under every conditional
-permutation, so its pseudo p-value must be exactly 1.0. One fixture verifies
-the entire permutation pathway with zero randomness. Ask: "is there an input
-where chance has no room to act?"
-
-**2. The noise-free recovery world.** For an estimator, build the world from
-known parameters exactly — y = (I - rho0 W)^-1 X beta0, no error term — and
-demand the truth back. At the true parameters the residual is zero, so any
-correct maximizer must land there, deterministically. (Implementation note:
-floor sigma^2 inside the log so the perfect fit is the unambiguous maximum
-instead of a crash.) A seeded test asserts "this run looked right once";
-recovery asserts the mathematics cannot be wrong.
-
-**3. Reproducibility is not a seed assertion.** Two identically-seeded
-INJECTED generators must produce identical output — that asserts determinism
-of the machinery, which published science requires. Production analysis runs
-MAY use a documented seed so a published map is exactly re-derivable. What
-remains banned is the original sin: asserting that seed 42 produces a value
-you copied from the first run.
-
-**4. Properties carry the rest.** Location-scale invariance for Moran's I,
-unit-invariance of rho, mean(I_i) == global I as the decomposition theorem.
-When two implementations must agree by mathematics, write the equality as a
-Hypothesis property — it snaps the moment they drift.
-
----
-
-### Process Rule (GFDE): Derive in the Docstring Before Writing the Assertion
-
-Twice this project, a hand-built fixture carried wrong hand-math — the swing
-fixture (a panel with no 2016 rows anywhere) and the LISA pair fixture (a
-lone surviving pair is measured against its own mean, so exclusion changes
-the reference frame). Both times the implementation was right and the test's
-expectation wrong; both times the RED step surfaced it; both times the
-arithmetic had been done in the head after the fixture was written.
-
-The countermeasure, now policy: **write the derivation into the test
-docstring BEFORE writing the assertion.** The tests authored that way this
-period (the p = 1.0 construction, the SAR recovery worlds, the hand-computed
-Moran cases) were right on the first run. Bug #3's comment lied because it
-described code; a derivation cannot lie about itself — and when it is wrong,
-it is wrong VISIBLY, next to the assertion it justifies.
-
----
-
-### Process Rule (GFDE): A Guardrail That Has Never Run Is Decoration
-
-The mutation-testing workflow was installed with predictions on record —
-and three days later had executed ZERO times. GitHub silently skips cron
-schedules on quiet repositories, and both humans and models reliably fail
-to click a dispatch button. The cost is worse than absence: an installed
-gate FEELS like coverage while verifying nothing.
-
-The rule: when installing any scheduled or manual guardrail, **schedule its
-first verified execution as part of installing it** — dispatch it before
-merging, or wire its trigger to an event that provably fires (a push), or
-put a check on the calendar. "It will run tonight" is a hypothesis; treat
-it like one.
-
----
-
-### Convention (GFDE): A Handed-Over PR Is Final
-
-A PR was merged while its branch was still receiving commits, recreating
-the remote branch and orphaning a commit into a follow-up PR. No harm —
-but the convention is now explicit: when a PR link is handed over for
-review, that branch is final unless stated otherwise; further work goes to
-a new branch.
-
----
-
-### Convention (GFDE): Notebooks / EDA Are TDD-Exempt (2026-06-15)
-
-The strict TDD + JIT discipline above governs **library and shipped code**
-(`src/geofluid/`, anything in the test suite). It does **not** govern
-exploratory analysis notebooks (`notebooks/`, jupytext py:percent + paired
-executed `.ipynb`). Matt, settling it: *"I don't mind not doing TDD on
-notebooks/EDA — it's kinda bad practice to unit test EDA anyway."* Unit-testing
-exploratory analysis ossifies code meant to stay fluid; the notebook leans on
-the already-tested `geofluid` library for the real computation.
-
-The line, so it isn't re-litigated:
-
-- A notebook calls tested library functions. New *analytical capability* still
-  arrives as a tested library function first (e.g. `realignment.trend_surprise`);
-  the notebook only narrates and visualizes it.
-- A bug fixed *inside a notebook* (the realignment EDA had a silent `read_json`
-  FIPS leading-zero coercion that NaN'd a whole axis) does **not** require a RED
-  regression test — UNLESS the same hazard exists in shipped code (grep to check;
-  in that case it did not). Inventing a tested helper purely to satisfy TDD on
-  notebook-local logic would itself violate JIT.
-- This is the same boundary as *"E2E verifies integration, never logic"* — a
-  layer that leans on tested code, exempt until it grows reusable logic of its own.
-- **Executing a notebook against real data is still a real-data acceptance run**
-  in the sense of Bugs #10–#12: the realignment run falsified the model of the
-  world twice (the NaN'd education axis; prose overstating a clean
-  region→education swap) and both were corrected. The exemption is from
-  test-first, not from honesty against real data.
-
----
-
-### Updated Evidence (this retrospective)
-
-| Event | How Caught | Codified As |
-|---|---|---|
-| Permutation machinery needed seed-free verification | Design-time constraint (RED FLAG 3) | Deterministic-construction pattern (p exactly 1.0) |
-| ML estimator needed seed-free verification | Same | Noise-free recovery worlds |
-| Hand-math wrong in two fixtures | RED step, both times | Derivation-in-docstring-before-assertion rule |
-| Mutation workflow: zero executions in three days | API check during retrospective | "A guardrail that has never run is decoration" |
-| Branch recreated by mid-flight merge | Push output ("new branch") | Handed-over PRs are final |
-| pandas 3 string dtype turned None into NaN | RED on mask contract | Object-cast noted; None is a decision, NaN is an accident |
-
----
-
-## Fourth GFDE Retrospective — Politics-Agnostic Loaders, Orientation Layers, and a Silent Pivot Drop
-
-*Added 2026-06-24, after the ballot-measure starter set (Kansas, Kentucky, Ohio
-abortion measures), the cross-measure contest-dimension panel, and the map
-wiring. The theme: three source formats for the same KIND of fact, one canonical
-panel, and where political MEANING is allowed to live.*
-
----
-
-### Pattern (GFDE): Loaders Stay Politics-Agnostic; Orientation Lives in One Named Place Per Consumer
-
-Three ballot-measure loaders were built this arc — Kansas (precinct workbook),
-Kentucky (SoS text export), Ohio (precinct-summary workbook) — three completely
-different file formats, all emitting ONE canonical panel (`fips, yes_votes,
-no_votes, total_votes, no_share`) via a shared `_assemble_referendum_panel`.
-Crucially, **none of the loaders encodes which side is "progressive."** They
-report raw yes/no and stay silent on politics, exactly as the original Kansas
-loader's docstring promised.
-
-This mattered the moment Ohio arrived. Ohio Issue 1 (2023) ESTABLISHED a right
-to abortion and passed, so a YES vote was the pro-choice side — the *opposite*
-polarity from Kansas and Kentucky, where a NO preserved rights. If orientation
-had been baked into the loaders (e.g. a hardcoded "pro-choice = no_share"), Ohio
-would have required a special-case loader, or worse, silently colored the map
-backwards.
-
-Instead, orientation is carried as an explicit per-measure fact at EACH
-consumer, in exactly one named place:
-- the cross-measure modelling panel: `Measure.progressive_side` ("yes"/"no"),
-  which `build_measures_panel` uses to compute an orientation-corrected
-  `progressive_share`;
-- the map overlay: a `progressive_side` parameter on `build_measure_overlay`,
-  which orients the dissonance the map actually colors.
-
-Both validated on real data: all 88 Ohio counties came out dissonance > 0
-(Issue 1 outran the 2020 Democratic share everywhere) — had the orientation
-been inverted, the blue metros would have gone negative. And Kansas/Kentucky
-data products regenerated BYTE-IDENTICAL, because their "no" orientation is the
-prior default.
-
-The rule: **a unit that ingests a fact should not decide what the fact MEANS
-politically. Orientation/polarity is an explicit input carried at the analysis
-and display layers, named once per consumer, never inferred and never hardcoded
-in ingest.** The tell that you got it wrong: a new data source with flipped
-polarity forces a new code path instead of a new config value.
-
----
-
-### Hazard (GFDE): pivot_table / groupby Silently Drop NaN-Index Groups
-
-The Ohio loader maps county names to FIPS, then pivots precinct rows to county
-totals. An early version mapped unknown names to NaN and *relied on the pivot*
-to produce the panel — and a county that failed to map was **silently dropped**,
-because `pivot_table`/`groupby` discard NaN-index groups by default. The
-unknown-county test was RED with "DID NOT RAISE": the bad county vanished
-without a sound.
-
-This is a NEW silent-shrink mechanism, distinct from Bug #2's empty-DataFrame
-KeyError and from the swing/LISA "absence is explicit" idiom. There, absence is
-deliberately preserved as NaN; here, a *mapping failure* was being erased by an
-aggregation downstream of it.
-
-The rule: **when a join or lookup can produce NaN keys, guard loudly BEFORE the
-pivot/groupby that consumes them.** Never let an aggregation be the thing that
-"handles" a mapping failure — it hides it. Every loader now raises, naming the
-unmapped county, before any aggregation runs. (Same shape as the contract's
-recurring lesson: silent dropping shrinks the panel invisibly; make it loud.)
-
----
-
-### Technique (GFDE): Byte-Identical Regeneration Is a Refactor Regression Test
-
-Twice this arc a refactor touched code that fed a committed data product:
-extracting `_assemble_referendum_panel` (used by every loader) and changing how
-`build_measure_overlay` constructs its `no_share` field. Both times the
-verification was the same: regenerate the affected `web/public/data/*.json` and
-confirm the Kansas/Kentucky files came back **byte-for-byte identical**. A
-diff-clean regeneration is a regression test for "this refactor must not change
-output" that no unit test expresses as directly — it checks the whole pipeline's
-serialized result, not a function in isolation. When a change is *supposed* to be
-output-preserving, prove it by regenerating and diffing, not by reasoning.
-
-(The flip side became a footgun — see BACKLOG: the deploy serves these committed
-products and does NOT run the export, so a loader change without regeneration
-ships a stale map silently. That guard is now a backlog item.)
-
----
-
-### Observation (GFDE): Immediately-GREEN Can Also Mean Cycle-1 Over-Built
-
-The contract holds that an immediately-GREEN test is information — a behavior
-already guaranteed. True, but this arc surfaced the other half: several Kentucky
-tests (row-order independence, multi-county sort) passed on arrival because the
-*first* cycle's implementation already keyed by label and sorted — i.e. cycle 1
-did more than its one test demanded. Immediately-GREEN is still information, but
-when it recurs, the honest question is not only "what guarantee did I discover?"
-but **"did my previous cycle over-implement?"** Minimal-code means the later
-test should usually have to drive *something*; a string of immediately-GREEN
-follow-ons is a mild tell that an earlier RED was over-satisfied.
-
----
-
-### Updated Evidence (this retrospective)
-
-| Event | How Caught | Codified As |
-|---|---|---|
-| Ohio Issue 1 flipped ballot polarity (YES = pro-choice) | Real-data acceptance (all 88 dissonance>0) | Politics-agnostic loaders; orientation named once per consumer |
-| Unknown county silently dropped by pivot | RED "DID NOT RAISE" on the unknown-county test | Guard loudly BEFORE the pivot/groupby; NaN keys are a mapping failure |
-| KY 59-vote gap vs certified canvass | Independent raw-file sum vs panel | Faithful-to-source + documented vintage ≠ loader bug (Bugs #10–12 applied) |
-| Refactors feeding committed data products | Byte-identical regeneration + diff | Diff-clean regeneration is the output-preserving regression test |
-| Run of immediately-GREEN KY tests | Noticed during the cycles | Immediately-GREEN can mean cycle-1 over-implementation, not just a guarantee |
+## Index of cited numbers
+
+Kept so citations in code and tests still point somewhere.
+
+| Cited as | Rule |
+|---|---|
+| Bug #1 | Column-name drift between producer and consumer: write the shared schema as a test before either side |
+| Bug #2 | Empty input must keep its columns; never KeyError on an empty frame |
+| Bug #3 | Align by key (FIPS), never by position or assumed sort order |
+| Bug #4 | RED FLAG 4: no `is True` on numpy/pandas values |
+| Bug #5 | Hollow tests behind conditional guards (RED FLAG 2); mutation testing watches for them |
+| Bug #8 | Blank map at the deploy path: why Playwright gates every deploy at the real base path |
+| Bugs #10–12 | Real data falsified the fixtures (pseudo-candidate rows, coexisting total and sub-mode rows, zero-vote placeholders): Section 5 |
+| Bug #11 pattern | Summary and total rows coexist with the detail rows; summing both double counts |
+| RED FLAG n | Section 3 table |
+| The Frontend Line | Section 7 |
+| OPEN INCIDENT | Section 10 (single-file commit) |
