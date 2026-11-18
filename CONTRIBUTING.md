@@ -6,8 +6,8 @@ not optional for contributions.
 
 ## Before anything else
 
-Read `TDD_CONTRACT.md`. It is binding and it is evidence-based: every rule
-in it exists because of a real bug in an earlier attempt at this exact
+Read `TDD_CONTRACT.md` (about 200 lines). It is binding, and every rule
+in it exists because of a real bug here or in an earlier attempt at this
 project. The short version:
 
 1. One failing test at a time. Run it. See it fail. Then write the minimum
