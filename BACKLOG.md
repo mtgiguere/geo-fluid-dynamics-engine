@@ -1,847 +1,214 @@
 # Backlog
 
-Work items agreed but deliberately not started (JIT: each begins when its
-trigger arrives, with its own tests). Newest decisions at top of each section.
+Open work only: agreed, deliberately not started, each with the trigger that
+starts it (just-in-time; every item arrives with its own tests). Finished work
+lives in `docs/FINDINGS.md` (what was learned), `docs/RESEARCH_LOG.md` (what
+was asked and checked) and git history (this file before 2026-11-18 holds the
+build narratives). Dated deadlines to MPSA (April 1-4, 2027) are in
+`docs/TODO_2027.md`.
 
-> **North star for the coming year (2026-08-10):** an exhaustive, honest check
-> of the founding question — how ideas move across the map — built on the
-> ballot-measure measurement design (`docs/MEASUREMENT_DESIGN.md`), with an eye
-> to presenting at **Geo Week 2027** or another geospatial/political-data venue.
+## The 2026 registration: finishing it
 
-## Product / UX
+- **Certified scorecard, unseal, grade, publish.** When Missouri certifies
+  (expected Dec 8-15): re-fetch, re-run `notebooks/mo_2026_scorecard.py`, unseal
+  and verify the ten playbooks (`seal.verify_manifest`), grade them, write the
+  FINDINGS entry (wins and misses), update the README status and rebuild the
+  receipt page (`forecast.html`) around the result. Steps: `docs/RUNBOOK_2026.md`.
+- **Aug 2026 canvass PDF cross-check.** When the SoS finally posts
+  `ActualResults-August42026.pdf`, check it against the ENR-portal panel.
 
-- **DONE (2026-08-14): "Bring Your Own State" lay explainer.**
-  `docs/BRING_YOUR_OWN_STATE.md` — plain-language, zero-jargon walkthrough of
-  what it takes to use the engine for a new state/issue (five ingredients;
-  only the loader is technical; the certified-total acceptance run framed as
-  a "built-in lie detector"; the Nebraska repeal-the-repeal orientation trap;
-  the honest Georgia answer: no initiative process → no direct-vote signal →
-  the tool refuses to guess). Death penalty worked as the example (NE/CA/OK
-  2016 all have real county data — a natural future corpus, incl. the CA
-  same-ballot competing pair). DEFERRED: a public web version of this
-  explainer alongside demo.html (same audience as the planned deep-time
-  "rabbit hole" page; both are post-registration work).
+## Science
 
-- **DONE (2026-06-13): Scoped views.** `geofluid/scope.py` (neighborhood
-  expansion + catalog) ships scopes.json (nation + every state + STL/KC
-  cross-border metro presets); frontend has a scope selector that filters,
-  fits the camera, and recounts storyline + status. Settled principle held:
-  scopes DISPLAY national statistics filtered, never recompute inside a
-  boundary. Deferred sub-item still open: a "fit colors to this view" ramp
-  toggle (rescaling breaks cross-scope comparison — only on request).
+- **Neighbours in the forecast (the spatial-lag model).** The 2026 Amendment 3
+  misses cluster on the map (Moran's I 0.33): neighbouring counties carry
+  information the registered model left out. `spatial/lag` already fits SAR.
+  Trigger: the method bake-off (below); first cut is the Feb 14 stretch item.
 
-- **DONE (2026-06-13): Kansas dissonance map view.** Modular ballot-measure
-  overlay: measures.json catalog + measure_<id>.json, a "Ballot measures"
-  optgroup in the metric dropdown, dissonance coloring (baseline = 2020),
-  auto-scope to the measure's state, disabled year controls, comparative
-  storyline/caption. Remaining sub-items, deferred: (a) named False-Bastion
-  CLASSIFICATION tiers (a continuous gap ships now; thresholds were the
-  deferred classify cycle); (b) more measures (the catalog is built for it —
-  append to MEASURES in the export); (c) minor: selecting a measure at
-  national scope shows mostly gray (only the measure's state has data) — the
-  auto-scope mitigates it, but a guard/hint could be cleaner.
+- **Information environment: heat, explanation, wording, money** (Matt,
+  2026-11-04; the "obscurity" question). The engine may be missing what voters
+  knew when they reached the question. In 2026 every Missouri measure moved
+  toward No against our call, and the two big level misses (Amdt 8, Prop A)
+  were the quiet ones; roll-off ranks the measures in the same order as the
+  level misses (n = 5, a lead, not a finding). Gap carried over between two
+  Missouri votes on the same issue: abortion 2024→2026 79% (r 0.74), minimum
+  wage 2018→2024 62% (0.68), Clean Missouri 2018→2020 repeal 30% (0.44),
+  unrelated pair 34% (0.31).
+  - Data: official ballot text (MO fair-ballot language; catalog measures where
+    available); committee spending (Missouri Ethics Commission; Ballotpedia
+    summaries; other states' portals); news volume per measure per week
+    (GDELT); search interest by media market (Google Trends).
+  - Features, all measured BEFORE the vote: reading level, negations, length,
+    YES = change vs keep, number of subjects, loaded words; later a text
+    embedding (the NLP phase).
+  - Tests across the 271-measure catalog: (a) does gap persistence rise with
+    heat? (b) do quiet or confusingly worded measures drift toward No from
+    their partisan expectation? (c) does the engine's edge over party alone
+    shrink on obscure measures (voters fall back on party cues)? (d) does money
+    shift outcomes beyond severity and county positions, and asymmetrically
+    (one-sided No money)? Spending is endogenous: measure and control, never
+    claim clean causality. Roll-off is the after-the-vote check on the score.
+  - Payoff: the engine knows in advance how far to trust itself (tight ranges
+    on hot, explained measures; party plus a No lean and wide ranges on quiet
+    ones). For a campaign: on a quiet measure, explaining what YES means may be
+    worth more than persuading.
+  Trigger: now, alongside the bake-off; Missouri 2026 is the first case study.
 
-- **DONE (2026-06-14): Explainer key — every view explains itself.** Every
-  MetricDef + the dissonance measure now carries a required `caption` (what it
-  shows, what gray means), rendered always-visible under the legend; Vitest
-  pins that no view can ship without one. Closes the Chicago-misreading risk
-  for all layers, not just the categorical ones. Possible future polish (not
-  needed now): a dedicated "how to read this map" help panel / first-visit
-  tour for the spec's broader audience.
+- **Engine method bake-off: analogs vs averages vs trendlines** (2026-11-04).
+  Choose the next registration's method by honest backtest, never by tuning on
+  the answer key. Candidates, fit on the ~21 certified MO measures 2018-2026
+  (`county_receipts_mo`): (1) single best analog, the 2026 method, as control;
+  (2) flat average of past gaps (reference); (3) similarity-weighted ensemble
+  (topic, severity, electorate); (4) county trendlines of measure gaps, pure vs
+  damped, midterm and presidential electorates apart, slopes shrunk toward
+  neighbours and state; (5) demographic fallback when no close analog exists
+  (the Amdt 6 lesson); (6) bracket width from history, widening with analog
+  distance, plus a tested "when in doubt, vote No" offset. Level and pattern
+  uncertainty sized separately (2026 ranges held 65% against a claimed 90%).
+  Protocol: rolling origin (through 2022 → 2024; through 2024 → 2026), scored
+  with `geofluid.scoring` relevel-then-RMSE plus coverage; n is small, so this
+  is method selection, not proof. New library code is test-first. Trigger:
+  certified 2026 results; the 2024 origin can start now.
 
-## Science (Module 1+)
+- **Solar wave, the remaining steps** (ingest and timing model done). (3) The
+  roads: borders vs Census commuting vs IRS migration vs TV media markets (no
+  Facebook data). (4) The clock test: sample solar every four years, as
+  elections do; if the wave disappears, that explains "no first domino".
+  (5) Back to politics: the same detector on GDELT daily county coverage and
+  dated local-option adoptions. Trigger: now (Dec 6 in the to-do).
 
-> The narrative across these findings is consolidated in `docs/FINDINGS.md`.
+- **Module 5: measure the order parameter before claiming a detector.**
+  From data we hold: (1) issue-party coupling over time (registered for
+  2026; provisional result: Amdt 3 HOLD, slope 0.77 vs 0.80); (2) dispersion
+  of `issue_resistance`
+  across counties per measure; (3) landslide-county share on the 1868-2024
+  spine; (4) the midterm-penalty distribution. Institutional-legitimacy inputs
+  (official turnover, concession behaviour, referee-override laws, rejection
+  language) need new ingests and NLP. Score the 2026 governance measures
+  (Amdt 6, the map referendum) as behavioural data points. Claim stays bounded:
+  "we measure the coupling every cycle", never "we will call the moment".
+  Trigger: after the certified scorecard; first deliverable a notebook for 1-3.
 
-- **PROVE A WAVE ON A KNOWN WAVE: rooftop solar (Matt, 2026-11-07).** Ideas
-  spread person to person; our election data says "the whole state moves at
-  once" because the clock is too slow (one snapshot per election) and because
-  we only looked along county borders. Test the engine on an idea that is
-  known to spread: home solar (Berkeley Lab *Tracking the Sun*, free, one
-  row per install with install date and ZIP code; peer effects shown by
-  Bollinger & Gillingham). Steps:
-  1. **Ingest** (TDD; acceptance against Berkeley Lab's own published install
-     counts): installs per county per quarter, per 1,000 households (ACS).
-  2. **The timing model** (the long-planned survival/hazard piece): when does
-     each county "take off", and did its neighbours take off first?
-  3. **The roads**: borders vs Census commuting flows vs IRS migration flows vs
-     TV media markets. Which one does the wave travel along? (No Facebook data.)
-  4. **The clock test**: sample the same solar data once every four years, as
-     elections do. If the wave disappears, that is direct evidence that
-     elections are too far apart to show a wave, which explains the abstract's
-     "no obvious first domino" finding.
-  5. **Bring it back to politics**: the same detector on GDELT's daily county
-     coverage (fast clock) and dated local-option adoptions (slow clock).
-  JIT trigger: now (Matt's pick for the MPSA paper).
+- **Persuadability as one per-county score.** Aggregate `issue_resistance`
+  across measures into a single trait, then optionally rank the targeting
+  engine on it instead of one measure's raw dissonance (a deliberate deploy
+  change). Missouri 2026 says it is mostly issue-specific (cross-measure median
+  r 0.09; same issue 0.68-0.74), so aggregate within issue families first.
+  Trigger: the bake-off's similarity weights.
 
-- **INFORMATION-ENVIRONMENT LAYER: heat, explanation, wording (Matt,
-  2026-11-04).** The engine's missing variable may be what voters knew when
-  they reached the question. Three parts:
-  1. **Heat (salience).** Hot, identity-linked issues (abortion) bring settled
-     opinions and single-issue voters, so a county's past vote carries forward.
-     Low-stakes issues ("should sheriffs be a constitutional office?") are
-     decided in the booth, so there is no stable county trait to carry.
-  2. **Explanation.** Was the meaning of YES/NO campaigned on? (Matt, as a
-     voter: Amendment 3's meaning was heavily advertised, the others' not.)
-  3. **Wording.** Double negatives, "YES keeps the law" referendums,
-     politician-written summaries. When voters are unsure, they tend to vote
-     No rather than skip (2026 roll-off was under 1% on every measure, yet NO
-     beat our calls on all five).
-  First evidence (provisional, 3 pairs, mixed electorates and time gaps):
-  share of the county gap that carried over between two votes on the same
-  issue in Missouri:
+- **Economic False Bastions, the county cut.** Missouri 2018 Prop B (minimum
+  wage) is already parsed by `parse_mo_canvass`; Florida 2020 Amendment 2
+  would add a second state. Shows the county gradient behind the state-level
+  −0.82 (which overstates; the residual is the honest version).
+  Trigger: the paper outline (Jan 10) if Finding 3 needs the county view.
 
-  | Issue | Gap carried over | r |
-  |---|---|---|
-  | abortion 2024 -> 2026 | 79% | 0.74 |
-  | minimum wage 2018 -> 2024 | 62% | 0.68 |
-  | Clean Missouri 2018 -> 2020 repeal | 30% | 0.44 |
-  | unrelated pair, for reference | 34% | 0.31 |
+- **Measurement design, build-order steps 3-6** (`docs/MEASUREMENT_DESIGN.md`):
+  (3) targeted county ingests chosen from `data/catalog/DESIGN_MATRIX.md` by
+  identification value (marriage 2004-2012, Medicaid expansion, cannabis,
+  minimum wage; NE 2024, SD 2006, WA 1998, CO 2006, FL 2024 as overlap assets);
+  (4) the ideal-point × cutpoint estimator, gated on matrix connectivity,
+  seed-free; (5) residual-diffusion test; (6) NLP content → cutpoint.
+  Trigger: each step's predecessor.
 
-  The Clean Missouri repeal is also the wording case: its 2020 summary led
-  with a gift ban and buried the redistricting change, and a court ordered it
-  rewritten. Data to collect:
-  - Official ballot text (MO SoS fair-ballot language; catalog measures where
-    available).
-  - Committee spending (Missouri Ethics Commission; other states' finance
-    portals).
-  - News volume per measure per week (GDELT, see the NLP section).
-  - Search interest by media market (Google Trends).
-  Measures to build:
-  - Simple wording features: reading level, negation count, YES = change vs
-    keep, length, loaded words.
-  - A meaning-similarity embedding of the ballot text (the first NLP task,
-    PyTorch + HF).
-  Tests:
-  - (a) Does gap persistence rise with heat across the catalog's repeated
-    issues (many more pairs than Missouri's three)?
-  - (b) Do quiet or confusingly worded measures drift toward No from their
-    partisan expectation?
-  - (c) Does picking past votes by text similarity beat the hand topic labels
-    in the method bake-off?
-  Payoff: the engine knows in advance how far to trust itself (tight ranges
-  and county history on hot, explained measures; party plus a No lean and wide
-  ranges on quiet ones; it would likely have caught Amdt 8 and Prop A). For a
-  campaign: on a quiet measure, explaining what YES means may be worth more
-  than persuading. Trigger: alongside the method bake-off; Missouri 2026 is
-  the first case study (results in hand; spending and coverage still to
-  collect).
+- **Module 4: the live surprise-field monitor.** `trend_surprise` plus spatial
+  coherence and axis detection; a better baseline than linear trend (it
+  overstates landslide years). GDELT is a candidate input.
+  Trigger: when Module 4 is scoped (after MPSA).
 
-- **LITERATURE CHECK before MPSA (2026-11-04).** Before the April 2027 talk
-  claims anything about False Bastions, issue resistance or ballot-measure
-  targeting, survey what is already published so nothing is presented as new
-  that is not:
-  - candidate-vs-measure divergence and ticket-splitting;
-  - state- and county-level opinion vs policy "incongruence";
-  - ballot-measure ideal-point and scaling work;
-  - post-2022 abortion-measure studies (KS, KY, OH, MI, MO);
-  - county forecasting methods (partisanship + demographics);
-  - spatial diffusion (Hui & Cho 2017 and what cites it).
-  Output: a short related-work note in `docs/` (citations, not copies; no
-  copyrighted PDFs committed) and an honest one-line positioning for the talk.
-  Expected positioning, to be confirmed or corrected by the check: the gap is
-  well known; what may be less common is treating it as a lasting county trait
-  that is forecast, turned into persuade / turn out / skip labels, and graded
-  in public before the vote. Provisional 2026 evidence for "lasting": about 80%
-  of the 2024 Amendment 3 county gap survived into 2026, and 25 of 27 red
-  bastions held. It is mostly issue-specific in Missouri (cross-measure median
-  r 0.09; `notebooks/mo_2026_scorecard.py` §9). Trigger: after the certified
-  scorecard, well before April.
+- **Module 2, refined paths.** Influence hubs were falsified twice. Open:
+  population- or metro-weighted scoring; a directed influence graph instead of
+  the antisymmetric pairwise score; and Matt's leading-signal hypothesis
+  (midterms, specials and ballot measures are a denser series than
+  presidential swing). Trigger: a high-frequency political series (GDELT, the
+  bake-off's Aug + Nov measure series).
 
-- **ENGINE METHOD BAKE-OFF: analogs vs averages vs trendlines (2026-11-04,
-  after the provisional 2026 scorecard).** Goal (Matt): learn how to make the
-  engine as good as it can be, choosing the method by honest backtest before the
-  next registration, never by tuning on the answer key. Provisional 2026 lessons
-  that motivate it: Amendment 3 (one close same-issue analog, abortion 2024) was
-  near-exact on level and 23% better than partisanship on pattern; the two level
-  misses (Amdt 8, Prop A) had weak/no precedent yet got brackets as narrow as
-  Amdt 3's; every measure shifted toward NO vs our call (incl. Amdt 6, whose
-  progressive side is YES, so not a pure Democratic wave); on Amdt 6 our analog
-  added ~0 over partisanship and On Point's demographic model beat our pattern.
-  Candidates, all fit on the ~21 certified MO measures 2018-2026
-  (`county_receipts_mo`):
-    1. **Single best analog** (the 2026 registered method), as the control.
-    2. **Flat average** of all past gaps. Already known not to beat
-       partisanship when pooled across issues; kept as a reference.
-    3. **Similarity-weighted ensemble**: every past measure, weighted by
-       closeness to the new question (topic, severity, electorate).
-    4. **County trendlines**: each county's gap over time, projected forward
-       (`realignment.trend_surprise` pointed at measure gaps instead of
-       presidential swing). Midterm and presidential electorates fit apart
-       (`history_buckets` already splits them); topic families fit apart or
-       topic-adjusted first; slopes shrunk toward neighbours' and the state's
-       (few points per county, so a raw 13-point slope is noise; the
-       neighbour pull is also the geo-fluid test). Pure vs DAMPED trend:
-       FINDINGS says realignments flicker rather than ratchet, so expect the
-       damped one to win; either result is a finding.
-    5. **Demographic fallback** (age, education, race, density) when no close
-       analog exists: the Amdt 6 lesson.
-    6. **Bracket width from history**: size each level range by how far past
-       Missouri results landed from their precedent, widening with analog
-       distance, and test for a standing "when in doubt, vote No" offset
-       (cross-check with roll-off, RUNBOOK step 8).
-  Protocol: rolling-origin backtest (data through 2022 -> forecast 2024; data
-  through 2024 -> forecast 2026), scored with the same `geofluid.scoring`
-  relevel-then-RMSE plus bracket coverage. Measure-level n is small (~5 per
-  origin), so report it as method selection, not proof. The winner is
-  registered for the next scored election and graded there. Also the densest
-  series we have (Aug + Nov, nearly every year), so it doubles as the first
-  look for a wave that four-year presidential snapshots alias away (see Module
-  2 notes). Trigger: certified 2026 results (December), which become the
-  second backtest origin's answer key; can start on the 2024 origin now. New
-  library code (damped trend, shrinkage, similarity weights) is test-first.
+- **Hybrid W.** Geography as the backbone plus one non-geographic edge,
+  education similarity (`attribute_knn_adjacency` blended with
+  `county_adjacency`). Also open from the horse race: permutation significance
+  and k-sensitivity. Trigger: when lag-model residuals show non-contiguous
+  structure.
 
-- **2026 PRE-REGISTERED PREDICTION EXPERIMENT — COMMITTED, CLOCK RUNNING
-  (2026-08-10).** Full protocol in `docs/MEASUREMENT_DESIGN.md` §7; researched
-  ballot landscape in `data/catalog/upcoming_2026.json`. Predict county-level
-  results for Nov 3 2026 measures and commit the predictions to main BEFORE the
-  election (git = notary): **MO Amendment 3** (repeal of 2024's abortion
-  amendment — same counties, 51.6% baseline, harsher cutpoint, midterm
-  electorate; the marquee), **NV Question 6** (identical text to 2024's 64.4% —
-  fixed cutpoint, isolates drift+turnout; calibration control), **MA Question 8**
-  (repeal of the operating rec-cannabis market; 2016 baseline 53.7%); stretch:
-  SD Amendment I + state-level VA/ID calls. Sequenced work with hard deadlines:
-    1. MO SoS county-level files — **DONE for the four historical elections
-       (2026-08-12)**: official canvass PDFs in `data/raw/` (Nov 2024, Nov
-       2018, Aug 2018, Aug 2020); scoping parse of Nov 2024 Amendment 3
-       reproduced the certified 51.60% exactly (117 jurisdictions: 114
-       counties + St. Louis City + **Kansas City reported as its own
-       jurisdiction spanning four counties — an explicit loader design
-       decision, the AK-districts class of geography question**).
-       STILL OPEN (Matt's do-out): **Aug 2026 primary county-level results
-       once MO certifies (~Sept 2026)** — the 2026-electorate calibration
-       set; unofficial county data earlier if the researcher finds it.
-       NV/MA past files if we pursue those at county level.
-    2. Loaders test-first, one at a time, each with certified-total acceptance
-       (Bugs #10–12). **MO LOADER DONE (2026-08-14)**:
-       `ingest/referendum.parse_mo_canvass` + `load_mo_referendum` (pdfplumber),
-       tested RED-first (canonical panel, comma numbers, multi-page sections,
-       Total-row integrity check, loud unknown-jurisdiction guard). Acceptance:
-       ALL EIGHT contests across the four canvasses match certified statewide
-       values to the decimal (2024 Amdt 3 51.60 / Prop A 57.57; 2018 Prop B
-       62.34 / Amdt 2 65.59 / Amdt 3 31.50 / Prop C 43.57; Aug-2018 Prop A
-       32.53; Aug-2020 Amdt 2 53.27), 116 jurisdictions each. Mapping policy:
-       Kansas City carries MIT's place-code convention "2938000" (spans four
-       counties; MIT presidential returns report KC separately too, so a KC
-       partisan baseline exists); canvass name aliases: "St. Louis"→29189,
-       "McDonald"→29119.
-    3. Prediction notebook (TDD-exempt EDA on tested library parts): county
-       positions from past measures + partisanship, explicit turnout
-       assumption + sensitivity, severity as a stated bracket. SCOPE WIDENED
-       (2026-08-14): predict EVERY MO November measure incl. the low-salience
-       referrals (Amdt 7 prosperity fund, Amdt 8 sheriffs — roll-off and
-       status-quo-bias modeling, humbler intervals; the anti-cherry-picking
-       move) and any litigation additions.
-    4. **REGISTERED 2026-10-14** (tag `registration-2026-11-03`): predictions
-       (5 x 116), statewide-only (NV Q6, MA Q8), receipts, record buckets,
-       propositions (pre-registered Wilcoxon test + Moran and turnout
-       diagnostics + coupling), raw-input manifest, sealed-playbook manifest;
-       freeze guard test re-hashes them on every pytest run. Final brackets:
-       Amdt 3 NO 48.5/55/59, Amdt 6 YES 50/62/70 (low ends widened at
-       registration on the implied-odds review), map NO 46/53/60, Amdt 7 NO
-       50/58/68, Amdt 8 NO 28/36/45, NV Q6 YES 58/63/68, MA Q8 NO 58/65/72.
-       Amendments = new dated file; the old one still gets scored. PLAYBOOK GENERATOR
-       DONE (2026-09-16): `targeting.build_playbook` (measure record + expected
-       votes + side -> oriented, re-bucketed, vote-priced, ranked plan) and
-       `playbook_budget_split` (persuasion pool = reachable votes in persuade
-       counties; turnout pool = votes at risk in turnout counties), both
-       TDD RED-first; `seal.sha256_manifest` / `verify_manifest` implement
-       the seal as a hash commitment (files in git-ignored
-       `data/predictions/sealed/`, digests committed in
-       `SEALED_MANIFEST_DRAFT_<date>.csv`). Notebook 6e writes all ten
-       playbooks (5 measures x 2 sides) and publishes only the bucket counts
-       and budget split per plan. REMAINING FOR THE FREEZE: Matt's bracket
-       review; copy every DRAFT (predictions, statewide-only, receipts,
-       record buckets, propositions, sealed manifest) to REGISTERED names;
-       keep the sealed/ folder safe OFF the repo (a second copy outside the
-       working tree) until December.
-    5. November/December: ingest certified results, score BOTH products
-       (predictions: per-county error, interval calibration, skill vs
-       partisanship-only baseline; playbooks: did flagged TARGET counties
-       carry the claimed headroom?), postmortem into FINDINGS.md win or lose,
-       then UNSEAL playbooks and assemble the viability dossier (receipt ->
-       scorecard -> playbook) -> the Geo Week 2027 centerpiece and the pitch
-       to real organizations. **SCORECARD TOOLING DONE (2026-09-29, TDD
-       RED-first, six tests):** `scoring.score_counties` / `score_summary`
-       (errors, RMSE, skill = 1 - RMSE_model/RMSE_baseline, 90% coverage),
-       `relevel` (logit shift to the certified statewide share - both model
-       and baseline are relevelled before comparison so the pattern grade is
-       independent of the level grade), `score_level` (bracket hit),
-       `coupling_slope` / `classify_coupling` (the registered Module 5
-       proposition). **ELECTION-NIGHT FETCH COMMITTED:**
-       `scripts/fetch_mo_enr.cjs` (parameterized race filter + output
-       prefix; smoke-tested 2026-09-29 against the Aug primary - byte-identical
-       to the Sept-14 fetch). December recipe: fetch -> parse_mo_enr_results
-       per measure -> a scoring notebook (TDD-exempt, on the tested scorer)
-       -> FINDINGS.md -> commit sealed/ files -> seal.verify_manifest.
-  LITIGATION RESOLVED (2026-09-03): the Missouri Supreme Court unanimously
-  reversed the SoS's 2026-08-04 rejections and ordered BOTH onto the Nov 3
-  ballot — **Amendment 6** (Respect Missouri Voters: 80% legislative
-  supermajority + statewide ratification to alter voter-approved
-  initiatives) and the **Congressional Map Referendum** on HB 1 (YES upholds
-  the 2025 map, NO repeals it; HB 1 is suspended so November runs on the
-  2022 map). The MO slate to predict is now FIVE measures: Amdt 3 (marquee),
-  Amdt 6, Amdt 7, Amdt 8, and the map referendum. Both new ones are
-  governance/rules-of-the-game topics with no county-level MO precedent
-  (nearest calibration: Aug-2026 Amdt 4 crushed ~80-20 — the same
-  direct-democracy axis as Amdt 6, opposite orientation). Catalog entries
-  updated in `data/catalog/upcoming_2026.json`.
-  CANVASS STATUS (2026-09-14): the Board of State Canvassers certified the
-  Aug 4 primary on 2026-08-25, but the county-level canvass PDF
-  (`ActualResults-August42026.pdf`) was STILL unposted 41 days out (past
-  lag was 17-30 days). WORKAROUND SHIPPED: the same certified numbers are
-  served by the SoS Election Night Results portal (enr.sos.mo.gov, "Pick a
-  Race"); Cloudflare blocks headless Chromium and plain curl but lets a
-  Playwright `channel: "chrome"` session with `AutomationControlled`
-  disabled through (scrape script pattern: select race, click Submit, read
-  the County/YES/NO table). `ingest/referendum.parse_mo_enr_results`
-  (TDD, RED-first) parses the page text with the statewide YES/NO block as
-  the Total-row integrity check; acceptance: all four Aug-2026 amendments
-  reproduce the portal's certified statewide shares (82.292 / 76.911 /
-  19.677 / 16.687 yes), 116 jurisdictions each; portal spells "De Kalb"
-  (alias added). Raw texts: `data/raw/enr_mo_20260804_amendment_{1,2,4,5}.txt`.
-  When the PDF finally posts, cross-check it against the ENR panel.
-    3a. **PREDICTION NOTEBOOK DRAFTED (2026-09-14)**:
-       `notebooks/mo_2026_predictions.py` -> `data/predictions/mo_2026-11-03_DRAFT_<date>.csv`
-       (580 rows = 5 measures x 116 jurisdictions; columns documented in
-       `data/predictions/README.md`). Data: 21 certified MO measures
-       2018-2026 (13 general incl. 6 newly parsed contests from the Nov-2018
-       / Nov-2020 / Nov-2024 canvasses, 4 past primaries, 4 Aug-2026 via
-       ENR) + 2018 U.S. Senate as the midterm partisan baseline (ad hoc
-       parse, certified totals reproduced exactly). MODEL CHOSEN BY
-       LEAVE-ONE-OUT BACKTEST (statewide level given): partisanship-only
-       county RMSE 3.69 pp; the pooled ideal-point position does NOT beat it
-       (3.80); partisanship + 0.5 x same-issue analog residual wins (3.39
-       over measures with an analog, vs 3.76) - and only true-sibling
-       analogs help (minwage 18->24, sportsbet->casino, minwage->abortion),
-       flavor guesses hurt. Registered model = partisanship slope from the
-       analog's era + k=0.5 analog residual, levelled to an EX-ANTE
-       statewide bracket per measure (Amdt 3 pro-rights NO 51.5/55/59;
-       Amdt 6 YES 55/62/70; map referendum NO 46/53/60; Amdt 7 NO 50/58/68;
-       Amdt 8 NO 28/36/45), 2018-midterm county turnout weights (2024
-       variant carried as sensitivity), 90% intervals = bracket carried
-       through the pattern or +/-1.645 x backtest pattern RMSE, whichever
-       wider. TO DO BEFORE REGISTRATION: Matt reviews the five brackets;
-       decide whether NV Q6 / MA Q8 get state-level-only rows; then copy to
-       `mo_2026-11-03_REGISTERED_<date>.csv` and commit by 2026-10-15.
+- **SEM half of the SAR honesty check.** The Durbin half is done (ρ holds
+  controlling for neighbours' demographics). The spatial-error model is
+  unidentified at zero noise, so the seed-free recovery pattern fails; it
+  needs a property over noise draws or an analytic special case. Until then,
+  describe ρ as "transmission not explained by own or neighbours'
+  demographics", not bare "contagion".
 
-- **BALLOT-LANGUAGE FEATURES AS A LEVEL COVARIATE (Matt, 2026-10-13) - the
-  NLP phase's first concrete job.** Confusing verbiage (net neutrality is
-  the famous case; MO 2024 Amendment 3's court-rewritten summary the local
-  one) shifts a measure's statewide level toward NO and raises roll-off,
-  roughly uniformly across counties. Today that enters the brackets as
-  judgement only. Training set: the 271-measure catalog
-  (`data/catalog/ballot_measures.csv`) with each measure's status-quo lean as
-  the signal; candidate text features: repeal / double-negative framing
-  ("a NO vote keeps..."), length, reading level, number of subjects. First
-  deliverable: a notebook testing whether those features explain residual
-  statewide level after topic and severity, on PAST measures; only then a
-  covariate. Post-November: report roll-off per 2026 measure as the
-  confusion measurement. JIT trigger: after the December dossier, with the
-  PyTorch/Hugging Face plan in [[feedback-pytorch-nlp]] memory.
+- **Deep time, next.** County-level historical referenda (prohibition, the one
+  complete rise-and-fall idea wave; women's suffrage), NHGIS decennial
+  demographics (separates persistence of people from replacement of people;
+  also sharpens the education-channel and Module 4 results), and a public
+  "rabbit hole" page on the Populist → New Deal story. Trigger: after MPSA.
 
-- **MODULE 5 SEED: MEASURE THE ORDER PARAMETER BEFORE CLAIMING A DETECTOR
-  (Matt + Claude, 2026-09-15).** The spec's Module 5 is a structural
-  early-warning for a losing faction rejecting the process: convergence +
-  acceleration of (a) cross-cutting-cleavage indicators (geographic sorting,
-  landslide counties, shared-space measures) and (b) institutional-legitimacy
-  indicators (officials resigning, concession refusal, rules-of-the-game
-  laws, rejection language). January 6 is the spec's worked example - NOT as
-  unpredictable human behaviour but as a signature that started years
-  earlier. Our findings (change is hard to predict; realignments flicker)
-  say: earn the detector by measuring its inputs faithfully first.
-  Order parameters computable from data we already hold:
-    1. **Issue-party coupling** - the partisan slope of each issue vote,
-       tracked over time (2024 abortion = steepest we hold). Steepening that
-       persists = ballot measures collapsing into party-line votes = the
-       cross-cutting cleavage closing. PRE-REGISTER with the Oct-15 file:
-       "2026 Amdt 3 slope >= 2024's" plus the same for every measure with a
-       same-issue predecessor (steepen / hold / relax).
-    2. **False-Bastion dispersion** - the spread of issue_resistance across
-       counties per measure; shrinking spread = fewer places where opponents
-       still share ground.
-    3. **Landslide-county share** on the 1868-2024 spine (the spec's own
-       example metric; we can compute it for 40 elections tonight).
-    4. **Midterm penalty distribution** - whether turnout asymmetry is
-       widening between the two coalitions' counties.
-  Institutional-legitimacy inputs need NEW ingests (election-official
-  turnover, concession behaviour, referee-override statutes; NLP layer for
-  rejection language = the parked PyTorch phase). The 2026 MO governance
-  measures (Amdt 6 initiative protection; HB 1 map referendum) are the first
-  BEHAVIOURAL data points on voters' response to referee-override moves -
-  score them as such in December. Product claim is bounded: "we measure the
-  coupling every cycle and say, with receipts, whether the ground shifted or
-  only the weather" - never "we will call the moment". JIT trigger: after the
-  December dossier; first deliverable = a notebook computing 1-3 over time.
+- **Internationalization.** Mexico is a portability demo for MPSA, deliberately
+  small: one loader matching INE's certified totals, one map (Dec 6 in the
+  to-do). Beyond the demo: Switzerland as the estimator's validation bench
+  (municipal referenda since 1848); a multiparty partisan baseline (party-bloc
+  or left-right composites); per-country boundary crosswalks; a documented
+  free-and-fair data-quality gate. Trigger: after MPSA.
 
-- **NON-POLITICAL DOMAINS (e.g. real estate) - PARKED, POST-NOVEMBER
-  (Matt, 2026-09-15).** The engine's analytical core is domain-agnostic
-  already: `spatial/weights`, `moran`, `lag` (SAR), `leadlag`, and
-  `realignment.trend_surprise` take any fips-indexed value x time and a
-  geography. What is political is the ingest layer (loaders, the
-  `progressive_side` orientation), the semantic layer (`dissonance`,
-  `issue_resistance`, `targeting`), and the frontend copy. A real-estate
-  pilot (e.g. Zillow ZHVI / FHFA HPI by county or ZIP, monthly) would need:
-  one loader to the canonical `fips x period x value` shape, a generic
-  "outcome" name in place of progressive_share, and a domain-neutral map
-  view. The denser cadence (monthly, not quadrennial) actually suits the
-  diffusion / lead-lag machinery better than elections do - the Module 2
-  lead-lag retry might succeed there where it was falsified on swing.
-  JIT trigger: after the November scorecard and the December dossier; the
-  first deliverable would be a horse-race notebook (does neighbour lag
-  predict a county's price change one period ahead?), not a product.
+- **Non-political domains** (e.g. real estate). The analytical core is
+  domain-agnostic; a pilot needs one loader to `fips × period × value`, a
+  generic outcome name and a neutral map view. Monthly data suits the
+  lead-lag machinery better than elections. Parked; first deliverable would
+  be a notebook, not a product.
 
-- **INTERNATIONALIZATION — SCOPED, POST-REGISTRATION (2026-08-14).** The
-  engine's objects (geographic units × direct issue votes × partisan baseline
-  × time) are country-agnostic; two targets chosen, both JIT-gated on the
-  2026 registration shipping first:
-  (a) **Switzerland as the estimator's validation bench** — quarterly national
-  referenda since 1848, ~600+ votes at municipality level (swissvotes.ch /
-  BFS, machine-readable), same topics revisited for decades: the densest
-  county×measure×time matrix on Earth. Validate the ideal-point/cutpoint
-  estimator where identification is easy before trusting it on sparse US data.
-  (b) **Mexico as the first foreign loader** — INE municipal-level data,
-  morena's 2018 realignment as a trend_surprise showcase, consultas populares
-  (with their quorum/turnout quirks documented); doubles as Matt's Year-0
-  geography. KNOWN REWORK: the partisan baseline must generalize from
-  two-party share to party-bloc/left-right composites (multiparty systems) —
-  the biggest engineering lift; boundary crosswalks per country; and the
-  free-and-fair prerequisite is a documented data-quality gate (the same rule
-  that quarantined the post-1890 US South in the rhyme notebook).
+## NLP / text
 
-- **CAMPAIGN MONEY AS A MEASURE-LEVEL COVARIATE — SCOPED (2026-08-14).**
-  Today spending is an acknowledged confound absorbed into estimated cutpoints
-  (MEASUREMENT_DESIGN.md honest limits). Upgrade path:
-  (1) enrich the catalog with `support_spend` / `oppose_spend` columns — a
-  research-agent job; Ballotpedia summarizes committee spending on the very
-  pages our `source_url` column already cites (state ethics filings for
-  depth). (2) Then the decomposition becomes testable: does money shift
-  outcomes BEYOND what severity + county positions predict, and is it
-  asymmetric (the Gerber finding: one-sided NO money defeats measures far
-  more effectively than YES money passes them — PG&E's Prop 16 lost 400:1
-  outspent; Prop 22 won at $200M; both belong in the test)? Level shift vs
-  county-gradient shape change is also testable with our machinery.
-  (3) For the 2026 marquee: Missouri Ethics Commission quarterly + 8-day
-  filings let us watch Amendment 3 war chests build in real time — the
-  registered prediction states its spending assumption explicitly, and the
-  postmortem grades it. HONESTY GATE: spending is endogenous (money chases
-  close races); we measure and control, we do not claim clean causality.
-
-- **DEEP-TIME ARC OPENED — Gilded Age rhyme test DONE (2026-08-14).**
-  `notebooks/gilded_age_rhyme.{py,ipynb}` (TDD-exempt, on the 1868–2024 spine):
-  1892 Populist share (third-party lens — `dem_share_2p` is blind to Weaver)
-  does NOT correlate with 1912 Progressivism (r ≈ −0.08) but predicts the 1932
-  New Deal break at r = +0.38 non-South (+0.28 with a 1928-free baseline: the
-  Al Smith anomaly explains part, not all). The reservoir discharged in 1932;
-  1936 re-target ≈ 0 for the mechanical re-baselining reason documented in the
-  notebook. 2016 echo +0.28 but silver-county-confounded. Summarized in
-  FINDINGS.md §8. NEXT in the arc (JIT, after the 2026 registration): (a)
-  county-level historical REFERENDA — prohibition (the only complete
-  rise-AND-fall idea wave, 1880s→1919→1933 repeal) and women's suffrage
-  (repeat-vote states) — scoping is a catalog-agent job; (b) NHGIS decennial
-  demographics (long-deferred, now doubly justified) to separate
-  persistence-of-people from replacement-of-people; (c) a public "rabbit hole"
-  explainer page telling the Populist→New Deal reservoir story for lay readers
-  (demo.html pattern; candidate second act for the Geo Week narrative).
-
-- **Ballot-measure measurement design — DOCUMENTED, NOT BUILT (2026-08-10).**
-  `docs/MEASUREMENT_DESIGN.md` is the full design: county ideal points ×
-  measure cutpoints (IRT — severity *estimated*, not hand-coded;
-  `progressive_side` is its one-bit degenerate case), identification via
-  overlap structure (same-ballot pairs → severity; repeated measures → drift;
-  demographics controlled from ACS; diffusion = spatially structured residual,
-  tested with Moran's I on estimator residuals), ex-ante prediction via
-  content→cutpoint placement (brackets + severity-slider product shape), and
-  topic dimensionality as a *tested hypothesis* (our False Bastions already
-  imply ≥2 axes; is r≈0.62 within-cluster or general?). Build order with JIT
-  triggers is in the doc: (1) statewide catalog + design matrix — DONE
-  (2026-08-10, see Data section); (2) measure metadata table — DONE
-  (2026-08-10): `geofluid.catalog.load_measure_catalog`, tested (schema,
-  dtypes, unique-id + closed-vocabulary validation, 100% branch) with a
-  real-data acceptance test against certified KS/OH landmarks;
-  (3) targeted county ingests by identification value (priority corpora:
-  marriage amendments 2004–2012, Medicaid-expansion initiatives, cannabis
-  wave, FL/MO minimum-wage county cuts); (4) the estimator — gated on matrix
-  connectivity, seed-free per contract; (5) residual-diffusion test; (6) NLP
-  content→cutpoint. Supersedes nothing — it *sequences* the open Module 2
-  path-b and economic-bastion items below.
-
-- **Issue-resistance trait PROMOTED to tested library (2026-06-28).**
-  `dissonance.issue_resistance` is the partisanship-controlled residual (OLS of
-  progressive on partisan share — the rigorous "defies its partisan peers", vs the
-  raw dissonance gap the map/targeting engine still use); the Ohio generality
-  notebook now calls it. STILL OPEN (path-b step toward the product): aggregate it
-  ACROSS measures into one per-county persuadability score (only Ohio has
-  overlapping measures today — waits on more same-geography measures), then
-  optionally rank the targeting engine on the aggregate trait instead of
-  single-measure raw dissonance (a deliberate deploy change, not yet warranted).
-
-- **Economic-axis False Bastions — STATE-LEVEL CUT DONE (2026-06-28).**
-  `notebooks/minimum_wage_economic_bastions.{py,ipynb}` (TDD-exempt): 10 verified
-  statewide minimum-wage measures (2006–2020) vs each state's presidential partisan
-  lean (our county returns). Economic dissonance = Yes share − Dem two-party share.
-  Finding: every measure passed ABOVE its partisan lean (mean +15pts); corr(lean,
-  dissonance) = −0.82 — poorest, reddest states (MO, AR, NE) crossed party hardest
-  for a raise (+20–31pts), blue states sit on their line. Inverts "What's the
-  Matter with Kansas": the abortion False-Bastion pattern on the economic axis,
-  pointing the other ideological direction. CAVEATS: N=10 verified subset,
-  state-level/ecological, selection bias, static income. NEXT (JIT): the
-  within-state COUNTY cut — ingest Florida 2020 (Amendment 2) and/or Missouri 2018
-  (Prop B) via the `referendum` loader pattern (Matt grabs the SoS file) to show
-  the county-level gradient AND add a genuinely off-cluster economic measure to the
-  issue-generality test.
-
-- **Education channel is EPISODIC — TEMPORAL CUT DONE (2026-06-28).**
-  `notebooks/education_channel_over_time.{py,ipynb}` (TDD-exempt; uses
-  `attribute_knn_adjacency` + `morans_i`): global Moran's I of residual swing per
-  election under geographic vs demographic-similarity networks. Education's
-  organizing power of swing: 0.13 (2004/08) → 0.02 (2012) → 0.34 (2016) →
-  0.32 (2020) → 0.05 (2024); geography steady 0.50–0.74 throughout. The
-  diploma-divide was the defining axis of the 2016/2020 SWINGS, not a permanent
-  remap — it flickered off in 2024 (a broad, non-education-patterned shift). This
-  strengthens the Module 5 (phase transition) case: realignments are episodic
-  regime events to detect, not a monotonic trend. Caveat: static modern
-  demographics applied to all years; time-resolved NHGIS demographics would
-  sharpen it.
-
-- **Module 4 (Chaos Sensor) — SEED DONE (2026-06-15).** `realignment.trend_surprise`:
-  per-county residual from its own linear trend over the trailing window of
-  presidential elections, extrapolated one ahead (actual − predicted). Tested
-  seed-free (residual math, min-obs/missing-target exclusion, no-future-leakage).
-  Showcase EDA notebook (`notebooks/realignment_1964_vs_2016.{py,ipynb}`, jupytext
-  + paired executed .ipynb) over the 1868–2024 spine: 1964 reads as an almost-
-  purely-REGIONAL break (median surprise 22.9pts, Moran's I 0.89, −0.58 with
-  South); 2016 layers a NEW education cleavage (~0.36 with college share) on top
-  of a still-regional map (~0.39) — an axis added, not swapped. The real-data run
-  was itself an acceptance run: it caught + fixed a silent `read_json` FIPS
-  leading-zero coercion (NaN'd the whole education axis) and corrected prose that
-  overstated a clean region→education dichotomy. (Notebooks are TDD-exempt — they
-  lean on the tested `geofluid` library.) STILL TO COME: spatial-coherence + axis
-  detection wired into a live "surprise field" monitor (the actual Module 4
-  product); the linear-trend baseline is deliberately simple (overstates landslide
-  years like 1964); time-resolved education (NHGIS decennial) rather than ACS-2024
-  as a static county trait.
-
-- **Module 2 node classification — FIRST ATTEMPT FALSIFIED (2026-06-15).**
-  Built `county_influence` (conformity = co-movement with neighbourhood;
-  volatility) + `classify_nodes` (Buffer/Bastion/ordinary/unknown), tested.
-  The real-data acceptance falsified the contemporaneous-conformity approach:
-  96% "buffer", spec's Pulaski bastion → buffer, "bastions" were tiny noisy
-  counties. Root cause: swing is so spatially autocorrelated that everyone
-  co-moves — conformity can't separate roles. NOT wired to the map. Paths
-  forward: (a) a temporal LEAD-LAG method to split Bellwether (leads) from
-  Buffer (follows) — needs more elections than 7, so likely gated on the
-  historical-returns extension; (b) define the Bastion via issue-resistance
-  (the dissonance metric) rather than swing co-movement, which may match the
-  spec's meaning better. The `county_influence` primitives stay as tested
-  building blocks for whichever path we take.
-
-- **Module 2 lead-lag retry — SECOND FALSIFICATION (2026-06-18).** Built
-  `spatial/leadlag.lead_lag` (path (a) above): per-county
-  `corr(own swing(t), neighbourhood(t+1)) − corr(own swing(t), neighbourhood(t−1))`
-  — positive leads, negative follows. Tested seed-free (deterministic
-  leader/follower construction; sparse / island / constant-series exclusions; an
-  antisymmetry property), 100% branch coverage. Acceptance run on the full 40-
-  election spine (`notebooks/leadlag_node_roles.{py,ipynb}`, TDD-exempt):
-    - The GOOD news — timing recovers a distinction conformity could not:
-      contemporaneous conformity collapses (median 0.94, 100% > 0.5, the attempt-#1
-      disease), while lead-lag SPREADS (49% lead / 51% follow, std 0.13). The
-      *information* is there.
-    - The bad news — it's not a usable Bellwether map: signal weak (median ≈ 0);
-      spatially incoherent (Moran's I ≈ −0.14, and that negativity is partly
-      MECHANICAL — within a pair, if I lead you then you follow me, so the metric's
-      own antisymmetry pushes neighbours to opposite signs and Moran's I isn't even
-      a clean coherence test for it); and the strongest "leaders" are small,
-      idiosyncratic counties (VA independent cities, Broomfield CO — created 2001 so
-      its history is backfill, sparse UT/SD counties), not the metros change
-      radiates from. Not a simple volatility artefact (corr ≈ 0); a mild thin-data
-      pull (corr |score| vs #elections ≈ −0.22). NOT wired to the map.
-  REFINED paths forward (supersede (a)): population-/metro-weighted or -restricted
-  scoring (candidate hubs); a DIRECTED influence graph instead of a symmetric
-  pairwise score (whose antisymmetry forces the checkerboard); or path (b), the
-  issue-resistance route via the dissonance metric. `lead_lag` stays a tested
-  primitive for whichever we take next.
-
-- **Module 2 path (b) issue-resistance — FIRST POSITIVE RESULT (2026-06-24).**
-  `panel/measures.build_measures_panel` (tidy `fips × measure_id` panel +
-  orientation-corrected `progressive_share`) feeds two analysis notebooks
-  (TDD-exempt) over the KS/KY/OH abortion + OH cannabis measures:
-    - `notebooks/issue_resistance_starter.{py,ipynb}` — across the three (disjoint)
-      states, the False Bastion is a near-UNIFORM offset (every county ~13–19 pts
-      ahead of its Dem share on abortion; slope 0.90–0.96, big positive intercept),
-      NOT a sharp county gradient (resistance-vs-partisanship corr only −0.10 to
-      −0.23). Issue resistance separates measure-from-party cleanly but not
-      counties-from-each-other — the same weak-localization wall swing hit.
-    - `notebooks/issue_generality_ohio.{py,ipynb}` — the disjoint-geography limit
-      pointed to OH's two same-ballot issues (abortion + cannabis, same 88
-      counties, identical turnout). Partial correlation (residualize each issue's
-      share on partisanship, then correlate residuals — the rigorous test; naive
-      shared-partisanship differencing is confounded): **r ≈ 0.62**. Resistance is
-      a stable CROSS-issue county trait — the first county-level structure the
-      module has found, and modellable where swing was not.
-  CAVEATS: one state, one ballot, N=88; abortion + cannabis share a "personal-
-  liberty" flavor, so this may be libertarian-cluster generality, not fully
-  general. NEXT (JIT): (1) an OFF-cluster same-ballot pair (an economic measure
-  beside a social one) to test whether the generality is broad or libertarian-
-  specific; (2) more multi-issue states to see if r ≈ 0.62 holds; (3) IF it holds,
-  promote "issue resistance" from a notebook residual to a tested library trait
-  and map it — the real Module 2 path-(b) product.
-  - PARTIALLY DONE (2026-06-28): step (3)'s building block shipped —
-    `dissonance.issue_resistance` is the tested per-measure trait (OLS residual of
-    progressive on partisan share; the rigorous "defies its partisan peers", vs
-    the raw dissonance gap the map/targeting engine still use). The generality
-    notebook now calls it. STILL OPEN: aggregate it ACROSS measures into a single
-    per-county persuadability score (only Ohio has overlapping measures today, so
-    this waits on more same-geography measures — steps 1/2), then optionally rank
-    the targeting engine on the aggregate trait instead of single-measure raw
-    dissonance (a deliberate deploy change, not yet warranted).
-
-- **Prescriptive layer (spec Stage 4) — FIRST TOUCH SHIPPED (2026-06-26).**
-  `targeting.build_itinerary` (tested, seed-free, 100% branch coverage) +
-  `spatial/distance` turn a county issue signal + a home county into a ranked,
-  classified campaign itinerary (TARGET / BASE / HARD), shipped as a PUBLIC demo
-  page (`web/public/demo.html`, built by `scripts/build_targeting_demo.py`) linked
-  from the live app's "The art of the possible" button. Walkthrough in `docs/DEMO.md`.
-  Deliberately stage one — the pipeline and the signal are proven; the product is
-  not finished. ROADMAP (the sequenced next work):
-    1. **More issues/states** — each is a small loader into the existing pipeline;
-       the engine is already data-source-agnostic. Unlocks targeting beyond KS.
-    2. **A persuadability score that travels** — promote the issue-resistance
-       residual (r ≈ 0.62 finding) to a tested per-county trait the engine can
-       rank on directly, not just one measure's dissonance.
-    3. **Real drive-time routing** — replace straight-line miles with a road
-       network / isochrones; order the itinerary as an actual route, not a list.
-    4. **In-map prescriptive mode** — fold the itinerary into the live Mapbox app
-       (goal picker → highlighted targets + ranked panel), retiring the static
-       demo page. Frontend logic that grows here gets Vitest (contract rule 7).
-    5. **Tunable thresholds + goals** — base/target cutoffs are fixed constants
-       today; expose them, and add the other organizer intents (turnout, defense)
-       beyond persuasion.
-    6. **Similarity-network diffusion (research) — FIRST CUT DONE (2026-06-28).**
-       `spatial/weights.attribute_knn_adjacency` (tested) builds a non-geographic
-       network from demographic similarity, drop-in to the Moran/lead-lag
-       machinery. Horse-race EDA (`notebooks/diffusion_network_horse_race.{py,
-       ipynb}`) over residual swing (county swing − national mean), 2004–2024:
-       **geography decisively wins** (Moran's I 0.62 vs best demographic net 0.28,
-       education 0.17) — similarity does NOT beat borders for presidential swing,
-       so "ideas hop metro-to-metro" is not the story and swapping networks does
-       not rescue the falsified lead-lag. BUT among demographic axes **education
-       leads and survives the collinearity control** (Layer-2 unique variation:
-       education 0.08 > income/urbanicity/age); urbanicity was partly education in
-       disguise (corr 0.48). NEXT: permutation significance; per-year (1964/2016
-       likely differ); k-sensitivity; and feed the result into Hybrid W below.
-
-- **Hybrid W**: blend queen adjacency with connectivity per the spec's W_hybrid.
-  Trigger: when the lag model's residuals show non-contiguous structure. NOW
-  EVIDENCE-BACKED (2026-06-28): the diffusion horse-race says keep geography as
-  the backbone and add ONE non-geographic edge — **education similarity** (it
-  carried the most co-movement beyond geography and survived controlling for
-  income/urbanicity/age). `attribute_knn_adjacency` is the constructor; a hybrid
-  would blend it with `county_adjacency` (e.g. row-normalized convex combination).
-
-## NLP / text (future phase)
-
-- **GDELT as the media/sentiment source for Module 4 (Chaos & Anomaly)
-  (Matt, 2026-11-04).** The GDELT Project (https://gdeltproject.org/) publishes
-  a free, worldwide catalog of web news: events, the Global Knowledge Graph
-  (people, organisations, places, themes per article) and a tone score per
-  article, updated every 15 minutes, queryable in Google BigQuery. Not
-  exhaustive, but one free place to mine. Why it fits:
-  - **Module 4:** a daily media-attention / tone series per place and theme is
-    a candidate input to the surprise-field monitor (does coverage or tone
-    shift before a county's vote surprises?).
-  - **The aliasing hypothesis (Module 2 notes):** a daily series is the
-    opposite of four-year snapshots; it may be fast enough to see a wave move.
-  - **Portability:** worldwide coverage, so the same source works for the
-    Mexico demo and beyond.
-  Caveats to check before trusting it:
-  - Coverage of an issue is not public opinion, and national outlets
-    dominate.
-  - Tone is a dictionary-based score, and non-English text is machine
-    translated.
-  - Place names are geocoded automatically, often only to city or state
-    level, so county resolution needs an acceptance test against known
-    events (the Bugs #10-12 rule applies to any ingest).
-  - BigQuery's free tier has a monthly query limit and GDELT's tables are
-    huge, so queries must be partition-filtered and the cost checked before
-    any run.
-  The PyTorch/HF decision below still applies if we compute our own tone
-  instead of using GDELT's. Trigger: when Module 4's live surprise-field
-  monitor is scoped.
-
-- **NLP stack decision — PyTorch + Hugging Face `transformers` (agreed
-  2026-06-15).** When the project reaches a text/NLP phase, default to PyTorch +
-  HF rather than alternatives (Matt's call; it's the right modern NLP stack and a
-  deliberate portfolio signal). Candidate tasks, none scoped yet: embedding ballot-
-  measure / platform / speech text to track how *ideas* (not just vote share)
-  diffuse across counties; issue/topic classification feeding Module 3 dissonance
-  real text instead of proxies; semantic-similarity to detect a new cleavage
-  forming. Architecture is chosen once the task is pinned — **JIT: don't build
-  ahead of the trigger.**
-  Constraints, recorded so they aren't rediscovered:
-  - Fits the no-seed TDD rule best via **inference in `eval()` mode** (deterministic
-    → satisfies the reproducibility-contract rule, not seed-value snapshots).
-    Embeddings / zero-shot / similarity are inference, not training.
-  - If fine-tuning: test pipeline contracts (tokenization, tensor shapes, label
-    maps, pre/post-processing) plus a noise-free property ("overfit a tiny batch →
-    loss → ~0"), never an asserted seeded loss value.
-  - Dependency/CI weight: torch is GB-scale; pin CPU-only wheels and watch
-    `uv lock --check` + pip-audit. Treat model **inference as an offline build step**
-    (like `scripts/export_web_data.py`), not inside the coverage-gated unit path.
-  - Trigger: a defined text-analysis need (most likely real ballot-measure / platform
-    text to deepen Module 3), plus the text data to ingest.
-  - TRIGGER NOW HAS A SHAPE (2026-08-10): content→cutpoint prediction — embed
-    ballot-measure text, learn the mapping to estimated severity cutpoints from
-    past measures, place NEW measures ex ante (`docs/MEASUREMENT_DESIGN.md` §3).
-    Still JIT: fires only after the estimator produces ex-post cutpoints to
-    train on (build-order step 6).
+- **GDELT** (free worldwide news catalog, themes and tone, every 15 minutes,
+  BigQuery). Uses: the information-environment layer, Module 4, the aliasing
+  hypothesis, Mexico. Check before trusting: coverage is not opinion; tone is
+  dictionary-based and non-English text is machine translated; geocoding is
+  often city or state, so county resolution needs an acceptance test against
+  known events; BigQuery's free tier needs partition-filtered, costed queries.
+  Trigger: the information-environment data step (Dec 13).
+- **Stack: PyTorch + Hugging Face** (agreed 2026-06-15). Inference in `eval()`
+  mode satisfies the reproducibility contract; fine-tuning tests pipeline
+  contracts plus "overfit a tiny batch → loss near 0", never a seeded loss
+  value. Pin CPU-only wheels; run inference as an offline build step, outside
+  the coverage-gated unit path. First jobs: ballot-text features and
+  content → cutpoint. Trigger: the information-environment features.
 
 ## Data
 
-- **Ballot-measure CATALOG — DONE (2026-08-10).** Step 1 of
-  `docs/MEASUREMENT_DESIGN.md` shipped: `data/catalog/ballot_measures.csv` —
-  **271 statewide measures, 1996–2025**, across the five priority corpora
-  (cannabis 74, labor 58, marriage 45, abortion 44, healthcare 50), each
-  Ballotpedia-verified (state, date, election type, yes_pct, outcome,
-  progressive_side, severity note, same-ballot companions, source URL).
-  `data/catalog/DESIGN_MATRIX.md` (auto-generated by
-  `scripts/assemble_measure_catalog.py`) computes the overlap structure:
-  **59 same-ballot multi-measure ballots, 50 of them CROSS-TOPIC** (vs. the
-  single Ohio 2023 pair all prior analysis rested on), and **59 repeat
-  state-topic geographies**. Standout identification assets: NE 2024 (5
-  measures incl. COMPETING abortion amendments), SD 2006 (abortion ban +
-  marriage + cannabis same ballot), WA 1998 (abortion + cannabis + minimum
-  wage), CO 2006 (4 measures incl. opposed marriage pair), MO 2018/2024,
-  FL 2024 (abortion + cannabis, both 60%-threshold failures). NEXT (step 3
-  of the build order, after the metadata table): pick the first county-level
-  ingests FROM the design matrix — each a per-state SoS loader with
-  certified-total acceptance (Bugs #10–12), one at a time.
+- **Ballot-measure ingests still on the starter list:** Michigan 2022 Prop 3
+  (the blue end of the abortion contrast); Missouri 2022 Amendment 3
+  (cannabis). Trigger: when a test needs them.
+- **Midterms** (district → county crosswalks, uncontested races). Trigger:
+  when the hazard model needs a two-year cadence.
+- **Connecticut crosswalk** (planning regions ↔ old counties, retiring the
+  ACS-2021 patch). Trigger: when CT demographics matter to an analysis.
 
-- **Ballot measures ingest — STARTER SET SCOPED + IN PROGRESS (2026-06-18).**
-  County-level, per-state SoS sources; Kansas Aug 2022 done. The two Module 2
-  falsifications (see Science) showed presidential swing is too synchronized/sticky
-  to localize influence; Matt's hypothesis is that cleaner single-issue contests
-  are the better signal (see the project memory). So this ingest is now the
-  highest-leverage move — it unblocks BOTH the issue-resistance route (Module 2
-  path b) AND a future lead-lag retry on single-issue contests. The decisive
-  reason: influence/resistance is a *multi-observation* structure — one measure
-  (N=1) has no structure to find, so we need variation across issues/states/time
-  to model on (the same depth lesson the 40-election spine taught lead-lag).
-  Starter set — same issue (abortion) across partisan contexts + one off-issue,
-  ingested ONE AT A TIME, each test-first + a real-data acceptance run vs the
-  certified statewide total (Bugs #10–12 pattern), reusing the `referendum.py`
-  pattern (each state's SoS file format differs — the KS loader is KS-specific):
-    1. **KS** Aug-2022 abortion (red; pro-choice won) — DONE, the anchor.
-    2. **KY** Nov-2022 Amdt 2 (deep red; "NO" won, preserving rights) — DONE
-       (2026-06-24). `load_ky_referendum` (KY SoS plain-text export, a distinct
-       format from the KS workbook; shared `_assemble_referendum_panel` so both
-       emit the canonical schema). Acceptance: all 120 counties map, panel
-       matches the raw file to the vote, NO% = certified 52.35%; the 59-vote
-       (0.004%) gap vs the certified canvass is a pre-certification export
-       vintage artifact (Russell at 99.01% est), not a loader bug. False-Bastion
-       structure confirmed (Louisville 71% / Lexington 73% NO vs rural Bell
-       34% NO). NOT yet wired to the map overlay (see CONTEST DIMENSION below —
-       KY is now the second measure, so combining it with KS is the JIT trigger
-       for the tidy fips × measure_id schema).
-    3. **OH** Nov-2023 Issue 1 (purple; pro-choice won) — DONE (2026-06-24).
-       `load_oh_referendum` (SoS precinct-summary workbook: header on the 3rd row,
-       both statewide issues side by side — Issue 1 abortion, Issue 2 cannabis;
-       "Total"/"Percentage" summary rows excluded, the Bug #11 pattern). Acceptance:
-       all 88 counties map, panel matches the certified canvass EXACTLY (YES
-       2,227,384 / NO 1,695,480, delta 0/0). The ORIENTATION FLIP (YES = pro-choice
-       here) drove the overlay's new `progressive_side` param so dissonance is
-       signed correctly; wired to the map. Adds the 2023 time point AND a YES-side
-       measure. (Issue 2 cannabis sits in the same file — a future off-issue measure,
-       the MO-cannabis slot's natural substitute; not ingested yet, JIT.)
-    4. **MI** Nov-2022 Prop 3 (purple/blue; passed) — the blue end of the contrast.
-       Source: Michigan Bureau of Elections.
-    5. **MO** Nov-2022 Amdt 3 (cannabis, red; passed) — DIFFERENT issue: tests
-       whether persuadability is issue-general or issue-specific. Source: MO SoS.
-       (FL/MO 2024 abortion are swappable alternates — red-state 2024 with strong
-       dissonance.)
-  CONTEST DIMENSION — TIDY PANEL DONE (2026-06-24): with KS + KY combined, the
-  trigger arrived. `panel/measures.build_measures_panel` stacks per-measure
-  referendum panels into one tidy `fips × measure_id` panel and adds
-  `progressive_share` (the progressive vote's share, oriented per measure via
-  `Measure.progressive_side` so it is comparable across measures — NO for the
-  abortion measures, YES for a future cannabis one). Tested seed-free, 100%
-  branch coverage. STILL DEFERRED (JIT — no consumer yet): the normalized measure
-  METADATA table (state, date, issue); it emerges when the resistance analysis
-  actually groups by those dimensions and the normalize-vs-denormalize access
-  pattern is concrete. Wiring to the map overlay is per-measure (each measure
-  ships its own dissonance file) and is independent of this modelling panel.
-- **Historical extension** (Algara–Sharif 1868–2020): **LOADER DONE +
-  VALIDATED (2026-06-15)** — `load_historical_returns` maps the dataset onto
-  the canonical returns schema; free download (no guestbook), already
-  FIPS-coded (authors did the boundary harmonization), read via pyreadr from
-  RData. Acceptance: landmarks correct, 2020 cross-validates vs MIT at
-  corr 0.9999 / 99.8% within 1pt. SPINE DONE (2026-06-15): `build_returns_spine`
-  joins Algara (pre-2000) + MIT (2000+) into one validated 1868-2024 panel
-  (40 elections, 116,983 county-years, national arc matches history; modern
-  wins the overlap). Module 4 realignment seed now built on it (see Science →
-  Module 4 Chaos Sensor). NEXT: the lead-lag node method (Module 2 retry — now
-  has 40 elections of depth). NHGIS decennial demographics still future
-  (pre-2005 years are returns-only; Module 4's education axis currently leans on
-  static ACS-2024).
-- **Midterms** (district→county crosswalks, uncontested-race handling).
-  Trigger: when the hazard model demands 2-year cadence.
-- **Connecticut crosswalk**: planning regions ↔ old counties, to retire the
-  ACS-2021 patch. Trigger: when CT's 2021-vintage demographics become a
-  problem for an analysis.
+## Product / UX
+
+- **Public pages:** the wave story page (Nov 28 in the to-do); a web version
+  of `BRING_YOUR_OWN_STATE.md`; link the wave player from the app once
+  reviewed.
+- **Prescriptive roadmap:** real drive-time routing; an in-map prescriptive
+  mode (retiring the static demo page); tunable thresholds and goals
+  (turnout, defense, not just persuasion).
+- **Map polish:** named False-Bastion tiers; a hint when a measure is shown at
+  national scope; a "fit colours to this view" toggle (only on request); a
+  first-visit "how to read this map" panel.
 
 ## Engineering
 
-- **Committed data products can go stale silently** (2026-06-24 footgun): the
-  deploy serves `web/public/data/*.json` as COMMITTED to git — it does NOT run
-  `scripts/export_web_data.py` (which needs CENSUS_API_KEY + the gitignored raw
-  data). So changing a loader wired into `MEASURES`, or the export itself,
-  without regenerating + committing the affected JSON ships a stale map with no
-  guard. Mitigation discipline today: after touching the export or a wired
-  loader, regenerate and commit the affected products (and diff byte-for-byte
-  when the change is meant to be output-preserving — see TDD_CONTRACT.md "Byte-
-  Identical Regeneration"). BETTER (deferred): a CI check that the committed
-  products match a fresh export — blocked on getting CENSUS_API_KEY + raw data
-  into CI, which is the very reason they are committed; revisit if a stale
-  product ever ships. Trigger: first stale-data incident, or a cheap way to
-  pin the no-Census-key products (measures + overlays) in CI.
-- **E2E only covers the Kansas measure** (2026-06-24): the Playwright suite
-  selects `measure:ks_abortion_2022` and asserts its scope/caption/dissonance.
-  KY is data-identical to that path (no new code), but OH exercises a NEW code
-  path — `build_measure_overlay`'s `progressive_side="yes"` orientation produces
-  the dissonance the map colors. That orientation is unit-tested, but nothing
-  verifies OH RENDERS correctly on the built app (the Bug #8 class: unit-green ≠
-  deployed-correct, lower-risk here because it is data not config). Trigger: add
-  a measure E2E (or parametrize the existing one) when the next measure lands, or
-  before relying on the OH overlay for outreach.
-- **Mutation gate** (2026-06-13): SELF-RUNNING and VALIDATED — mutmut 3.x runs
-  clean on our src layout in CI (runs #1 cron + #2 push both succeeded; the
-  numbered gaps in the survivor list prove most mutants are killed, harness
-  is real). The workflow now also emits survivor DIFFS (not just opaque IDs)
-  to the job summary + artifact, so triage is actionable.
-  FIRST RESULTS (~115 survivors, pre-sentinel-hardening run): concentrated in
-  the math modules — `fit_spatial_lag` ~80, `local_morans_i` ~15,
-  `load_county_returns` ~10. Hardened so far: _ACS_SENTINELS (all 7 pinned);
-  SAR inferential outputs n / loglik ordering / lr_pvalue (were unasserted).
-  STILL OPEN, as a TRIAGED multi-arc effort (do NOT chase 100% — equivalent
-  mutants exist): (a) read the diffs from the next run and target the
-  high-value SAR/Moran survivors; (b) KNOWN HARD CLASS — mutants on the
-  noise parameters (sigma2 magnitude, exact lr_pvalue) resist killing under
-  the no-seed rule, same root tension as SEM; may need property-based or
-  constructed-residual approaches, or accept as documented equivalent-ish.
-- **Git single-file-commit mystery** (TDD_CONTRACT.md OPEN INCIDENT):
-  unexplained; tripwire in place. Trigger: any recurrence — capture
-  evidence before repairing; consider upgrading git 2.24.
-
-## Science honesty notes
-
-- **PARTIALLY DONE (2026-06-13): Durbin half of the SAR honesty check.**
-  `fit_spatial_lag(..., durbin=True)` adds neighbors' covariates W·X. Finding:
-  rho does NOT drop controlling for neighbors' demographics (0.86→0.86 in 2008,
-  slightly higher in 2016/2020) — the wave is not observable demographic
-  confounding. STILL OPEN: the spatial-error model (SEM) — correlated UNOBSERVED
-  shocks. Why deferred: SEM's lambda is unidentified at zero noise, so the
-  noise-free recovery pattern that keeps SAR/SDM seed-free does not work; testing
-  SEM needs either a property over many noise draws or an analytic special case —
-  a real design problem against RED FLAG 3, not a quick add. Until SEM is done,
-  describe rho as "transmission not explained by self-or-neighbor demographics,"
-  not bare "contagion".
+- **Page-builder logic under test.** `build_prediction_receipt.py` (891 lines),
+  `build_blueprint.py` (565) and `build_targeting_demo.py` (451) publish
+  numbers; move their logic into the tested library (contract Section 7), add
+  golden-number tests, and one Playwright smoke test per public page
+  (`demo`, `forecast`, `blueprint`, `waves`). Trigger: now (next branch).
+- **E2E covers only the Kansas measure.** Ohio's YES orientation is
+  unit-tested but not checked on the built app. Trigger: the next measure on
+  the map, or before relying on the Ohio overlay for outreach.
+- **Committed data products can go stale silently.** The deploy serves the
+  committed `web/public/data/*.json`; it does not run the export. After
+  touching the export or a wired loader, regenerate and commit (byte-diff when
+  output-preserving). Better: a CI check for the products that need no Census
+  key. Trigger: first stale-data incident.
+- **Mutation survivors.** Triage the high-value SAR and Moran survivors from
+  the diffs; noise-parameter mutants resist killing under the no-seed rule
+  (same root as SEM) and may be documented as equivalent. Do not chase 100%.
+- **Single-file-commit mystery** (contract Section 10): unexplained; the
+  `git ls-files` tripwire is in place. On recurrence, capture evidence before
+  repairing.
