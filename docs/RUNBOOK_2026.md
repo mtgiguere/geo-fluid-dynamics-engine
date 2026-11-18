@@ -82,6 +82,18 @@ py:percent, TDD-exempt EDA) that leans on `geofluid.scoring`:
      ± 1.645 × 0.147 on the logit scale, against the 0.85–0.95 band; report
      the registered unconditional coverage beside it with where the
      statewide result landed.
+   - The 2026-11-02 supplement (`propositions_2026-11-03_SUPPLEMENT_REGISTERED_2026-11-02.csv`),
+     the On Point Politics benchmark. First verify the off-repo capture in
+     `data/raw/onpoint_20261102/` against
+     `onpoint_benchmark_evidence_2026-11-02.csv` (`seal.verify_manifest`, every
+     row `ok`). Their share is Yes/(Yes+No) from their county table, flipped
+     to No where our progressive side is NO; join on FIPS (their 29510 is St.
+     Louis City); fold Kansas City into Jackson for ours and the certified
+     result, weighted by 2026 votes cast. Relevel ours, theirs and the
+     baseline to the certified share, then: skill vs theirs with the
+     115-block bootstrap; the Amendment 3 disagreement test (|ours − theirs|
+     ≥ 5 points after relevelling, exact one-sided binomial vs 0.5, descriptive
+     if fewer than 10); the level table. Win or lose, it goes in.
 8. Roll-off per measure: votes cast on the measure versus the top of the
    ticket, as the confusion measurement named in the known weaknesses.
 9. Playbook grade: did the counties the sealed plans flagged as persuasion

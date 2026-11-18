@@ -35,7 +35,10 @@ The descriptive map and the first analytical layers are live and deployed
   row-standardized W), `spatial/moran` (global Moran's I, LISA with permutation
   significance), `spatial/lag` (SAR maximum-likelihood spatial-lag model, ρ, with a
   `durbin=True` honesty check — ρ survives controlling for neighbors' demographics).
-  Still to come: the survival/hazard *timing* model, hybrid W, and the spatial-error
+  The survival/hazard *timing* model is built (`spatial/timing`: take-off quarter,
+  at-risk table, discrete-time hazard with a national or per-state clock) and first run
+  on rooftop solar (2026-11-11): neighbour odds ratio ~4-7 even after each state's own
+  clock. Still to come: hybrid W, and the spatial-error
   (SEM) half of the honesty check (hard under the no-seed rule — see BACKLOG).
 - **Module 3 (Friction & Dissonance), live**: `dissonance` (issue-vs-party gap) and
   the Kansas Aug-2022 + Kentucky Nov-2022 + Ohio Nov-2023 abortion ballot-measure
@@ -186,7 +189,12 @@ watchdog for hollow tests. (mutmut only runs on Linux CI — it refuses on Windo
 
 - `src/geofluid/ingest/` — raw public data → canonical panels (`county_returns`,
   `county_demographics`, `county_geometry`, `referendum` (incl. `parse_mo_canvass` for SoS canvass PDFs and
-  `parse_mo_enr_results` for the SoS Election Night Results portal), `historical_returns`)
+  `parse_mo_enr_results` for the SoS Election Night Results portal), `historical_returns`,
+  `solar` (LBNL rooftop installs -> county-quarter adoption panel, the known wave) + `zcta_county`
+  (ZIP -> one county by largest land share), `spid` (State Policy Innovation and Diffusion v1.2:
+  724 policies x 50 states adoption years, 1691-2017; do wave roads change over time?),
+  `names` (SSA baby names by state 1910-2025: each new name a mass-behaviour wave),
+  `fec` (FEC individual contributions: giving by ZIP and day; the bulk file omits donors under $200))
 - `src/geofluid/panel/master` — joins returns + demographics into the master panel
   (FIPS-harmonized; adds swing); `panel/spine` — joins historical + MIT returns into
   the 1868–2024 panel; `panel/measures` — stacks per-measure referendum panels into
@@ -198,6 +206,8 @@ watchdog for hollow tests. (mutmut only runs on Linux CI — it refuses on Windo
   classification falsified on real data; see BACKLOG.md), `leadlag` (`lead_lag`:
   Module 2 temporal retry — tested, also falsified on real data; see BACKLOG.md),
   `distance` (`haversine_miles` + `bounding_box_center`: drive-distance for targeting);
+  `timing` (`takeoff_quarters` / `at_risk_table` / `fit_neighbour_hazard` / `fit_hazard` (several shares at once, e.g. past vs next neighbours): Module 1 timing
+  model, does an idea reach a county after its neighbours, net of the national/state clock);
   `weights.attribute_knn_adjacency` (a non-geographic similarity network — drop-in
   to Moran/lag; horse-race found geography still wins but education > urbanicity,
   see BACKLOG)
@@ -224,8 +234,15 @@ watchdog for hollow tests. (mutmut only runs on Linux CI — it refuses on Windo
 - `src/geofluid/scope` — geographic scope catalog + cross-border neighborhood expansion
 - `src/geofluid/map/layers` — GeoJSON layer + per-year metrics export shaping;
   `map/svg` — `project_rings`, the inline-SVG projection every public page builder uses (tested once,
-  not copied)
+  not copied); `map/waves` — `running_share_levels`, the wave player's frames (each county's share of
+  its own final total, one character per frame), `handoffs` (the arrows: a neighbour crossed the mark
+  in the last few frames) and `chance_handoffs` (the arrows chance alone would draw, exact: the honest
+  yardstick, since a broadcast draws arrows too)
 - `scripts/export_web_data.py` — thin orchestration → `web/public/data/*.json`;
+  `scripts/build_wave_player.py` — the wave player (`web/public/waves.html` + `data/waves.json`):
+  pick an idea (solar, 2019 candidates' donors, Dobbs giving), press play, watch it travel; zoom to a
+  state for hand-off arrows and the live hand-offs-vs-chance count; an "Arrival map" toggle shows one still
+  map coloured by WHEN each county caught on (order is easier to judge still than animated); draft, not yet linked from the app;
   `scripts/build_targeting_demo.py` — renders the public prescriptive demo
   (`web/public/demo.html`) from real data through the tested targeting engine;
   `scripts/fetch_mo_enr.cjs` — election-night fetch of county ballot-measure results from
@@ -252,12 +269,14 @@ watchdog for hollow tests. (mutmut only runs on Linux CI — it refuses on Windo
   change organizes). Each finding is summarized in `docs/FINDINGS.md`.
 - `web/` — Vite + TS + Mapbox frontend (`src/metrics.ts`, `src/scope.ts`,
   `src/measure.ts`; `e2e/` Playwright); `public/calc.js` — the receipt page's budget calculator as an
-  ES module the page imports, unit-tested by `src/calc.test.ts` (rule 7: page logic gets Vitest); `public/demo.html` — the static, public
+  ES module the page imports, unit-tested by `src/calc.test.ts` (rule 7: page logic gets Vitest); `public/waves.js` — the wave
+  player's frame logic (level, colour, wave front, the past-the-mark curve), tested by `src/waves.test.ts`; `public/demo.html` — the static, public
   Stage-4 prescriptive demo, linked from the app's "The art of the possible" button; `public/forecast.html` — the static, public 2026 pre-registration
   explainer, linked from the app's "The November receipt" button (rebuild after registration); `public/blueprint.html` — the public deep-dive
   (research arc with inline notebook figures), linked from "The blueprint" button
 - `tests/unit/` — Python unit tests (one file per module)
-- `docs/` — `FINDINGS.md` (what was learned), `MEASUREMENT_DESIGN.md` (the research design
+- `docs/` — `RELATED_WORK.md` (the literature check: what is already known, what we add, the one-line positioning; verified citations), `FAQ.md` (ready answers to the questions people ask: "how do you know it's the neighbours?", news vs wave, polls, "anyone can run it"), `FINDINGS.md` (what was learned), `RESEARCH_LOG.md` (every
+  brainstorm question asked, what we checked and found, what is open; dated), `MEASUREMENT_DESIGN.md` (the research design
   + the 2026 protocol), `RUNBOOK_2026.md` (election night + December scorecard, step by step),
   `BRING_YOUR_OWN_STATE.md` (lay guide), `ADD_A_STATE.md` (programmer's guide: schema, loader
   pattern, certified-total acceptance, catalog entry), `DATA_SOURCES.md` (every raw file's

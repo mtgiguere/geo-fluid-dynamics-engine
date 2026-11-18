@@ -13,17 +13,31 @@ county's vote on an *issue* diverges from its *party* label, tests whether
 change moves neighbor to neighbor, and turns what survives testing into a
 plan a campaign can act on and a prediction that can be graded.
 
-## Where it stands (October 2026)
+## Where it stands (November 2026)
 
-**A pre-registered prediction is frozen and waiting for November 3, 2026.**
-County-by-county predictions for Missouri's five statewide ballot measures,
-plus statewide calls for Nevada and Massachusetts, were committed on
-2026-10-14 under the tag `registration-2026-11-03`, with the statistical
-test, two diagnostics on the engine itself, and the sealed campaign
-playbooks' fingerprints. A guard test fails the suite if any registered file
-changes. The scorecard, win or lose, is published after certification. See
-[`data/predictions/README.md`](data/predictions/README.md) and the
-[runbook](docs/RUNBOOK_2026.md).
+**The pre-registered forecast met the vote. First read, on provisional
+counts (certified results expected mid-December):**
+
+- **Pass or fail: 7 of 7 called right** (Missouri's five measures, Nevada
+  Question 6, Massachusetts Question 8).
+- **County map: a real edge over party alone.** Across 580 county-measure
+  rows our misses were 5.5% smaller than a partisanship-only forecast
+  (95% range +2.1% to +8.7%); on Amendment 3 (abortion), 23% smaller.
+- **The False Bastions held:** 25 of 27 red counties that ran ahead of
+  their party in 2024 stayed ahead in 2026, keeping about 79% of the gap.
+- **What we got wrong:** our county ranges held 65% of results, not the 90%
+  we claimed (too narrow), and three statewide ranges missed (Missouri
+  Amendment 8 and Prop A, both toward No; Massachusetts Question 8). The
+  misses also cluster on the map, which points to the next build: a model
+  that uses neighbouring counties.
+
+The predictions were committed on 2026-10-14 under the tag
+`registration-2026-11-03` (a supplement under
+`registration-supplement-2026-11-02`, before the vote), and a guard test
+fails the suite if any registered file changes. The scorecard
+(`notebooks/mo_2026_scorecard.py`) is re-run on certified counts when Missouri
+certifies. See [`data/predictions/README.md`](data/predictions/README.md) and
+the [runbook](docs/RUNBOOK_2026.md).
 
 **What the research found** is in [`docs/FINDINGS.md`](docs/FINDINGS.md),
 in the order the argument built, losses included:

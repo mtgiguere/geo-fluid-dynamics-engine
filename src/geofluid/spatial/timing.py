@@ -1,0 +1,202 @@
+"""The timing model: does an idea reach a county after it reaches the county's
+neighbours? (Module 1, the survival/hazard half of the Wave Predictor.)
+
+Election snapshots, years apart, say a whole state moves at once: a wave
+photographed every four years looks like everyone moving together. The timing
+model works from DATED adoptions instead. It finds the quarter each county
+"takes off", then asks whether counties take off sooner once a neighbour has,
+after the nationwide clock is taken out. It is proved first on rooftop solar
+(`geofluid.ingest.solar`), an idea known to spread from neighbour to neighbour,
+before it is pointed back at politics.
+"""
+
+from collections.abc import Iterable, Mapping
+from typing import Literal
+
+import numpy as np
+import pandas as pd
+
+TAKEOFF_COLUMNS = ["fips", "takeoff"]
+
+
+def takeoff_quarters(panel: pd.DataFrame, share: float, min_installs: int) -> pd.DataFrame:
+    """The quarter each county takes off: the first quarter its running total
+    reaches `share` of the total it ends the panel with.
+
+    `panel` is `geofluid.ingest.solar.county_adoption_panel` output.
+    """
+    # The bar is set against the county's OWN final count, not its number of
+    # households. Coverage of the source file is uneven (about a quarter of
+    # Texas and Maryland installs carry a usable ZIP), so a per-household bar
+    # would make a thinly reported county look late. Against its own total, a
+    # county's timing is read from its own shape, whatever its coverage.
+    final = panel.groupby("fips")["cumulative_installs"].transform("max")
+    # A county that ends with a handful of installs has no shape to read: with
+    # two, "half its final count" is one household's decision. With none, a
+    # bar of zero would be "reached" in the first quarter. Such counties are
+    # left untimed.
+    timed = final >= min_installs
+    reached = panel[timed & (panel["cumulative_installs"] >= share * final)]
+    takeoffs = reached.groupby("fips")["quarter"].min().rename("takeoff").reset_index()
+    return takeoffs.loc[:, TAKEOFF_COLUMNS]
+
+
+AT_RISK_COLUMNS = ["fips", "period", "event", "neighbour_share"]
+WINDOW_COLUMNS = ["past_window_share", "next_window_share"]
+
+
+def at_risk_table(
+    takeoffs: pd.DataFrame,
+    adjacency: Mapping[str, frozenset[str]],
+    freq: str = "QS",
+    never: Iterable[str] = (),
+    end: pd.Timestamp | None = None,
+    window: int = 0,
+) -> pd.DataFrame:
+    """One row per unit per period while it waits to take off.
+
+    `takeoffs` is `takeoff_quarters` output (or any fips -> takeoff table);
+    `adjacency` maps each fips to the fips it borders
+    (`geofluid.spatial.weights.county_adjacency`). `freq` is the period:
+    "QS" (quarter, the solar panel's step) or "YS" (year, for laws).
+    `never` lists units observed to `end` that had not taken off by then.
+    With `window` > 0, each row also gets the share of neighbours that took
+    off in the last `window` periods and in the next `window` periods.
+    """
+    when = dict(zip(takeoffs["fips"], takeoffs["takeoff"], strict=True))
+    last = takeoffs["takeoff"].max() if end is None else max(end, takeoffs["takeoff"].max())
+    span = pd.date_range(takeoffs["takeoff"].min(), last, freq=freq)
+    # A unit that had not taken off by the end of the data (a state that never
+    # passed the law by 2017) is "not yet", not unknown: right-censored. It is
+    # given a take-off after the last period, so it is at risk in every
+    # period, never has an event, and counts as "not yet" next door.
+    for fips in never:
+        when[fips] = pd.Timestamp.max
+    # The learning-vs-alike split. A neighbour that went first in the last
+    # few periods could have been learned from; one that goes in the next few
+    # could not, so its pull is the ceiling on "neighbours are alike". Fitted
+    # together (`fit_hazard`), each is read holding the other fixed. Rows stop
+    # where the next window would run past the data: a neighbour's take-off
+    # after the end would be missed and miscounted as "not yet".
+    step = pd.tseries.frequencies.to_offset(freq) * window
+    if window:
+        span = span[span + step <= last]
+    rows = []
+    for fips in sorted(when):
+        # A neighbour with no take-off (too few installs, or outside the
+        # source file) is unknown, not "not yet": it is left out of the share.
+        neighbours = [when[n] for n in adjacency.get(fips, frozenset()) if n in when]
+        # No timed neighbour (or no county shape to border anything): there
+        # is no share to measure, and none is made up.
+        if not neighbours:
+            continue
+        # The survival layout: a county is at risk every quarter up to and
+        # including the one it takes off in, and leaves the table after.
+        for quarter in span[span <= when[fips]]:
+            row = {
+                "fips": fips,
+                "period": quarter,
+                "event": int(quarter == when[fips]),
+                # Strictly earlier: a neighbour taking off this same
+                # quarter cannot yet have been seen next door.
+                "neighbour_share": sum(t < quarter for t in neighbours) / len(neighbours),
+            }
+            if window:
+                row["past_window_share"] = sum(
+                    quarter - step <= t < quarter for t in neighbours
+                ) / len(neighbours)
+                row["next_window_share"] = sum(
+                    quarter < t <= quarter + step for t in neighbours
+                ) / len(neighbours)
+            rows.append(row)
+    columns = AT_RISK_COLUMNS + (WINDOW_COLUMNS if window else [])
+    return pd.DataFrame(rows, columns=columns)
+
+
+# Newton's method for the hazard fit: a logistic likelihood is concave, so
+# from zero it converges in a handful of steps; the cap is a backstop.
+_MAX_NEWTON_STEPS = 100
+_NEWTON_TOLERANCE = 1e-12
+
+
+def fit_neighbour_hazard(table: pd.DataFrame, clock: Literal["national", "state"]) -> float:
+    """The wave, as one number: the odds ratio on `neighbour_share` in a
+    discrete-time hazard model with one baseline per quarter (clock
+    "national") or per state per quarter (clock "state").
+
+    `table` is `at_risk_table` output, or several stacked with a `wave`
+    column naming each (each wave then has its own baselines). The model is a logistic regression of
+    `event` on a dummy per baseline plus `neighbour_share`, fitted by maximum
+    likelihood (Newton's method). The returned odds ratio is how many times
+    the odds of taking off this quarter are multiplied for a county whose
+    neighbours have ALL taken off, against one whose neighbours have none.
+    """
+    return fit_hazard(table, ["neighbour_share"], clock)["neighbour_share"]
+
+
+def fit_hazard(
+    table: pd.DataFrame, covariates: list[str], clock: Literal["national", "state"]
+) -> dict[str, float]:
+    """`fit_neighbour_hazard` with several columns fitted together: one odds
+    ratio per column in `covariates`, each read holding the others fixed.
+
+    The use it was built for is the clean placebo: the share of neighbours
+    that adopted in the PAST few years (could be learned from) and in the
+    NEXT few years (cannot be; it measures neighbours being alike), in one
+    model, so neither borrows the other's signal.
+    """
+    # The quarter dummies are the nationwide clock: a tax credit, a price
+    # drop, a statewide policy, anything that lifts every county in the same
+    # quarter. Only what is left after the clock is credited to neighbours,
+    # so "everyone moves at once" cannot masquerade as a wave.
+    # A state clock goes one level down: a state programme (Illinois 2019,
+    # Maryland 2021) lifts all its counties at once, and most neighbours share
+    # a state, so only what spreads beyond the state's own clock is a wave.
+    # The state is the first two digits of the county fips.
+    baseline = table["period"].astype(str)
+    if clock == "state":
+        baseline = table["fips"].str[:2] + " " + baseline
+    # A table pooling several waves (724 laws) carries a `wave` column, and
+    # each wave keeps its own clock: a court ruling or a federal grant pushes
+    # one law, so one law's busy year must not be credited to neighbours
+    # adopting another.
+    if "wave" in table.columns:
+        baseline = table["wave"].astype(str) + " " + baseline
+    # A quarter (or state-quarter) in which nobody takes off (the early
+    # years), or everybody still at risk does (the last one), says nothing
+    # about neighbours: its baseline would run off toward odds 0 or
+    # infinity. It is set aside.
+    events_in_baseline = table.groupby(baseline)["event"].transform("mean")
+    informative = (events_in_baseline > 0) & (events_in_baseline < 1)
+    table, baseline = table[informative], baseline[informative]
+    group, _ = pd.factorize(baseline)
+    x = table.loc[:, covariates].to_numpy(dtype=float)
+    event = table["event"].to_numpy(dtype=float)
+    n_groups = int(group.max()) + 1
+    alpha = np.zeros(n_groups)
+    beta = np.zeros(len(covariates))
+    # Newton's method on (one intercept per baseline, beta). There can be
+    # thousands of baselines (724 policies x their years), too many for a
+    # dense matrix, but each intercept touches only its own rows, so the
+    # Hessian is a diagonal block plus a few rows and columns for beta. Solving
+    # through that block (a Schur complement) takes exactly the same Newton
+    # step as the dense solve, in time proportional to the number of rows.
+    for _ in range(_MAX_NEWTON_STEPS):
+        p = 1.0 / (1.0 + np.exp(-(alpha[group] + x @ beta)))
+        w = p * (1.0 - p)
+        g_alpha = np.bincount(group, event - p, n_groups)
+        g_beta = x.T @ (event - p)
+        d = np.bincount(group, w, n_groups)
+        # c[g, k]: the Hessian's cross term between intercept g and slope k.
+        c = np.stack([np.bincount(group, w * x[:, k], n_groups) for k in range(x.shape[1])], 1)
+        schur = (x.T * w) @ x - (c.T / d) @ c
+        step_beta = np.linalg.solve(schur, g_beta - c.T @ (g_alpha / d))
+        step_alpha = (g_alpha - c @ step_beta) / d
+        alpha += step_alpha
+        beta += step_beta
+        if (
+            max(float(np.max(np.abs(step_beta))), float(np.max(np.abs(step_alpha))))
+            < _NEWTON_TOLERANCE
+        ):
+            break
+    return {name: float(np.exp(b)) for name, b in zip(covariates, beta, strict=True)}
