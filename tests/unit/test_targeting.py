@@ -399,6 +399,6 @@ def test_a_stored_record_is_re_read_at_a_stated_level() -> None:
 
     record = record_at_level(gap, penalty, level=0.50)
 
-    assert record.loc["A"].tolist() == pytest.approx([0.60, 0.10, 0.01])
-    assert record.loc["B"].tolist() == pytest.approx([0.30, -0.20, 0.02])
+    assert list(record.loc["A"]) == pytest.approx([0.60, 0.10, 0.01])
+    assert list(record.loc["B"]) == pytest.approx([0.30, -0.20, 0.02])
     assert list(record.columns) == ["expected_share", "mean_gap", "midterm_penalty"]

@@ -12,3 +12,7 @@ uv run ruff format --check .
 
 echo "pre-commit: pytest"
 uv run pytest --no-header -q
+
+# Strict typing: CI runs it too, but failing here is cheaper.
+echo "pre-commit: mypy"
+uv run mypy
