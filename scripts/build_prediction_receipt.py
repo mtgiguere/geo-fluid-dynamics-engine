@@ -8,9 +8,10 @@ THIS ballot, what we predict and why, and how we will grade ourselves. An
 inline SVG Missouri choropleth switches between the five measures; hover a
 county for its prediction, interval and the partisanship-only baseline.
 
-Like scripts/build_targeting_demo.py this is thin glue over the tested
-library's outputs, not itself under test. Every number on the page comes
-from the prediction files; the prose is the lay narrative around them.
+This script only assembles. Every number on the page comes from the
+prediction files through tested library code (geofluid.report for which file
+is the record, each measure's call and odds and how a chance is worded;
+geofluid.targeting for the worked plan); the prose is the lay narrative.
 Run:  uv run python scripts/build_prediction_receipt.py
 """
 
@@ -20,7 +21,7 @@ from pathlib import Path
 import pandas as pd
 
 from geofluid.map.svg import project_rings
-from geofluid.scoring import bracket_odds
+from geofluid.report import latest_prediction_file, measure_call, reader_percent
 from geofluid.targeting import build_playbook, playbook_budget_split
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -149,25 +150,6 @@ STATEWIDE_ONLY = {
 BACKTEST = {"partisan": 3.69, "pooled": 3.80, "analog": 3.39, "analog_baseline": 3.76}
 
 
-def _latest(prefix: str) -> tuple[Path, str]:
-    reg = sorted(PRED.glob(f"{prefix}_REGISTERED_*.csv"))
-    if reg:
-        return reg[-1], "REGISTERED"
-    drafts = sorted(PRED.glob(f"{prefix}_DRAFT_*.csv"))
-    if not drafts:
-        raise SystemExit(f"no {prefix} file in {PRED}")
-    return drafts[-1], "DRAFT"
-
-
-def _pct(p: float) -> str:
-    """A chance as a reader-safe percent: nothing on this page is certain."""
-    if p < 0.005:
-        return "under 1%"
-    if p > 0.995:
-        return "over 99%"
-    return f"{p * 100:.0f}%"
-
-
 def _lerp_hex(c1: str, c2: str, t: float) -> str:
     a = [int(c1[i : i + 2], 16) for i in (1, 3, 5)]
     b = [int(c2[i : i + 2], 16) for i in (1, 3, 5)]
@@ -182,18 +164,18 @@ def _fill(share: float) -> str:
 
 
 def main() -> None:
-    pred_path, status = _latest("mo_2026-11-03")
+    pred_path, status = latest_prediction_file(PRED, "mo_2026-11-03")
     date = pred_path.stem.split("_")[-1]
     preds = pd.read_csv(pred_path, dtype={"fips": str})
-    statewide_only = pd.read_csv(_latest("statewide_only_2026-11-03")[0])
-    props = pd.read_csv(_latest("propositions_2026-11-03")[0])
-    manifest = pd.read_csv(_latest("SEALED_MANIFEST")[0])
+    statewide_only = pd.read_csv(latest_prediction_file(PRED, "statewide_only_2026-11-03")[0])
+    props = pd.read_csv(latest_prediction_file(PRED, "propositions_2026-11-03")[0])
+    manifest = pd.read_csv(latest_prediction_file(PRED, "SEALED_MANIFEST")[0])
 
     # The worked example: the pro-rights (NO) side of Amendment 3, rebuilt from
     # the public record file through the tested playbook generator. Same code
     # path as the sealed playbooks; this one is shown because the receipt is
     # only worth something if a reader can see what a plan looks like.
-    record_file, _st = _latest("county_record_buckets_mo")
+    record_file, _st = latest_prediction_file(PRED, "county_record_buckets_mo")
     rec = pd.read_csv(record_file, dtype={"fips": str}).set_index("fips")
     level_a3 = float(
         preds.loc[preds["measure_id"] == "mo_20261103_amendment_3", "level_central"].iloc[0]
@@ -277,14 +259,10 @@ def main() -> None:
     odds_rows = []
     for mid, meta in MEASURES.items():
         g = preds[preds["measure_id"] == mid]
-        lo, mid_level, hi = (
-            g["level_low"].iloc[0],
-            g["level_central"].iloc[0],
-            g["level_high"].iloc[0],
-        )
-        wins = int((g["pred_progressive_share"] > 0.5).sum())
+        call = measure_call(g)
+        lo, mid_level, hi = call.low, call.central, call.high
         kc = g[g["fips"] == "2938000"]["pred_progressive_share"].iloc[0]
-        now, plus_one, _sd = bracket_odds(low=lo, central=mid_level, high=hi)
+        now, plus_one = call.chance_now, call.chance_plus_one
         odds_rows.append((meta["short"], meta["tracked"], now, plus_one - now))
         cards.append(
             f"""<article class="card" id="card-{mid}">
@@ -295,17 +273,17 @@ def main() -> None:
       ({meta["tracked_means"]})</span></div>
   <div class="range">Range we'd stop being surprised in:
     <b>{lo * 100:.0f} to {hi * 100:.0f}</b>. Counties we expect that side to win:
-    <b>{wins} of 116</b>. Kansas City: <b>{kc * 100:.0f}</b>.</div>
+    <b>{call.counties_won} of {call.n_counties}</b>. Kansas City: <b>{kc * 100:.0f}</b>.</div>
   <div class="odds">Chance the <b>{meta["tracked"]}</b> side is ahead on election night, as
-    things stand: <b>{_pct(now)}</b>. One statewide point its way
-    (about {point_votes:,.0f} net votes) moves that to <b>{_pct(plus_one)}</b>.</div>
+    things stand: <b>{reader_percent(now)}</b>. One statewide point its way
+    (about {point_votes:,.0f} net votes) moves that to <b>{reader_percent(plus_one)}</b>.</div>
   <p>{meta["why"]}</p>
   <div class="past">Learned from: {meta["past"]}</div>
 </article>"""
         )
     odds_rows.sort(key=lambda r: -r[3])
     odds_html = "\n".join(
-        f"<tr><td>{short}</td><td>{side}</td><td>{_pct(now)}</td>"
+        f"<tr><td>{short}</td><td>{side}</td><td>{reader_percent(now)}</td>"
         f"<td>{gain * 100:+.1f} pts</td></tr>"
         for short, side, now, gain in odds_rows
     )
