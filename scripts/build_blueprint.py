@@ -7,14 +7,17 @@ said (figures pulled straight from the executed research notebooks), the
 November plan, and the lock-in. It is the companion to forecast.html: the
 receipt says what we predict; the blueprint says how we got there.
 
-Like scripts/build_targeting_demo.py this is thin glue, not under test. The
-figures are the notebooks' own rendered outputs (matplotlib PNGs embedded as
-data URIs) so the page cannot show a chart the research didn't produce.
+This script only assembles; the one fact it computes, the registration
+date, comes from the tested geofluid.report. The figures are the notebooks'
+own rendered outputs (matplotlib PNGs embedded as data URIs) so the page
+cannot show a chart the research didn't produce.
 Run:  uv run python scripts/build_blueprint.py
 """
 
 import json
 from pathlib import Path
+
+from geofluid.report import registration_dates
 
 ROOT = Path(__file__).resolve().parents[1]
 NB = ROOT / "notebooks"
@@ -54,8 +57,7 @@ def main() -> None:
         "panels": _figure("mo_2026_predictions"),
         "populist": _figure("gilded_age_rhyme"),
     }
-    registered = sorted((ROOT / "data/predictions").glob("REGISTERED_SHA256_*.csv"))
-    reg_date = registered[-1].stem.split("_")[-1] if registered else "pending"
+    reg_date, supplements = registration_dates(ROOT / "data/predictions")
     html = _TEMPLATE.format(
         favicon=_FAVICON,
         ink=INK,
@@ -63,6 +65,7 @@ def main() -> None:
         ember_deep=EMBER_DEEP,
         slate=SLATE,
         reg_date=reg_date,
+        supplements=" and ".join(supplements),
         **figs,
     )
     HTML_OUT.write_text(html, encoding="utf-8")
@@ -482,7 +485,8 @@ _TEMPLATE = r"""<!doctype html>
       branch, that changes a byte of them fails. The raw inputs are fingerprinted alongside, so
       anyone can confirm in December that the predictions came from exactly these certified
       files. The ten sealed playbooks exist only as digests until the scorecard is public.</p>
-      <p>A later revision, if any, is a new dated file. The original still gets scored.</p>
+      <p>Supplements are new dated files ({supplements}); nothing registered is ever
+      edited, and the original still gets scored.</p>
     </div>
     <div>
       <p>Then the honest part of the method, the part the data taught us: wait. The flock
