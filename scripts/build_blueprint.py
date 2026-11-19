@@ -1,4 +1,4 @@
-"""Build the public "blueprint" page (untested orchestration + rendering).
+"""Build the public "blueprint" page (assembly only; the logic is tested library code).
 
 The deep dive, in the order the work happened: the brainstorm (do ideas
 travel across the ground like forests?), the five modules imagined, the data

@@ -1,4 +1,4 @@
-"""Build the public "November receipt" page (untested orchestration + rendering).
+"""Build the public "November receipt" page (assembly only; the logic is tested library code).
 
 Renders data/predictions/ - the registered (or, before the freeze, the latest
 draft) 2026 Missouri county predictions, the statewide-only calls, the
@@ -20,7 +20,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from geofluid.map.svg import project_rings
+from geofluid.map.svg import lerp_hex, project_rings
 from geofluid.report import latest_prediction_file, measure_call, reader_percent
 from geofluid.targeting import build_playbook, playbook_budget_split, record_at_level
 
@@ -150,17 +150,11 @@ STATEWIDE_ONLY = {
 BACKTEST = {"partisan": 3.69, "pooled": 3.80, "analog": 3.39, "analog_baseline": 3.76}
 
 
-def _lerp_hex(c1: str, c2: str, t: float) -> str:
-    a = [int(c1[i : i + 2], 16) for i in (1, 3, 5)]
-    b = [int(c2[i : i + 2], 16) for i in (1, 3, 5)]
-    return "#" + "".join(f"{round(a[i] + (b[i] - a[i]) * t):02x}" for i in range(3))
-
-
 def _fill(share: float) -> str:
     """Diverging ramp around 50: deep slate well below, neutral at 50, ember well above."""
     if share < 0.5:
-        return _lerp_hex(NEUTRAL, SLATE_DEEP, min(1.0, (0.5 - share) / 0.3))
-    return _lerp_hex(NEUTRAL, EMBER_DEEP, min(1.0, (share - 0.5) / 0.3))
+        return lerp_hex(NEUTRAL, SLATE_DEEP, min(1.0, (0.5 - share) / 0.3))
+    return lerp_hex(NEUTRAL, EMBER_DEEP, min(1.0, (share - 0.5) / 0.3))
 
 
 def main() -> None:

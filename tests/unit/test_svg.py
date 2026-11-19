@@ -8,7 +8,7 @@ once, under test, and the scripts call it.
 
 import math
 
-from geofluid.map.svg import project_rings
+from geofluid.map.svg import lerp_hex, project_rings
 
 
 def test_unit_square_projects_to_the_full_width_with_aspect_correction() -> None:
@@ -26,3 +26,14 @@ def test_unit_square_projects_to_the_full_width_with_aspect_correction() -> None
     assert abs(height - expected_height) < 1e-9
     assert paths["X"] == "M0.0,1000.0L1000.0,1000.0L1000.0,0.0L0.0,0.0L0.0,1000.0Z"
     assert centroids["X"] == (500.0, 500.0)
+
+
+def test_colour_ramp_blends_each_channel_and_rounds_to_hex() -> None:
+    """A quarter of the way from #000000 to #FF8040: each channel moves a
+    quarter of its distance: 255 * 0.25 = 63.75 -> 64 (0x40), 128 * 0.25 =
+    32 (0x20), 64 * 0.25 = 16 (0x10). The ends return the end colours."""
+    assert lerp_hex("#000000", "#FF8040", 0.25) == "#402010"
+    assert (lerp_hex("#000000", "#FF8040", 0.0), lerp_hex("#000000", "#FF8040", 1.0)) == (
+        "#000000",
+        "#ff8040",
+    )

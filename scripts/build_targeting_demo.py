@@ -1,4 +1,4 @@
-"""Build the prescriptive-targeting demo (untested orchestration + rendering).
+"""Build the prescriptive-targeting demo (assembly only; the logic is tested library code).
 
 Runs the REAL Kansas Aug-2022 abortion data through the tested targeting engine
 (geofluid.targeting) + distance helpers (geofluid.spatial.distance) for a
@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from geofluid.map.svg import project_rings
+from geofluid.map.svg import lerp_hex, project_rings
 from geofluid.spatial.distance import bounding_box_center, haversine_miles
 from geofluid.targeting import build_itinerary
 
@@ -42,18 +42,12 @@ _FAVICON = (
 )
 
 
-def _lerp_hex(c1: str, c2: str, t: float) -> str:
-    a = [int(c1[i : i + 2], 16) for i in (1, 3, 5)]
-    b = [int(c2[i : i + 2], 16) for i in (1, 3, 5)]
-    return "#" + "".join(f"{round(a[i] + (b[i] - a[i]) * t):02x}" for i in range(3))
-
-
 def _fill(category: str, dissonance: float, d_lo: float, d_hi: float) -> str:
     """Target counties glow on an amber ramp by dissonance; base is cool slate;
     hard ground recedes into the ink ground."""
     if category == "target":
         t = (dissonance - d_lo) / (d_hi - d_lo) if d_hi > d_lo else 0.5
-        return _lerp_hex("#F0CE86", EMBER_DEEP, max(0.0, min(1.0, t)))
+        return lerp_hex("#F0CE86", EMBER_DEEP, max(0.0, min(1.0, t)))
     return SLATE if category == "base" else ASH
 
 

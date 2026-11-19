@@ -53,3 +53,15 @@ def project_rings(
         cy = (py(min(p[1] for p in own)) + py(max(p[1] for p in own))) / 2
         centroids[fid] = (round(cx, 1), round(cy, 1))
     return paths, centroids, height
+
+
+def lerp_hex(c1: str, c2: str, t: float) -> str:
+    """The colour a fraction `t` of the way from `c1` to `c2` ("#RRGGBB").
+
+    Each channel moves linearly and rounds to the nearest integer; the
+    result is lower-case hex. The page builders' colour ramps are built on
+    it (`t` = 0 gives `c1`, 1 gives `c2`).
+    """
+    a = [int(c1[i : i + 2], 16) for i in (1, 3, 5)]
+    b = [int(c2[i : i + 2], 16) for i in (1, 3, 5)]
+    return "#" + "".join(f"{round(a[i] + (b[i] - a[i]) * t):02x}" for i in range(3))
