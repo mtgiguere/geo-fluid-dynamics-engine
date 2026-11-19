@@ -22,7 +22,7 @@ import pandas as pd
 
 from geofluid.map.svg import project_rings
 from geofluid.report import latest_prediction_file, measure_call, reader_percent
-from geofluid.targeting import build_playbook, playbook_budget_split
+from geofluid.targeting import build_playbook, playbook_budget_split, record_at_level
 
 ROOT = Path(__file__).resolve().parents[1]
 PRED = ROOT / "data/predictions"
@@ -180,13 +180,7 @@ def main() -> None:
     level_a3 = float(
         preds.loc[preds["measure_id"] == "mo_20261103_amendment_3", "level_central"].iloc[0]
     )
-    record = pd.DataFrame(
-        {
-            "expected_share": level_a3 + rec["abortion_2024_gap"],
-            "mean_gap": rec["abortion_2024_gap"],
-            "midterm_penalty": rec["midterm_penalty"],
-        }
-    )
+    record = record_at_level(rec["abortion_2024_gap"], rec["midterm_penalty"], level=level_a3)
     plan = build_playbook(record, rec["expected_votes_2026"], side="progressive")
     plan["county"] = plan["fips"].map(rec["county"])
     split = playbook_budget_split(plan)

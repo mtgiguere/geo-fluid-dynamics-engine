@@ -21,6 +21,7 @@ from geofluid.report import (
     reader_percent,
     registration_dates,
 )
+from geofluid.targeting import build_playbook, playbook_budget_split, record_at_level
 
 # The frozen 2026 registration (never edited; test_registration_frozen guards it).
 PRED = Path(__file__).resolve().parents[2] / "data" / "predictions"
@@ -175,3 +176,32 @@ def test_golden_the_receipt_cards_match_the_registered_file(
         reader_percent(call.chance_plus_one),
     )
     assert (seen, call.n_counties) == (published, 116)
+
+
+def test_golden_the_receipt_worked_plan_matches_the_registered_record() -> None:
+    """Golden numbers: the worked Amendment 3 plan (the NO side, which the
+    data calls progressive) as the live receipt publishes it, rebuilt from
+    the frozen county record at the registered central level 0.55: 30
+    persuade, 7 turnout and 79 hard counties; reachable votes 78% persuasion,
+    22% turnout; the top persuade county St. Charles at 1,701 votes per
+    point, record 57, headroom +2,841; one statewide point is 23,687 votes."""
+    rec = pd.read_csv(
+        PRED / "county_record_buckets_mo_REGISTERED_2026-10-14.csv", dtype={"fips": str}
+    ).set_index("fips")
+    record = record_at_level(rec["abortion_2024_gap"], rec["midterm_penalty"], level=0.55)
+    plan = build_playbook(record, rec["expected_votes_2026"], side="progressive")
+    split = playbook_budget_split(plan)
+    top = plan[plan["bucket"] == "persuade"].nlargest(1, "votes_per_point").iloc[0]
+
+    assert plan["bucket"].value_counts().to_dict() == {"hard": 79, "persuade": 30, "turnout": 7}
+    assert (
+        round(float(split["persuasion_share"]) * 100),
+        round(float(split["turnout_share"]) * 100),
+    ) == (78, 22)
+    assert rec.loc[top["fips"], "county"] == "St. Charles"
+    assert (
+        f"{top['votes_per_point']:,.0f}",
+        f"{top['expected_share'] * 100:.0f}",
+        f"{top['headroom_votes']:+,.0f}",
+    ) == ("1,701", "57", "+2,841")
+    assert f"{rec['expected_votes_2026'].sum() / 100:,.0f}" == "23,687"

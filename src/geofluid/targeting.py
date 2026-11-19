@@ -147,6 +147,25 @@ def history_buckets(
     return out
 
 
+def record_at_level(
+    mean_gap: "pd.Series[float]", midterm_penalty: "pd.Series[float]", *, level: float
+) -> pd.DataFrame:
+    """A stored county record re-read at a stated statewide level.
+
+    The registration saved each county's mean gap and midterm penalty, not
+    the expected shares, so a plan can be rebuilt later at any level. The
+    rule is history_buckets' own: expected_share = level + mean gap. The
+    output is the record build_playbook takes.
+    """
+    return pd.DataFrame(
+        {
+            "expected_share": level + mean_gap,
+            "mean_gap": mean_gap,
+            "midterm_penalty": midterm_penalty,
+        }
+    )
+
+
 def build_playbook(
     record: pd.DataFrame,
     expected_votes: "pd.Series[float]",
