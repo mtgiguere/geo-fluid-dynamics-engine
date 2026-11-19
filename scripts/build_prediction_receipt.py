@@ -215,7 +215,9 @@ def main() -> None:
             rings[fid] = (
                 geom["coordinates"] if geom["type"] == "MultiPolygon" else [geom["coordinates"]]
             )
-            names[fid] = f["properties"]["NAME"]
+            # Full labels, because the geometry names St. Louis city (29510) and
+            # St. Louis County (29189) both just "St. Louis".
+            names[fid] = "St. Louis City" if fid == "29510" else f"{f['properties']['NAME']} County"
     paths, _centroids, height = project_rings(rings)
 
     # Embedded data: per measure, per fips -> [pred, low, high, baseline]
@@ -806,7 +808,7 @@ _TEMPLATE = r"""<!doctype html>
     const v = DATA[sel.value][fips]; if (!v) return;
     const side = TRACKED[sel.value];
     const pct = x => Math.round(x * 100);
-    readout.innerHTML = '<div class="name">' + NAMES[fips] + ' County</div>'
+    readout.innerHTML = '<div class="name">' + NAMES[fips] + '</div>'
       + '<div class="num">' + pct(v[0]) + ' of 100 for ' + side + '</div>'
       + '<p>Range: <b>' + pct(v[1]) + ' to ' + pct(v[2]) + '</b> (nine times in ten).</p>'
       + '<p>Partisanship alone would say <b>' + pct(v[3]) + '</b>. '
