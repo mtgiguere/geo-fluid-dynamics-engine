@@ -193,11 +193,6 @@ build narratives). Dated deadlines to MPSA (April 1-4, 2027) are in
 
 ## Engineering
 
-- **Page-builder logic under test.** `build_prediction_receipt.py` (891 lines),
-  `build_blueprint.py` (565) and `build_targeting_demo.py` (451) publish
-  numbers; move their logic into the tested library (contract Section 7), add
-  golden-number tests, and one Playwright smoke test per public page
-  (`demo`, `forecast`, `blueprint`, `waves`). Trigger: now (next branch).
 - **E2E covers only the Kansas measure.** Ohio's YES orientation is
   unit-tested but not checked on the built app. Trigger: the next measure on
   the map, or before relying on the Ohio overlay for outreach.
