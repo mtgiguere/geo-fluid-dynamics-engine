@@ -10,8 +10,8 @@ exist, and how many ideological dimensions the topic space actually has.
 > **The ambition that shapes the year.** If the coming year's work can honestly
 > claim "we exhaustively checked how ideas move across the map" — every claim
 > calibrated on past data and falsifiable on future votes — the result is a
-> presentable body of work (target: Geo Week 2027, or another geospatial /
-> political-data venue). "Exhaustive" means: catalog *everything*, ingest
+> presentable body of work (target: MPSA 2027, Chicago, April 1-4; chosen over
+> the earlier Geo Week idea). "Exhaustive" means: catalog *everything*, ingest
 > *selectively* by identification value, and grade every prediction after the
 > fact.
 
@@ -268,7 +268,7 @@ end on one live cycle:
 
 **Deadlines:** registration commit on main by **2026-10-15**; election
 **2026-11-03**; postmortem + playbook unseal after certification (Dec 2026) —
-feeding the Geo Week 2027 story: *pre-registered, out-of-sample, scored in
+feeding the MPSA 2027 story: *pre-registered, out-of-sample, scored in
 public, and prescriptive advice that was graded like a forecast.*
 
 ## Build order (JIT triggers)
