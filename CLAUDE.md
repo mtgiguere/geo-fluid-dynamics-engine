@@ -51,6 +51,7 @@ Notebooks (`notebooks/`) are TDD-exempt EDA but must lean on the tested library.
 uv run ruff check .
 uv run ruff format .    # if this changes files, re-run ruff check
 uv run pytest
+uv run mypy
 ```
 
 One-time per clone: `git config core.hooksPath .githooks`.

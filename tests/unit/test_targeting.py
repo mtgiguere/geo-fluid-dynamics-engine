@@ -29,6 +29,7 @@ from geofluid.targeting import (
     build_playbook,
     history_buckets,
     playbook_budget_split,
+    record_at_level,
 )
 
 
@@ -385,3 +386,19 @@ def test_itinerary_can_rank_on_the_partisanship_controlled_residual() -> None:
     assert abs(float(out["dissonance"].loc["A"]) - 0.05) < 1e-9
     assert abs(float(out["dissonance"].loc["B"]) - (-0.05)) < 1e-9
     assert list(out.loc[["A", "B", "C", "D"], "category"]) == ["target", "hard", "hard", "base"]
+
+
+def test_a_stored_record_is_re_read_at_a_stated_level() -> None:
+    """A record saved earlier (each county's mean gap and midterm penalty)
+    is re-read at a new statewide level exactly as history_buckets reads
+    it: expected_share = level + mean gap. At level 0.50, gaps +0.10 and
+    -0.20 give 0.60 and 0.30; gap and penalty pass through unchanged, so
+    build_playbook can take the result as its record."""
+    gap = pd.Series({"A": 0.10, "B": -0.20})
+    penalty = pd.Series({"A": 0.01, "B": 0.02})
+
+    record = record_at_level(gap, penalty, level=0.50)
+
+    assert list(record.loc["A"]) == pytest.approx([0.60, 0.10, 0.01])
+    assert list(record.loc["B"]) == pytest.approx([0.30, -0.20, 0.02])
+    assert list(record.columns) == ["expected_share", "mean_gap", "midterm_penalty"]

@@ -133,10 +133,11 @@ specification. Never.
 uv run ruff check .
 uv run ruff format .    # if it changes files, re-run ruff check
 uv run pytest           # its own step: never piped through tail or any filter
+uv run mypy             # strict; also its own step
 ```
 
 - `.githooks/pre-commit` enforces this (`git config core.hooksPath .githooks`
-  once per clone). CI repeats it with mypy strict, branch coverage ≥ 90%,
+  once per clone). CI repeats it with branch coverage ≥ 90%,
   pip-audit and CodeQL; Playwright gates every deploy; mutation testing runs
   on every push to main as the watchdog for tests that cannot fail.
 - **A rule violated once gets promoted to a mechanism.** Written rules get

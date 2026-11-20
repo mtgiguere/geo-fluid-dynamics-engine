@@ -1,4 +1,4 @@
-"""Build the public "November receipt" page (untested orchestration + rendering).
+"""Build the public "November receipt" page (assembly only; the logic is tested library code).
 
 Renders data/predictions/ - the registered (or, before the freeze, the latest
 draft) 2026 Missouri county predictions, the statewide-only calls, the
@@ -8,9 +8,10 @@ THIS ballot, what we predict and why, and how we will grade ourselves. An
 inline SVG Missouri choropleth switches between the five measures; hover a
 county for its prediction, interval and the partisanship-only baseline.
 
-Like scripts/build_targeting_demo.py this is thin glue over the tested
-library's outputs, not itself under test. Every number on the page comes
-from the prediction files; the prose is the lay narrative around them.
+This script only assembles. Every number on the page comes from the
+prediction files through tested library code (geofluid.report for which file
+is the record, each measure's call and odds and how a chance is worded;
+geofluid.targeting for the worked plan); the prose is the lay narrative.
 Run:  uv run python scripts/build_prediction_receipt.py
 """
 
@@ -19,9 +20,9 @@ from pathlib import Path
 
 import pandas as pd
 
-from geofluid.map.svg import project_rings
-from geofluid.scoring import bracket_odds
-from geofluid.targeting import build_playbook, playbook_budget_split
+from geofluid.map.svg import lerp_hex, project_rings
+from geofluid.report import latest_prediction_file, measure_call, reader_percent
+from geofluid.targeting import build_playbook, playbook_budget_split, record_at_level
 
 ROOT = Path(__file__).resolve().parents[1]
 PRED = ROOT / "data/predictions"
@@ -149,62 +150,31 @@ STATEWIDE_ONLY = {
 BACKTEST = {"partisan": 3.69, "pooled": 3.80, "analog": 3.39, "analog_baseline": 3.76}
 
 
-def _latest(prefix: str) -> tuple[Path, str]:
-    reg = sorted(PRED.glob(f"{prefix}_REGISTERED_*.csv"))
-    if reg:
-        return reg[-1], "REGISTERED"
-    drafts = sorted(PRED.glob(f"{prefix}_DRAFT_*.csv"))
-    if not drafts:
-        raise SystemExit(f"no {prefix} file in {PRED}")
-    return drafts[-1], "DRAFT"
-
-
-def _pct(p: float) -> str:
-    """A chance as a reader-safe percent: nothing on this page is certain."""
-    if p < 0.005:
-        return "under 1%"
-    if p > 0.995:
-        return "over 99%"
-    return f"{p * 100:.0f}%"
-
-
-def _lerp_hex(c1: str, c2: str, t: float) -> str:
-    a = [int(c1[i : i + 2], 16) for i in (1, 3, 5)]
-    b = [int(c2[i : i + 2], 16) for i in (1, 3, 5)]
-    return "#" + "".join(f"{round(a[i] + (b[i] - a[i]) * t):02x}" for i in range(3))
-
-
 def _fill(share: float) -> str:
     """Diverging ramp around 50: deep slate well below, neutral at 50, ember well above."""
     if share < 0.5:
-        return _lerp_hex(NEUTRAL, SLATE_DEEP, min(1.0, (0.5 - share) / 0.3))
-    return _lerp_hex(NEUTRAL, EMBER_DEEP, min(1.0, (share - 0.5) / 0.3))
+        return lerp_hex(NEUTRAL, SLATE_DEEP, min(1.0, (0.5 - share) / 0.3))
+    return lerp_hex(NEUTRAL, EMBER_DEEP, min(1.0, (share - 0.5) / 0.3))
 
 
 def main() -> None:
-    pred_path, status = _latest("mo_2026-11-03")
+    pred_path, status = latest_prediction_file(PRED, "mo_2026-11-03")
     date = pred_path.stem.split("_")[-1]
     preds = pd.read_csv(pred_path, dtype={"fips": str})
-    statewide_only = pd.read_csv(_latest("statewide_only_2026-11-03")[0])
-    props = pd.read_csv(_latest("propositions_2026-11-03")[0])
-    manifest = pd.read_csv(_latest("SEALED_MANIFEST")[0])
+    statewide_only = pd.read_csv(latest_prediction_file(PRED, "statewide_only_2026-11-03")[0])
+    props = pd.read_csv(latest_prediction_file(PRED, "propositions_2026-11-03")[0])
+    manifest = pd.read_csv(latest_prediction_file(PRED, "SEALED_MANIFEST")[0])
 
     # The worked example: the pro-rights (NO) side of Amendment 3, rebuilt from
     # the public record file through the tested playbook generator. Same code
     # path as the sealed playbooks; this one is shown because the receipt is
     # only worth something if a reader can see what a plan looks like.
-    record_file, _st = _latest("county_record_buckets_mo")
+    record_file, _st = latest_prediction_file(PRED, "county_record_buckets_mo")
     rec = pd.read_csv(record_file, dtype={"fips": str}).set_index("fips")
     level_a3 = float(
         preds.loc[preds["measure_id"] == "mo_20261103_amendment_3", "level_central"].iloc[0]
     )
-    record = pd.DataFrame(
-        {
-            "expected_share": level_a3 + rec["abortion_2024_gap"],
-            "mean_gap": rec["abortion_2024_gap"],
-            "midterm_penalty": rec["midterm_penalty"],
-        }
-    )
+    record = record_at_level(rec["abortion_2024_gap"], rec["midterm_penalty"], level=level_a3)
     plan = build_playbook(record, rec["expected_votes_2026"], side="progressive")
     plan["county"] = plan["fips"].map(rec["county"])
     split = playbook_budget_split(plan)
@@ -245,7 +215,9 @@ def main() -> None:
             rings[fid] = (
                 geom["coordinates"] if geom["type"] == "MultiPolygon" else [geom["coordinates"]]
             )
-            names[fid] = f["properties"]["NAME"]
+            # Full labels, because the geometry names St. Louis city (29510) and
+            # St. Louis County (29189) both just "St. Louis".
+            names[fid] = "St. Louis City" if fid == "29510" else f"{f['properties']['NAME']} County"
     paths, _centroids, height = project_rings(rings)
 
     # Embedded data: per measure, per fips -> [pred, low, high, baseline]
@@ -277,14 +249,10 @@ def main() -> None:
     odds_rows = []
     for mid, meta in MEASURES.items():
         g = preds[preds["measure_id"] == mid]
-        lo, mid_level, hi = (
-            g["level_low"].iloc[0],
-            g["level_central"].iloc[0],
-            g["level_high"].iloc[0],
-        )
-        wins = int((g["pred_progressive_share"] > 0.5).sum())
+        call = measure_call(g)
+        lo, mid_level, hi = call.low, call.central, call.high
         kc = g[g["fips"] == "2938000"]["pred_progressive_share"].iloc[0]
-        now, plus_one, _sd = bracket_odds(low=lo, central=mid_level, high=hi)
+        now, plus_one = call.chance_now, call.chance_plus_one
         odds_rows.append((meta["short"], meta["tracked"], now, plus_one - now))
         cards.append(
             f"""<article class="card" id="card-{mid}">
@@ -295,17 +263,17 @@ def main() -> None:
       ({meta["tracked_means"]})</span></div>
   <div class="range">Range we'd stop being surprised in:
     <b>{lo * 100:.0f} to {hi * 100:.0f}</b>. Counties we expect that side to win:
-    <b>{wins} of 116</b>. Kansas City: <b>{kc * 100:.0f}</b>.</div>
+    <b>{call.counties_won} of {call.n_counties}</b>. Kansas City: <b>{kc * 100:.0f}</b>.</div>
   <div class="odds">Chance the <b>{meta["tracked"]}</b> side is ahead on election night, as
-    things stand: <b>{_pct(now)}</b>. One statewide point its way
-    (about {point_votes:,.0f} net votes) moves that to <b>{_pct(plus_one)}</b>.</div>
+    things stand: <b>{reader_percent(now)}</b>. One statewide point its way
+    (about {point_votes:,.0f} net votes) moves that to <b>{reader_percent(plus_one)}</b>.</div>
   <p>{meta["why"]}</p>
   <div class="past">Learned from: {meta["past"]}</div>
 </article>"""
         )
     odds_rows.sort(key=lambda r: -r[3])
     odds_html = "\n".join(
-        f"<tr><td>{short}</td><td>{side}</td><td>{_pct(now)}</td>"
+        f"<tr><td>{short}</td><td>{side}</td><td>{reader_percent(now)}</td>"
         f"<td>{gain * 100:+.1f} pts</td></tr>"
         for short, side, now, gain in odds_rows
     )
@@ -840,7 +808,7 @@ _TEMPLATE = r"""<!doctype html>
     const v = DATA[sel.value][fips]; if (!v) return;
     const side = TRACKED[sel.value];
     const pct = x => Math.round(x * 100);
-    readout.innerHTML = '<div class="name">' + NAMES[fips] + ' County</div>'
+    readout.innerHTML = '<div class="name">' + NAMES[fips] + '</div>'
       + '<div class="num">' + pct(v[0]) + ' of 100 for ' + side + '</div>'
       + '<p>Range: <b>' + pct(v[1]) + ' to ' + pct(v[2]) + '</b> (nine times in ten).</p>'
       + '<p>Partisanship alone would say <b>' + pct(v[3]) + '</b>. '
