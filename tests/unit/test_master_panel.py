@@ -104,9 +104,9 @@ def test_swing_is_change_in_two_party_share_since_previous_election() -> None:
         _demographics([{}]),
     )
 
-    by_year = panel.set_index("year")
-    assert pd.isna(by_year.loc[2016, "swing_dem_2p"])
-    assert abs(by_year.loc[2020, "swing_dem_2p"] - 0.15) < 1e-9
+    swing = panel.set_index("year")["swing_dem_2p"]
+    assert pd.isna(swing.loc[2016])
+    assert abs(swing.loc[2020] - 0.15) < 1e-9
 
 
 def test_swing_is_missing_when_previous_election_has_no_row() -> None:
@@ -127,9 +127,9 @@ def test_swing_is_missing_when_previous_election_has_no_row() -> None:
         _demographics([{}]),
     )
 
-    by_year = panel.set_index("year")
-    assert pd.isna(by_year.loc[2020, "swing_dem_2p"])  # NOT 0.5 - 0.3
-    assert abs(by_year.loc[2024, "swing_dem_2p"] - 0.1) < 1e-9
+    swing = panel.set_index("year")["swing_dem_2p"]
+    assert pd.isna(swing.loc[2020])  # NOT 0.5 - 0.3
+    assert abs(swing.loc[2024] - 0.1) < 1e-9
 
 
 def test_shannon_county_old_fips_harmonizes_to_oglala_lakota() -> None:
